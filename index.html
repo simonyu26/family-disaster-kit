@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#52796F">
-  <title>🏕️ 森林露營小隊・防災系統 v1.8</title>
+  <title>🏕️ 森林露營小隊・防災系統 v1.9</title>
   <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
   <link rel="apple-touch-icon" href="./icon-192.png">
   <link rel="manifest" href="./manifest.json">
@@ -32,7 +32,7 @@
       padding: 12px 14px 88px 14px;
     }
 
-    /* 頂部列 */
+    /* 頂部列與全站示警快訊條 */
     .top-bar { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px; }
     h1 { font-size: 1.2rem; color: var(--primary); margin: 0; font-weight: 800; }
     .icon-btn {
@@ -42,7 +42,7 @@
     .status-strip {
       display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;
       background: #EADCB9; border: 1px solid #D1BF9A; border-radius: 10px;
-      padding: 6px 10px; font-size: 0.78rem; margin-bottom: 12px;
+      padding: 6px 10px; font-size: 0.78rem; margin-bottom: 10px;
     }
     .status-badge { font-weight: 800; }
     .status-badge.online { color: var(--primary-dark); }
@@ -51,8 +51,13 @@
       background: var(--accent); color: #FFF; padding: 2px 8px; border-radius: 12px;
       font-weight: bold; cursor: pointer; font-size: 0.75rem;
     }
+    .global-alert-ticker {
+      display: none; background: #FDF4F2; border: 2px solid var(--danger); color: var(--danger);
+      border-radius: 10px; padding: 7px 10px; font-size: 0.8rem; font-weight: 800;
+      margin-bottom: 10px; cursor: pointer; align-items: center; justify-content: space-between; gap: 8px;
+    }
 
-    /* 子視角切換（物資分頁內） */
+    /* 子視角切換 */
     .sub-toggle {
       display: flex; background: #EADCB9; border-radius: 10px; margin-bottom: 10px;
       padding: 3px; border: 1px solid #D1BF9A; gap: 4px;
@@ -63,7 +68,7 @@
     }
     .sub-btn.active { background: var(--primary); color: #FFF; }
 
-    /* 隊員卡片與單排進度條 */
+    /* 隊員卡片與頭像 */
     .party-container { display: flex; overflow-x: auto; gap: 10px; padding: 4px 0 10px 0; }
     .party-container::-webkit-scrollbar { display: none; }
     .character-card {
@@ -77,14 +82,16 @@
     }
     .my-badge {
       position: absolute; top: -6px; right: -4px; background: var(--accent); color: #FFF;
-      font-size: 0.65rem; font-weight: bold; padding: 2px 6px; border-radius: 10px;
+      font-size: 0.65rem; font-weight: bold; padding: 2px 6px; border-radius: 10px; z-index: 2;
     }
-    .char-avatar { font-size: 1.9rem; line-height: 1; margin-bottom: 3px; position: relative; display: inline-block; }
+    .char-avatar { font-size: 1.9rem; line-height: 1; margin-bottom: 3px; position: relative; display: inline-flex; justify-content: center; align-items: center; min-height: 38px; }
+    .avatar-img { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 2px solid #D1BF9A; }
     .char-buddy {
       font-size: 0.95rem; position: absolute; bottom: -2px; right: -10px;
-      background: white; border-radius: 50%; width: 19px; height: 19px;
-      display: flex; justify-content: center; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+      background: white; border-radius: 50%; width: 20px; height: 20px;
+      display: flex; justify-content: center; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.15); overflow: hidden;
     }
+    .buddy-img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
     .progress-track {
       width: 100%; height: 7px; background: #E6DEC9; border-radius: 99px;
       overflow: hidden; margin-top: 6px;
@@ -125,7 +132,7 @@
     .item-header { display: flex; justify-content: space-between; align-items: center; gap: 8px; width: 100%; }
     .item-name-line { display: flex; align-items: center; gap: 6px; }
     .item-name { font-size: 1rem; font-weight: 800; word-break: break-word; }
-    .btn-edit-item { background: transparent; border: none; font-size: 0.9rem; cursor: pointer; opacity: 0.65; padding: 2px 4px; }
+    .btn-edit-item { background: transparent; border: none; font-size: 0.9rem; cursor: pointer; opacity: 0.7; padding: 2px 4px; }
 
     .switch { position: relative; display: inline-block; width: 50px; height: 28px; flex-shrink: 0; }
     .switch input { opacity: 0; width: 0; height: 0; }
@@ -168,15 +175,30 @@
     .chip.missing { background: #F7E3DC; color: var(--accent); border-color: var(--accent); }
     .chip.na { background: transparent; color: #B3A08E; border: 2px dashed #D4C1AF; }
 
-    /* 地圖面板 */
-    #map { width: 100%; height: 320px; border-radius: 14px; border: 2px solid #D1BF9A; z-index: 1; background: #E5E0D5; }
+    /* 地圖面板與搜尋／路線 */
+    #map { width: 100%; height: 310px; border-radius: 14px; border: 2px solid #D1BF9A; z-index: 1; background: #E5E0D5; }
+    .map-search-bar { display: flex; gap: 6px; margin-bottom: 8px; }
+    .map-search-results {
+      background: var(--card-bg); border: 1px solid #D1BF9A; border-radius: 10px;
+      margin-bottom: 8px; display: none; overflow: hidden;
+    }
+    .map-search-item {
+      padding: 8px 10px; border-bottom: 1px dashed #E6DEC9; font-size: 0.83rem;
+      display: flex; justify-content: space-between; align-items: center; gap: 8px; cursor: pointer;
+    }
+    .map-search-item:last-child { border-bottom: none; }
     .map-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
     .map-btn {
       background: var(--primary); color: #FFF; border: none; border-radius: 10px;
-      padding: 9px 8px; font-weight: bold; font-size: 0.85rem; cursor: pointer;
+      padding: 9px 8px; font-weight: bold; font-size: 0.84rem; cursor: pointer;
     }
     .map-btn.secondary { background: var(--accent); }
     .map-btn.outline { background: var(--card-bg); color: var(--text); border: 2px solid #D1BF9A; }
+    .route-banner {
+      margin-top: 8px; background: #EFF6F3; border: 2px solid var(--primary);
+      border-radius: 10px; padding: 8px 12px; font-size: 0.82rem; display: none;
+      justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;
+    }
     .tile-progress { margin-top: 8px; background: var(--card-bg); border: 1px solid #D1BF9A; border-radius: 10px; padding: 8px 12px; font-size: 0.8rem; display: none; }
     .loc-card {
       background: var(--card-bg); border: 2px solid #EDE6D6; border-radius: 12px;
@@ -187,19 +209,43 @@
       border-radius: 8px; padding: 4px 8px; font-size: 0.76rem; font-weight: 800; white-space: nowrap; text-align: right;
     }
 
-    /* 模組卡片（應變預留與營地成員管理） */
+    /* 情報區與模組卡片 */
     .section-card {
       background: var(--card-bg); border: 2px solid #EDE6D6; border-radius: 14px;
       padding: 14px; margin-bottom: 12px;
     }
-    .section-title { font-size: 1rem; font-weight: 800; color: var(--primary-dark); margin: 0 0 10px 0; display: flex; justify-content: space-between; align-items: center; }
+    .section-title { font-size: 1rem; font-weight: 800; color: var(--primary-dark); margin: 0 0 10px 0; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
     .member-row {
       display: flex; justify-content: space-between; align-items: center;
       padding: 9px 0; border-bottom: 1px dashed #E6DEC9; gap: 8px;
     }
     .member-row:last-child { border-bottom: none; }
+    .alert-item { padding: 8px 0; border-bottom: 1px dashed #E6DEC9; font-size: 0.85rem; }
+    .alert-item:last-child { border-bottom: none; }
+    .cbs-badge {
+      display: inline-block; background: var(--danger); color: #FFF;
+      font-size: 0.7rem; font-weight: bold; padding: 1px 6px; border-radius: 6px; margin-right: 4px;
+    }
+    .city-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+    .city-chip {
+      background: #EADCB9; border: 1px solid #D1BF9A; border-radius: 14px;
+      padding: 4px 10px; font-size: 0.78rem; font-weight: bold; cursor: pointer;
+    }
+    .city-chip.active { background: var(--primary); color: #FFF; border-color: var(--primary); }
+    .fm-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+    .fm-table td, .fm-table th { border-bottom: 1px solid #E6DEC9; padding: 5px 4px; text-align: left; }
 
-    /* 懸浮按鈕 */
+    /* Emoji 點選面板與照片上傳預覽 */
+    .emoji-picker { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+    .emoji-opt {
+      background: #FFF; border: 1px solid #D1BF9A; border-radius: 8px;
+      padding: 4px 7px; font-size: 1.15rem; cursor: pointer;
+    }
+    .emoji-opt:active { transform: scale(0.92); background: #EFF6F3; }
+    .photo-upload-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+    .preview-circle { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary); display: none; }
+
+    /* 懸浮按鈕 & 底部導覽列 */
     .fab-container { position: fixed; bottom: 74px; right: 16px; display: flex; flex-direction: column; gap: 8px; z-index: 900; }
     .fab {
       background: var(--primary); color: #FFF; width: 48px; height: 48px; border-radius: 50%;
@@ -208,7 +254,6 @@
     }
     .fab.secondary { background: var(--accent); }
 
-    /* 底部導覽列 (Bottom Tab Bar) */
     .bottom-nav {
       position: fixed; bottom: 0; left: 0; right: 0; height: 62px;
       background: var(--card-bg); border-top: 2px solid #D1BF9A;
@@ -241,7 +286,7 @@
     .modal-backdrop.open { display: flex; }
     .modal-card {
       background: var(--card-bg); border: 2px solid #D1BF9A; border-radius: 16px;
-      padding: 16px; width: 100%; max-width: 420px; max-height: 88vh; overflow-y: auto;
+      padding: 16px; width: 100%; max-width: 430px; max-height: 88vh; overflow-y: auto;
     }
     .modal-title { font-size: 1.1rem; font-weight: 800; color: var(--primary-dark); margin: 0 0 12px 0; }
     .form-group { margin-bottom: 12px; }
@@ -287,7 +332,7 @@
 <body>
 
   <div class="top-bar">
-    <h1>🏕️ 森林露營小隊 v1.8</h1>
+    <h1>🏕️ 森林露營小隊 v1.9</h1>
     <button class="icon-btn" onclick="syncWithServer(true)" title="同步最新進度">🔄 同步</button>
   </div>
 
@@ -297,6 +342,12 @@
       <span id="pending-badge" class="sync-pill" style="display:none;" onclick="flushOfflineQueue()">待同步 0 筆</span>
       <span id="last-sync-text" style="color:var(--text-muted);">尚未同步</span>
     </div>
+  </div>
+
+  <!-- 頂部連動：全站重大示警快訊條（平時隱藏，關注地區有示警時自動浮現） -->
+  <div id="global-alert-ticker" class="global-alert-ticker" onclick="switchTab('guide')">
+    <span id="global-alert-text">⚠️ 重大防災示警</span>
+    <span style="white-space:nowrap; font-size:0.74rem;">詳情 ▶</span>
   </div>
 
   <!-- 分頁 1：物資整備 -->
@@ -321,9 +372,24 @@
     <div id="inventory"></div>
   </div>
 
-  <!-- 分頁 2：離線地圖 -->
+  <!-- 分頁 2：離線地圖（含搜尋與路線規劃） -->
   <div id="tab-map" style="display:none;">
+    <div class="map-search-bar">
+      <input type="text" id="map-search-input" class="search-box" placeholder="🔍 搜尋地名、地址或已存點位..." onkeydown="if(event.key==='Enter') searchMap()">
+      <button class="btn btn-primary" onclick="searchMap()">搜尋</button>
+    </div>
+    <div id="map-search-results" class="map-search-results"></div>
+
     <div id="map"></div>
+
+    <div id="route-banner" class="route-banner">
+      <span id="route-info-text"></span>
+      <div style="display:flex; gap:6px;">
+        <a id="gmap-nav-link" href="#" target="_blank" class="btn btn-primary" style="text-decoration:none; padding:4px 9px; font-size:0.78rem;">Google Maps 導航</a>
+        <button class="btn btn-muted" style="padding:4px 9px; font-size:0.78rem;" onclick="clearRoute()">清除路線</button>
+      </div>
+    </div>
+
     <div class="map-controls">
       <button class="map-btn" onclick="locateMe()">📍 取得目前 GPS</button>
       <button class="map-btn secondary" onclick="openAddLocationModal()">➕ 新增避難點位</button>
@@ -332,24 +398,78 @@
     </div>
     <div id="tile-progress" class="tile-progress"></div>
     <div style="margin-top:12px; font-weight:800; color:var(--primary-dark); display:flex; justify-content:space-between; align-items:center;">
-      <span>📌 避難處所與集合點</span>
+      <span>📌 避難處所與集合點（可規劃路線）</span>
       <span id="tile-cache-count" style="font-size:0.75rem; color:var(--text-muted);">計算快取中...</span>
     </div>
     <div id="locations-list"></div>
   </div>
 
-  <!-- 分頁 3：應變指南（架構預留模組） -->
+  <!-- 分頁 3：情報（含「即時情報」與「應變指南」雙子分頁） -->
   <div id="tab-guide" style="display:none;">
-    <div class="section-card">
-      <div class="section-title"><span>🧭 防災應變模組（架構預留區）</span></div>
-      <p style="font-size:0.88rem; color:var(--text-muted); line-height:1.5; margin:0 0 10px 0;">
-        此分頁預留給後續擴充為綜合防災 App 使用，未來可對應獨立的 Google Sheets 工作表（如 <code>Checklists</code>、<code>Contacts</code>），離線快取後於災時查閱：
-      </p>
-      <ul style="font-size:0.86rem; color:var(--text); padding-left:20px; margin:0; line-height:1.7;">
-        <li><strong>災害情境處置卡</strong>：地震、颱風停水停電、緊急撤離 SOP</li>
-        <li><strong>家庭緊急聯絡網</strong>：集合原則、外縣市聯絡人、保險與證件備份索引</li>
-        <li><strong>72 小時黃金生存指數</strong>：依關鍵物資計算與遊戲化任務引導</li>
-      </ul>
+    <div class="sub-toggle">
+      <div id="btn-guide-live" class="sub-btn active" onclick="setGuideSubMode('live')">📡 即時情報</div>
+      <div id="btn-guide-sop" class="sub-btn" onclick="setGuideSubMode('sop')">📋 應變指南</div>
+    </div>
+
+    <div id="guide-live-pane">
+      <!-- 天氣區塊 -->
+      <div class="section-card">
+        <div class="section-title">
+          <span>🌦️ 即時天氣（Open-Meteo）</span>
+          <button class="btn btn-muted" style="padding:4px 9px; font-size:0.78rem;" onclick="fetchWeather(true)">🔄 更新</button>
+        </div>
+        <div id="weather-box" style="font-size:0.88rem; color:var(--text-muted);">切換至此頁時自動載入目前位置天氣...</div>
+      </div>
+
+      <!-- NCDR 災害示警與細胞廣播同源看板 -->
+      <div class="section-card">
+        <div class="section-title">
+          <span>🚨 NCDR 災害示警與細胞告警</span>
+          <button class="btn btn-muted" style="padding:4px 9px; font-size:0.78rem;" onclick="fetchNcdrAlerts(true)">🔄 更新</button>
+        </div>
+        <div class="city-chips" id="alert-city-chips">
+          <span class="city-chip active" onclick="setAlertCity('全部')">全部</span>
+          <span class="city-chip" onclick="setAlertCity('臺北市')">臺北市</span>
+          <span class="city-chip" onclick="setAlertCity('彰化市')">彰化市</span>
+          <span class="city-chip" onclick="setAlertCity('高雄市')">高雄市</span>
+        </div>
+        <div id="ncdr-alerts-box" style="font-size:0.85rem; color:var(--text-muted);">點擊更新抓取最新民生示警（有網更新後將快取於本機）</div>
+        <div style="margin-top:8px;">
+          <a href="https://alerts.ncdr.nat.gov.tw/web/" target="_blank" style="font-size:0.8rem; font-weight:bold; color:var(--primary-dark);">🔗 開啟 NCDR 民生示警公開資料平台</a>
+        </div>
+      </div>
+
+      <!-- 警廣與離線 FM 頻率表 -->
+      <div class="section-card">
+        <div class="section-title">
+          <span>📻 警廣路況與離線 FM 頻率表</span>
+          <a href="https://www.pbs.npa.gov.tw/ch/index" target="_blank" class="btn btn-muted" style="text-decoration:none; padding:4px 9px; font-size:0.78rem;">🌐 即時路況</a>
+        </div>
+        <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:8px;">
+          斷網停電時可使用手搖／電池收音機對頻收聽（路況通報專線：<strong>0800-000-123</strong>）：
+        </div>
+        <table class="fm-table">
+          <tr><th>地區／廣播網</th><th>FM 頻率</th></tr>
+          <tr><td>全國網（臺北／雲嘉南／高屏／宜蘭）</td><td><strong>FM 104.9</strong></td></tr>
+          <tr><td>全國網（桃竹苗／臺中／彰化／南投）</td><td><strong>FM 105.1</strong></td></tr>
+          <tr><td>全國網（花蓮／臺東・舞鶴）</td><td><strong>FM 101.3 / 106.5</strong></td></tr>
+          <tr><td>地區網（臺北分臺／中彰投／高屏）</td><td><strong>94.3 / 94.5 / 93.1</strong></td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div id="guide-sop-pane" style="display:none;">
+      <div class="section-card">
+        <div class="section-title"><span>📋 防災應變指南（預留擴充區）</span></div>
+        <p style="font-size:0.86rem; color:var(--text-muted); line-height:1.5; margin:0 0 8px 0;">
+          此子分頁預留給後續擴充家庭應變 SOP 與遊戲化任務使用：
+        </p>
+        <ul style="font-size:0.85rem; color:var(--text); padding-left:20px; margin:0; line-height:1.7;">
+          <li><strong>災害情境處置卡</strong>：地震、颱風停水停電、緊急撤離 SOP</li>
+          <li><strong>家庭緊急聯絡網</strong>：臺北市／彰化市／高雄市集合原則與外縣市聯絡人</li>
+          <li><strong>72 小時黃金生存指數</strong>：依關鍵物資計算與遊戲化任務引導</li>
+        </ul>
+      </div>
     </div>
   </div>
 
@@ -377,7 +497,7 @@
     </div>
   </div>
 
-  <!-- 懸浮按鈕（僅在物資分頁顯示） -->
+  <!-- 懸浮按鈕 -->
   <div class="fab-container" id="fab-group">
     <div class="fab secondary" onclick="openPrintModal()" title="狸貓商店採買單">🛒</div>
     <div class="fab" onclick="openAddItemModal()" title="新增物資">+</div>
@@ -392,7 +512,7 @@
       <span class="nav-icon">🗺️</span><span>地圖</span>
     </div>
     <div class="nav-item" id="nav-guide" onclick="switchTab('guide')">
-      <span class="nav-icon">🧭</span><span>應變</span>
+      <span class="nav-icon">📡</span><span>情報</span>
     </div>
     <div class="nav-item" id="nav-camp" onclick="switchTab('camp')">
       <span class="nav-icon">🏕️</span><span>營地</span>
@@ -416,7 +536,7 @@
     <div id="print-content"></div>
   </div>
 
-  <!-- 新增/編輯物資 Modal（整合移出背包與刪除） -->
+  <!-- 新增/編輯物資 Modal -->
   <div id="item-modal" class="modal-backdrop">
     <div class="modal-card">
       <h3 class="modal-title" id="item-modal-title">➕ 新增防災物資</h3>
@@ -443,25 +563,42 @@
     </div>
   </div>
 
-  <!-- 新增/編輯成員 Modal -->
+  <!-- 新增/編輯成員 Modal（支援改名、點選 Emoji 與上傳壓縮照片） -->
   <div id="member-modal" class="modal-backdrop">
     <div class="modal-card">
       <h3 class="modal-title" id="member-modal-title">➕ 新增小隊成員</h3>
-      <input type="hidden" id="member-edit-mode" value="">
+      <input type="hidden" id="member-old-name" value="">
       <div class="form-group">
-        <label class="form-label">成員名稱</label>
+        <label class="form-label">成員名稱（編輯可改名，試算表將同步更新）</label>
         <input type="text" id="member-name-input" class="form-input" placeholder="例如：Grandma 或 小明">
       </div>
-      <div style="display:flex; gap:10px;">
-        <div class="form-group" style="flex:1;">
-          <label class="form-label">主角頭像 (Emoji)</label>
-          <input type="text" id="member-avatar-input" class="form-input" value="🧑" placeholder="例如：👨 👩 👧 👴">
+
+      <div class="form-group">
+        <label class="form-label">主角頭像（點選 Emoji、輸入或上傳照片）</label>
+        <div class="photo-upload-row">
+          <img id="preview-avatar-img" class="preview-circle" alt="頭像預覽">
+          <input type="text" id="member-avatar-input" class="form-input" value="🧑" style="flex:1;" oninput="syncPhotoPreview('avatar')">
+          <label class="btn btn-muted" style="cursor:pointer; white-space:nowrap;">
+            📷 傳照片
+            <input type="file" accept="image/*" style="display:none;" onchange="handlePhotoUpload(event, 'avatar')">
+          </label>
         </div>
-        <div class="form-group" style="flex:1;">
-          <label class="form-label">夥伴動物 (Emoji)</label>
-          <input type="text" id="member-buddy-input" class="form-input" value="🐾" placeholder="例如：🐶 🐱 🐰 🐻">
-        </div>
+        <div class="emoji-picker" id="avatar-emoji-picker"></div>
       </div>
+
+      <div class="form-group">
+        <label class="form-label">夥伴動物（點選 Emoji、輸入或上傳照片）</label>
+        <div class="photo-upload-row">
+          <img id="preview-buddy-img" class="preview-circle" alt="夥伴預覽">
+          <input type="text" id="member-buddy-input" class="form-input" value="🐾" style="flex:1;" oninput="syncPhotoPreview('buddy')">
+          <label class="btn btn-muted" style="cursor:pointer; white-space:nowrap;">
+            📷 傳照片
+            <input type="file" accept="image/*" style="display:none;" onchange="handlePhotoUpload(event, 'buddy')">
+          </label>
+        </div>
+        <div class="emoji-picker" id="buddy-emoji-picker"></div>
+      </div>
+
       <div class="form-group" id="member-default-state-group">
         <label class="form-label">現有物資預設狀態</label>
         <select id="member-default-state" class="form-input">
@@ -520,18 +657,25 @@
 
     const STORAGE_KEYS = {
       GAS_URL: 'camp_gas_url',
-      DATA: 'camp_inventory_cache_v18',
-      MEMBERS: 'camp_members_cache_v18',
-      LOCATIONS: 'camp_locations_cache_v18',
-      QUEUE: 'camp_offline_queue_v18',
+      DATA: 'camp_inventory_cache_v19',
+      MEMBERS: 'camp_members_cache_v19',
+      LOCATIONS: 'camp_locations_cache_v19',
+      QUEUE: 'camp_offline_queue_v19',
+      ALERTS: 'camp_ncdr_alerts_cache',
+      WEATHER: 'camp_weather_cache',
       MY_CHAR: 'camp_my_char',
       COLLAPSED: 'camp_collapsed_cats',
       LAST_SYNC: 'camp_last_sync'
     };
 
+    const AVATAR_EMOJIS = ['👨', '👩', '👧', '👦', '👴', '👵', '🧑', '👶', '⛺', '🦸'];
+    const BUDDY_EMOJIS = ['🐶', '🐱', '🐰', '🐹', '🐻', '🦊', '🐨', '🐼', '🦉', '🐾'];
+
     let globalData = null;
     let membersMap = {};
     let locationsData = [];
+    let alertsCache = [];
+    let selectedAlertCity = '全部';
     let currentTab = 'inventory';
     let invSubMode = 'character';
     let currentChar = '';
@@ -540,7 +684,7 @@
     let collapsedCats = JSON.parse(localStorage.getItem(STORAGE_KEYS.COLLAPSED) || '{}');
     let offlineQueue = JSON.parse(localStorage.getItem(STORAGE_KEYS.QUEUE) || '[]');
 
-    let mapInstance = null, mapInitialized = false, markersLayer = null, userPos = null, userMarker = null;
+    let mapInstance = null, mapInitialized = false, markersLayer = null, routeLayer = null, userPos = null, userMarker = null;
 
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('./sw.js').catch(() => {});
@@ -557,6 +701,7 @@
     });
 
     window.onload = () => {
+      initEmojiPickers();
       const params = new URLSearchParams(window.location.search);
       if (params.get('api')) {
         localStorage.setItem(STORAGE_KEYS.GAS_URL, params.get('api'));
@@ -567,9 +712,15 @@
       updatePendingBadge();
       updateLastSyncText();
 
-      const cachedInv = localStorage.getItem(STORAGE_KEYS.DATA);
-      const cachedMem = localStorage.getItem(STORAGE_KEYS.MEMBERS);
-      const cachedLoc = localStorage.getItem(STORAGE_KEYS.LOCATIONS);
+      const cachedInv = localStorage.getItem(STORAGE_KEYS.DATA) || localStorage.getItem('camp_inventory_cache_v18');
+      const cachedMem = localStorage.getItem(STORAGE_KEYS.MEMBERS) || localStorage.getItem('camp_members_cache_v18');
+      const cachedLoc = localStorage.getItem(STORAGE_KEYS.LOCATIONS) || localStorage.getItem('camp_locations_cache_v18');
+      const cachedAlerts = localStorage.getItem(STORAGE_KEYS.ALERTS);
+      if (cachedAlerts) {
+        alertsCache = JSON.parse(cachedAlerts);
+        updateGlobalAlertTicker();
+      }
+
       if (cachedInv) {
         globalData = JSON.parse(cachedInv);
         if (cachedMem) membersMap = JSON.parse(cachedMem);
@@ -585,8 +736,67 @@
         showToast('請先設定 GAS API 網址', 'warn');
       } else if (navigator.onLine) {
         syncWithServer(false);
+        fetchNcdrAlerts(false);
       }
     };
+
+    function initEmojiPickers() {
+      const avBox = document.getElementById('avatar-emoji-picker');
+      const bdBox = document.getElementById('buddy-emoji-picker');
+      avBox.innerHTML = AVATAR_EMOJIS.map(e => `<button type="button" class="emoji-opt" onclick="pickEmoji('avatar','${e}')">${e}</button>`).join('');
+      bdBox.innerHTML = BUDDY_EMOJIS.map(e => `<button type="button" class="emoji-opt" onclick="pickEmoji('buddy','${e}')">${e}</button>`).join('');
+    }
+
+    function pickEmoji(target, emoji) {
+      const input = document.getElementById(target === 'avatar' ? 'member-avatar-input' : 'member-buddy-input');
+      input.value = emoji;
+      syncPhotoPreview(target);
+    }
+
+    function syncPhotoPreview(target) {
+      const val = document.getElementById(target === 'avatar' ? 'member-avatar-input' : 'member-buddy-input').value.trim();
+      const img = document.getElementById(target === 'avatar' ? 'preview-avatar-img' : 'preview-buddy-img');
+      if (val.startsWith('data:image/')) {
+        img.src = val;
+        img.style.display = 'inline-block';
+      } else {
+        img.style.display = 'none';
+      }
+    }
+
+    function handlePhotoUpload(event, target) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const size = 128;
+          const canvas = document.createElement('canvas');
+          canvas.width = size;
+          canvas.height = size;
+          const ctx = canvas.getContext('2d');
+          const minSide = Math.min(img.width, img.height);
+          const sx = (img.width - minSide) / 2;
+          const sy = (img.height - minSide) / 2;
+          ctx.drawImage(img, sx, sy, minSide, minSide, 0, 0, size, size);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.72);
+          const input = document.getElementById(target === 'avatar' ? 'member-avatar-input' : 'member-buddy-input');
+          input.value = dataUrl;
+          syncPhotoPreview(target);
+          showToast('✅ 照片已壓縮就緒，記得按儲存！', 'success');
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function renderAvatarHTML(val, isBuddy = false) {
+      if (val && val.startsWith('data:image/')) {
+        return `<img src="${val}" class="${isBuddy ? 'buddy-img' : 'avatar-img'}" alt="頭像">`;
+      }
+      return val || (isBuddy ? '🐾' : '🧑');
+    }
 
     function getGasUrl() {
       return localStorage.getItem(STORAGE_KEYS.GAS_URL) || DEFAULT_GAS_URL;
@@ -594,13 +804,8 @@
 
     function updateNetworkUI() {
       const el = document.getElementById('net-status');
-      if (navigator.onLine) {
-        el.className = 'status-badge online';
-        el.innerText = '🟢 已連線';
-      } else {
-        el.className = 'status-badge offline';
-        el.innerText = '🟠 離線模式';
-      }
+      if (navigator.onLine) { el.className = 'status-badge online'; el.innerText = '🟢 已連線'; }
+      else { el.className = 'status-badge offline'; el.innerText = '🟠 離線模式'; }
     }
 
     function updatePendingBadge() {
@@ -633,10 +838,7 @@
     async function syncWithServer(manual = false) {
       const url = getGasUrl();
       if (!url) { switchTab('camp'); return; }
-      if (!navigator.onLine) {
-        if (manual) showToast('🟠 目前無網路，無法連線至 Google 試算表', 'warn');
-        return;
-      }
+      if (!navigator.onLine) { if (manual) showToast('🟠 目前無網路，無法連線至試算表', 'warn'); return; }
       if (offlineQueue.length > 0) await flushOfflineQueue();
 
       try {
@@ -656,9 +858,7 @@
 
         selectInitialCharacter();
         updateLastSyncText();
-        renderParty();
-        renderInventory();
-        renderCampTab();
+        renderParty(); renderInventory(); renderCampTab();
         if (currentTab === 'map') renderMapLocations();
         if (manual) showToast('✅ 已同步至最新狀態', 'success');
       } catch (err) {
@@ -681,9 +881,7 @@
 
     function enqueueAction(payload) {
       if (payload.action === 'updateItem') {
-        offlineQueue = offlineQueue.filter(
-          q => !(q.action === 'updateItem' && q.row === payload.row && q.charName === payload.charName)
-        );
+        offlineQueue = offlineQueue.filter(q => !(q.action === 'updateItem' && q.row === payload.row && q.charName === payload.charName));
       }
       offlineQueue.push(payload);
       localStorage.setItem(STORAGE_KEYS.QUEUE, JSON.stringify(offlineQueue));
@@ -711,7 +909,6 @@
       }
     }
 
-    // 分頁切換
     function switchTab(tab) {
       currentTab = tab;
       ['inventory', 'map', 'guide', 'camp'].forEach(t => {
@@ -720,6 +917,7 @@
       });
       document.getElementById('fab-group').style.display = (tab === 'inventory') ? 'flex' : 'none';
       if (tab === 'map') initMapIfNeeded();
+      if (tab === 'guide') initGuideTab();
       if (tab === 'camp') renderCampTab();
     }
 
@@ -728,8 +926,14 @@
       document.getElementById('btn-sub-char').classList.toggle('active', mode === 'character');
       document.getElementById('btn-sub-item').classList.toggle('active', mode === 'item');
       updateOtherCharBanner();
-      renderParty();
-      renderInventory();
+      renderParty(); renderInventory();
+    }
+
+    function setGuideSubMode(mode) {
+      document.getElementById('btn-guide-live').classList.toggle('active', mode === 'live');
+      document.getElementById('btn-guide-sop').classList.toggle('active', mode === 'sop');
+      document.getElementById('guide-live-pane').style.display = (mode === 'live') ? 'block' : 'none';
+      document.getElementById('guide-sop-pane').style.display = (mode === 'sop') ? 'block' : 'none';
     }
 
     function selectInitialCharacter() {
@@ -776,10 +980,7 @@
       let total = 0, checked = 0;
       globalData.items.forEach(item => {
         const st = item.status[charName];
-        if (st && st.state !== 'na') {
-          total++;
-          if (st.state === 'ready') checked++;
-        }
+        if (st && st.state !== 'na') { total++; if (st.state === 'ready') checked++; }
       });
       return { total, checked, pct: total === 0 ? 0 : Math.round((checked / total) * 100) };
     }
@@ -799,8 +1000,7 @@
       if (!dateString) return { expired: false, warn: false };
       const expDate = new Date(dateString);
       if (isNaN(expDate)) return { expired: false, warn: false };
-      const now = new Date();
-      const diffMonths = (expDate - now) / (1000 * 60 * 60 * 24 * 30);
+      const diffMonths = (expDate - new Date()) / (1000 * 60 * 60 * 24 * 30);
       return { expired: diffMonths < 0, warn: diffMonths >= 0 && diffMonths <= 6 };
     }
 
@@ -827,7 +1027,7 @@
 
         card.innerHTML = `
           ${myBadgeHTML}
-          <div class="char-avatar">${vis.avatar}<span class="char-buddy">${vis.buddy}</span></div>
+          <div class="char-avatar">${renderAvatarHTML(vis.avatar, false)}<span class="char-buddy">${renderAvatarHTML(vis.buddy, true)}</span></div>
           <div style="font-weight:800; font-size:0.92rem; margin-top:4px;">${char}</div>
           <div class="progress-track">
             <div class="progress-fill" style="width:${prog.pct}%; background:${barColor};"></div>
@@ -968,11 +1168,7 @@
         state: charData.state, expDate: charData.exp, qty: charData.qty, textNote: charData.note
       };
 
-      if (!navigator.onLine || !getGasUrl()) {
-        enqueueAction(payload);
-        showToast('🟠 已離線暫存', 'warn');
-        return;
-      }
+      if (!navigator.onLine || !getGasUrl()) { enqueueAction(payload); showToast('🟠 已離線暫存', 'warn'); return; }
       try {
         const res = await postToGas(payload);
         if (res.serverTime) { localStorage.setItem(STORAGE_KEYS.LAST_SYNC, res.serverTime); updateLastSyncText(); }
@@ -985,8 +1181,7 @@
 
     function toggleItemReady(rowIdx, charName, isChecked) {
       globalData.items.find(i => i.row === rowIdx).status[charName].state = isChecked ? 'ready' : 'missing';
-      renderParty(); renderInventory();
-      commitItemUpdate(rowIdx, charName);
+      renderParty(); renderInventory(); commitItemUpdate(rowIdx, charName);
     }
 
     function stepQty(rowIdx, charName, delta) {
@@ -995,34 +1190,28 @@
       const next = Math.max(0, (isNaN(currentNum) ? 0 : currentNum) + delta);
       charData.qty = next === 0 ? '' : String(next);
       if (next > 0) charData.state = 'ready';
-      renderParty(); renderInventory();
-      commitItemUpdate(rowIdx, charName);
+      renderParty(); renderInventory(); commitItemUpdate(rowIdx, charName);
     }
 
     function updateField(rowIdx, charName, field, value) {
       const charData = globalData.items.find(i => i.row === rowIdx).status[charName];
       charData[field] = value;
       if (field === 'qty' && value.trim() !== '' && charData.state !== 'ready') charData.state = 'ready';
-      renderParty(); renderInventory();
-      commitItemUpdate(rowIdx, charName);
+      renderParty(); renderInventory(); commitItemUpdate(rowIdx, charName);
     }
 
     function cycleChipState(rowIdx, charName) {
       const charData = globalData.items.find(i => i.row === rowIdx).status[charName];
       charData.state = charData.state === 'ready' ? 'missing' : (charData.state === 'missing' ? 'na' : 'ready');
-      renderParty(); renderInventory();
-      commitItemUpdate(rowIdx, charName);
+      renderParty(); renderInventory(); commitItemUpdate(rowIdx, charName);
     }
 
-    // 編輯／新增／移出／刪除物資 Modal
     function populateCategoryDatalist() {
       const dl = document.getElementById('category-datalist');
       dl.innerHTML = '';
       if (!globalData) return;
       [...new Set(globalData.items.map(i => i.category))].forEach(c => {
-        const opt = document.createElement('option');
-        opt.value = c;
-        dl.appendChild(opt);
+        const opt = document.createElement('option'); opt.value = c; dl.appendChild(opt);
       });
     }
 
@@ -1036,7 +1225,6 @@
       document.getElementById('modal-chars-group').style.display = 'block';
       document.getElementById('btn-remove-from-char').style.display = 'none';
       document.getElementById('btn-delete-item').style.display = 'none';
-
       const charsBox = document.getElementById('modal-chars-list');
       charsBox.innerHTML = '';
       globalData.characters.forEach(c => {
@@ -1063,11 +1251,10 @@
       const rowIdx = Number(document.getElementById('edit-item-row').value);
       const item = globalData.items.find(i => i.row === rowIdx);
       if (!item || !currentChar) return;
-      if (!confirm(`確定要將【${item.name}】移出【${currentChar}】的背包嗎？（其他家人不受影響）`)) return;
+      if (!confirm(`確定要將【${item.name}】移出【${currentChar}】的背包嗎？`)) return;
       closeModal('item-modal');
       item.status[currentChar].state = 'na';
-      renderParty(); renderInventory();
-      commitItemUpdate(rowIdx, currentChar);
+      renderParty(); renderInventory(); commitItemUpdate(rowIdx, currentChar);
     }
 
     async function saveItemModal() {
@@ -1101,9 +1288,7 @@
           localStorage.setItem(STORAGE_KEYS.DATA, JSON.stringify(globalData));
           renderParty(); renderInventory();
           showToast('✅ 已新增物資：' + name, 'success');
-        } catch (err) {
-          showToast('❌ 新增失敗：' + err.message, 'error');
-        }
+        } catch (err) { showToast('❌ 新增失敗：' + err.message, 'error'); }
       } else {
         const rowIdx = Number(rowStr);
         if (!navigator.onLine) { showToast('🟠 編輯物資需於連線狀態執行', 'warn'); return; }
@@ -1115,9 +1300,7 @@
           localStorage.setItem(STORAGE_KEYS.DATA, JSON.stringify(globalData));
           renderParty(); renderInventory();
           showToast('✅ 已更新物資', 'success');
-        } catch (err) {
-          showToast('❌ 更新失敗：' + err.message, 'error');
-        }
+        } catch (err) { showToast('❌ 更新失敗：' + err.message, 'error'); }
       }
     }
 
@@ -1126,7 +1309,7 @@
       const item = globalData.items.find(i => i.row === rowIdx);
       if (!item) return;
       if (!navigator.onLine) { showToast('🟠 刪除物資需於連線狀態執行', 'warn'); return; }
-      if (!confirm(`確定要從全營地試算表永久刪除【${item.name}】嗎？所有家人的該項紀錄都會移除。`)) return;
+      if (!confirm(`確定要從全營地永久刪除【${item.name}】嗎？`)) return;
       closeModal('item-modal');
       try {
         showToast('🗑️ 正在永久刪除...');
@@ -1135,12 +1318,10 @@
         localStorage.setItem(STORAGE_KEYS.DATA, JSON.stringify(globalData));
         renderParty(); renderInventory();
         showToast('✅ 已永久刪除物資', 'success');
-      } catch (err) {
-        showToast('❌ 刪除失敗：' + err.message, 'error');
-      }
+      } catch (err) { showToast('❌ 刪除失敗：' + err.message, 'error'); }
     }
 
-    // 營地分頁：成員管理與連線設定
+    // 營地分頁：成員管理
     function renderCampTab() {
       document.getElementById('setting-gas-url').value = getGasUrl();
       const select = document.getElementById('setting-my-char');
@@ -1164,11 +1345,13 @@
         row.className = 'member-row';
         row.innerHTML = `
           <div style="display:flex; align-items:center; gap:8px;">
-            <span style="font-size:1.35rem;">${vis.avatar}${vis.buddy}</span>
+            <span style="display:inline-flex; align-items:center; gap:4px; font-size:1.25rem;">
+              ${renderAvatarHTML(vis.avatar, false)} ${renderAvatarHTML(vis.buddy, false)}
+            </span>
             <strong>${name}</strong>
           </div>
           <div style="display:flex; gap:6px;">
-            <button class="btn btn-muted" style="padding:4px 9px; font-size:0.78rem;" onclick="openMemberModal('${name}')">✏️ 頭像</button>
+            <button class="btn btn-muted" style="padding:4px 9px; font-size:0.78rem;" onclick="openMemberModal('${name}')">✏️ 編輯</button>
             <button class="btn btn-danger" style="padding:4px 9px; font-size:0.78rem;" onclick="deleteMember('${name}')">🗑️</button>
           </div>
         `;
@@ -1179,11 +1362,9 @@
     function openMemberModal(editName = '') {
       if (!navigator.onLine) { showToast('🟠 成員管理需於連線狀態執行', 'warn'); return; }
       const isEdit = !!editName;
-      document.getElementById('member-modal-title').innerText = isEdit ? `✏️ 編輯【${editName}】頭像` : '➕ 新增小隊成員';
-      document.getElementById('member-edit-mode').value = editName;
-      const nameInput = document.getElementById('member-name-input');
-      nameInput.value = editName;
-      nameInput.disabled = isEdit;
+      document.getElementById('member-modal-title').innerText = isEdit ? `✏️ 編輯成員【${editName}】` : '➕ 新增小隊成員';
+      document.getElementById('member-old-name').value = editName;
+      document.getElementById('member-name-input').value = editName;
       document.getElementById('member-default-state-group').style.display = isEdit ? 'none' : 'block';
 
       if (isEdit) {
@@ -1194,40 +1375,44 @@
         document.getElementById('member-avatar-input').value = '🧑';
         document.getElementById('member-buddy-input').value = '🐾';
       }
+      syncPhotoPreview('avatar');
+      syncPhotoPreview('buddy');
       document.getElementById('member-modal').classList.add('open');
     }
 
     async function saveMemberModal() {
-      const editName = document.getElementById('member-edit-mode').value;
-      const name = document.getElementById('member-name-input').value.trim();
+      const oldName = document.getElementById('member-old-name').value;
+      const newName = document.getElementById('member-name-input').value.trim();
       const avatar = document.getElementById('member-avatar-input').value.trim() || '🧑';
       const buddy = document.getElementById('member-buddy-input').value.trim() || '🐾';
       const defaultState = document.getElementById('member-default-state').value;
 
-      if (!name) { showToast('請輸入成員名稱', 'warn'); return; }
+      if (!newName) { showToast('請輸入成員名稱', 'warn'); return; }
       closeModal('member-modal');
 
       try {
-        if (editName) {
-          showToast('📡 正在更新成員頭像...');
-          const res = await postToGas({ action: 'updateMember', name: editName, avatar, buddy });
+        if (oldName) {
+          showToast('📡 正在更新成員資料...');
+          const res = await postToGas({ action: 'updateMember', oldName, newName, avatar, buddy });
+          if (res.inventory) globalData = res.inventory;
           membersMap = res.members || membersMap;
+          if (myChar === oldName) { myChar = newName; localStorage.setItem(STORAGE_KEYS.MY_CHAR, myChar); }
+          if (currentChar === oldName) currentChar = newName;
+          localStorage.setItem(STORAGE_KEYS.DATA, JSON.stringify(globalData));
           localStorage.setItem(STORAGE_KEYS.MEMBERS, JSON.stringify(membersMap));
-          renderParty(); renderCampTab();
-          showToast('✅ 已更新成員頭像', 'success');
+          renderParty(); renderInventory(); renderCampTab();
+          showToast('✅ 已更新成員資料', 'success');
         } else {
           showToast('📡 正在新增成員與試算表欄位...');
-          const res = await postToGas({ action: 'addMember', name, avatar, buddy, defaultState });
+          const res = await postToGas({ action: 'addMember', name: newName, avatar, buddy, defaultState });
           globalData = res.inventory;
           membersMap = res.members || membersMap;
           localStorage.setItem(STORAGE_KEYS.DATA, JSON.stringify(globalData));
           localStorage.setItem(STORAGE_KEYS.MEMBERS, JSON.stringify(membersMap));
           renderParty(); renderInventory(); renderCampTab();
-          showToast('✅ 已新增成員：' + name, 'success');
+          showToast('✅ 已新增成員：' + newName, 'success');
         }
-      } catch (err) {
-        showToast('❌ 操作失敗：' + err.message, 'error');
-      }
+      } catch (err) { showToast('❌ 操作失敗：' + err.message, 'error'); }
     }
 
     async function deleteMember(name) {
@@ -1244,9 +1429,7 @@
         if (currentChar === name) currentChar = globalData.characters[0] || '';
         renderParty(); renderInventory(); renderCampTab();
         showToast('✅ 已移除成員：' + name, 'success');
-      } catch (err) {
-        showToast('❌ 移除失敗：' + err.message, 'error');
-      }
+      } catch (err) { showToast('❌ 移除失敗：' + err.message, 'error'); }
     }
 
     function saveSettings() {
@@ -1256,12 +1439,9 @@
       myChar = selectedChar;
       localStorage.setItem(STORAGE_KEYS.MY_CHAR, myChar);
       if (myChar) currentChar = myChar;
-      updateOtherCharBanner();
-      renderParty(); renderInventory();
-      syncWithServer(true);
+      updateOtherCharBanner(); renderParty(); renderInventory(); syncWithServer(true);
     }
 
-    // 採買清單 Modal
     function openPrintModal() {
       if (!globalData) return;
       const filterBox = document.getElementById('filter-partners');
@@ -1316,7 +1496,7 @@
     function closePrintModal() { document.getElementById('print-modal').style.display = 'none'; }
     function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
-    // ================= 離線地圖模組 =================
+    // ================= 離線地圖 + 搜尋 + 雙模路線規劃 =================
     function initMapIfNeeded() {
       if (!mapInitialized) {
         mapInitialized = true;
@@ -1324,6 +1504,7 @@
         mapInstance = L.map('map').setView(defaultCenter, 15);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '© OpenStreetMap' }).addTo(mapInstance);
         markersLayer = L.layerGroup().addTo(mapInstance);
+        routeLayer = L.layerGroup().addTo(mapInstance);
         mapInstance.on('click', (e) => {
           document.getElementById('loc-lat').value = e.latlng.lat.toFixed(6);
           document.getElementById('loc-lng').value = e.latlng.lng.toFixed(6);
@@ -1332,6 +1513,58 @@
       setTimeout(() => { mapInstance.invalidateSize(); }, 150);
       renderMapLocations();
       updateTileCacheCount();
+    }
+
+    async function searchMap() {
+      const q = document.getElementById('map-search-input').value.trim();
+      const box = document.getElementById('map-search-results');
+      if (!q) { box.style.display = 'none'; renderMapLocations(); return; }
+
+      if (!navigator.onLine) {
+        const matched = locationsData.filter(l => l.name.includes(q) || (l.note || '').includes(q));
+        box.style.display = 'block';
+        box.innerHTML = matched.length === 0
+          ? '<div class="map-search-item">🟠 離線模式：找不到符合的已存點位</div>'
+          : matched.map(l => `<div class="map-search-item" onclick="focusLocation(${l.lat},${l.lng})"><span>📌 ${l.name}</span><span>前往</span></div>`).join('');
+        return;
+      }
+
+      box.style.display = 'block';
+      box.innerHTML = '<div class="map-search-item">🔍 搜尋中...</div>';
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=5&countrycodes=tw&q=${encodeURIComponent(q)}`);
+        const items = await res.json();
+        if (!items.length) {
+          box.innerHTML = '<div class="map-search-item">找不到相關地點，請換個關鍵字</div>';
+          return;
+        }
+        box.innerHTML = '';
+        items.forEach(place => {
+          const lat = parseFloat(place.lat), lng = parseFloat(place.lon);
+          const shortName = place.display_name.split(',')[0];
+          const div = document.createElement('div');
+          div.className = 'map-search-item';
+          div.innerHTML = `
+            <div style="flex:1;" onclick="focusLocation(${lat},${lng})">
+              <strong>${shortName}</strong><br>
+              <span style="color:var(--text-muted); font-size:0.75rem;">${place.display_name}</span>
+            </div>
+            <button class="btn btn-muted" style="padding:4px 8px; font-size:0.75rem; white-space:nowrap;" onclick="prefillLocation('${shortName.replace(/'/g, '')}', ${lat}, ${lng})">➕ 存為點位</button>
+          `;
+          box.appendChild(div);
+        });
+      } catch (err) {
+        box.innerHTML = '<div class="map-search-item">⚠️ 搜尋失敗，請稍後再試</div>';
+      }
+    }
+
+    function prefillLocation(name, lat, lng) {
+      focusLocation(lat, lng);
+      document.getElementById('loc-name').value = name;
+      document.getElementById('loc-lat').value = lat.toFixed(6);
+      document.getElementById('loc-lng').value = lng.toFixed(6);
+      document.getElementById('loc-note').value = '';
+      document.getElementById('loc-modal').classList.add('open');
     }
 
     function renderMapLocations() {
@@ -1359,10 +1592,68 @@
             <div style="font-size:0.78rem; color:var(--text-muted); margin-top:2px;">${loc.note || '無備註'}・(${loc.lat.toFixed(4)}, ${loc.lng.toFixed(4)})</div>
           </div>
           ${distHTML}
+          <button class="btn btn-primary" style="padding:5px 8px; font-size:0.76rem;" onclick="planRouteTo(${loc.lat}, ${loc.lng}, '${loc.name.replace(/'/g, '')}')">🚶 路線</button>
           <button class="btn-edit-item" onclick="deleteLocation('${loc.id}', '${loc.name}')">🗑️</button>
         `;
         listEl.appendChild(card);
       });
+    }
+
+    async function planRouteTo(destLat, destLng, destName) {
+      if (!userPos) {
+        showToast('🛰️ 先取得目前 GPS 位置以規劃路線...', 'info');
+        if (!navigator.geolocation) { showToast('❌ 無法取得 GPS', 'error'); return; }
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            userPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+            updateUserMarker();
+            renderMapLocations();
+            planRouteTo(destLat, destLng, destName);
+          },
+          () => showToast('❌ 請允許 GPS 定位後再規劃路線', 'error'),
+          { enableHighAccuracy: true, timeout: 8000 }
+        );
+        return;
+      }
+
+      if (routeLayer) routeLayer.clearLayers();
+      const banner = document.getElementById('route-banner');
+      const infoText = document.getElementById('route-info-text');
+      document.getElementById('gmap-nav-link').href = `https://www.google.com/maps/dir/?api=1&destination=${destLat},${destLng}&travelmode=walking`;
+
+      if (navigator.onLine) {
+        try {
+          const url = `https://router.project-osrm.org/route/v1/foot/${userPos.lng},${userPos.lat};${destLng},${destLat}?overview=full&geometries=geojson`;
+          const res = await fetch(url);
+          const data = await res.json();
+          if (data.routes && data.routes.length > 0) {
+            const r = data.routes[0];
+            const coords = r.geometry.coordinates.map(c => [c[1], c[0]]);
+            const line = L.polyline(coords, { color: '#2A9D8F', weight: 5, opacity: 0.9 }).addTo(routeLayer);
+            mapInstance.fitBounds(line.getBounds(), { padding: [30, 30] });
+            const distKm = (r.distance / 1000).toFixed(2);
+            const mins = Math.max(1, Math.round(r.duration / 60));
+            infoText.innerText = `🚶 前往【${destName}】：步行約 ${distKm} 公里（約 ${mins} 分鐘）`;
+            banner.style.display = 'flex';
+            return;
+          }
+        } catch (e) {}
+      }
+
+      const straight = L.polyline([[userPos.lat, userPos.lng], [destLat, destLng]], {
+        color: '#E07A5F', weight: 4, dashArray: '8, 8'
+      }).addTo(routeLayer);
+      mapInstance.fitBounds(straight.getBounds(), { padding: [30, 30] });
+      const d = calcDistanceMeters(userPos.lat, userPos.lng, destLat, destLng);
+      const bearing = calcBearingText(userPos.lat, userPos.lng, destLat, destLng);
+      const distStr = d >= 1000 ? `${(d / 1000).toFixed(2)} 公里` : `${Math.round(d)} 公尺`;
+      infoText.innerText = `🟠 離線直線指引至【${destName}】：${bearing}・直線 ${distStr}`;
+      banner.style.display = 'flex';
+    }
+
+    function clearRoute() {
+      if (routeLayer) routeLayer.clearLayers();
+      document.getElementById('route-banner').style.display = 'none';
     }
 
     function focusLocation(lat, lng) { if (mapInstance) mapInstance.setView([lat, lng], 16); }
@@ -1371,19 +1662,22 @@
       else showToast('目前沒有已儲存的點位', 'warn');
     }
 
+    function updateUserMarker() {
+      if (!mapInstance || !userPos) return;
+      mapInstance.setView([userPos.lat, userPos.lng], 16);
+      if (userMarker) mapInstance.removeLayer(userMarker);
+      userMarker = L.circleMarker([userPos.lat, userPos.lng], {
+        radius: 9, fillColor: '#E07A5F', color: '#FFF', weight: 3, fillOpacity: 1
+      }).addTo(mapInstance).bindPopup('📍 我的目前位置').openPopup();
+    }
+
     function locateMe() {
       if (!navigator.geolocation) { showToast('❌ 此裝置不支援 GPS', 'error'); return; }
       showToast('🛰️ 讀取 GPS 衛星座標中...');
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           userPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-          if (mapInstance) {
-            mapInstance.setView([userPos.lat, userPos.lng], 16);
-            if (userMarker) mapInstance.removeLayer(userMarker);
-            userMarker = L.circleMarker([userPos.lat, userPos.lng], {
-              radius: 9, fillColor: '#E07A5F', color: '#FFF', weight: 3, fillOpacity: 1
-            }).addTo(mapInstance).bindPopup('📍 我的目前位置').openPopup();
-          }
+          updateUserMarker();
           renderMapLocations();
           showToast('✅ 已更新目前位置與方位距離', 'success');
         },
@@ -1487,6 +1781,132 @@
                 Math.sin(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.cos((lon2 - lon1) * Math.PI / 180);
       const brng = ((Math.atan2(y, x) * 180 / Math.PI) + 360) % 360;
       return `🧭 ${['北', '東北', '東', '東南', '南', '西南', '西', '西北'][Math.round(brng / 45) % 8]}方 (${Math.round(brng)}°)`;
+    }
+
+    // ================= 情報分頁（天氣 + NCDR 示警與細胞告警 + 頂部快訊條） =================
+    function initGuideTab() {
+      renderWeatherCache();
+      renderNcdrAlerts();
+      if (navigator.onLine) {
+        fetchWeather(false);
+        fetchNcdrAlerts(false);
+      }
+    }
+
+    function matchAlertRegion(alertItem, cityLabel) {
+      const text = (alertItem.title + ' ' + alertItem.summary).replace(/台/g, '臺');
+      if (cityLabel === '臺北市') return text.includes('臺北');
+      if (cityLabel === '彰化市') return text.includes('彰化');
+      if (cityLabel === '高雄市') return text.includes('高雄');
+      return true;
+    }
+
+    function updateGlobalAlertTicker() {
+      const ticker = document.getElementById('global-alert-ticker');
+      const textEl = document.getElementById('global-alert-text');
+      if (!alertsCache || alertsCache.length === 0) {
+        ticker.style.display = 'none';
+        return;
+      }
+      // 優先檢查臺北市／彰化／高雄是否有生效示警
+      const watchMatches = alertsCache.filter(a =>
+        matchAlertRegion(a, '臺北市') || matchAlertRegion(a, '彰化市') || matchAlertRegion(a, '高雄市')
+      );
+      if (watchMatches.length > 0) {
+        const top = watchMatches[0];
+        ticker.style.display = 'flex';
+        textEl.innerText = `${top.isCbs ? '📲 [災防告警] ' : '⚠️ '}${top.title}（共 ${watchMatches.length} 則關注區示警）`;
+      } else {
+        ticker.style.display = 'none';
+      }
+    }
+
+    function renderWeatherCache() {
+      const box = document.getElementById('weather-box');
+      const raw = localStorage.getItem(STORAGE_KEYS.WEATHER);
+      if (!raw) return;
+      const w = JSON.parse(raw);
+      box.innerHTML = `
+        <div style="font-size:1.05rem; font-weight:800; color:var(--primary-dark);">🌡️ ${w.temp}°C ・ 濕度 ${w.humidity}% ・ 風速 ${w.wind} km/h</div>
+        <div style="margin-top:4px;">降雨量：${w.precip} mm・未來 1 小時降雨機率：${w.rainProb}%</div>
+        <div style="font-size:0.75rem; color:var(--text-muted); margin-top:4px;">資料時間：${w.timeText}（座標 ${w.lat.toFixed(2)}, ${w.lng.toFixed(2)}）</div>
+      `;
+    }
+
+    async function fetchWeather(manual = false) {
+      if (!navigator.onLine) { if (manual) showToast('🟠 離線顯示最後快取天氣', 'warn'); return; }
+      const lat = userPos ? userPos.lat : (locationsData[0] ? locationsData[0].lat : 25.0330);
+      const lng = userPos ? userPos.lng : (locationsData[0] ? locationsData[0].lng : 121.5430);
+      try {
+        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m&hourly=precipitation_probability&timezone=Asia%2FTaipei&forecast_days=1`);
+        const data = await res.json();
+        const cur = data.current;
+        const rainProb = (data.hourly && data.hourly.precipitation_probability && data.hourly.precipitation_probability[0]) || 0;
+        const wObj = {
+          temp: cur.temperature_2m, humidity: cur.relative_humidity_2m,
+          precip: cur.precipitation, wind: cur.wind_speed_10m, rainProb,
+          lat, lng, timeText: new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })
+        };
+        localStorage.setItem(STORAGE_KEYS.WEATHER, JSON.stringify(wObj));
+        renderWeatherCache();
+        if (manual) showToast('✅ 已更新即時天氣', 'success');
+      } catch (e) {
+        if (manual) showToast('⚠️ 天氣更新失敗', 'warn');
+      }
+    }
+
+    function setAlertCity(city) {
+      selectedAlertCity = city;
+      document.querySelectorAll('#alert-city-chips .city-chip').forEach(el => {
+        el.classList.toggle('active', el.innerText === city);
+      });
+      renderNcdrAlerts();
+    }
+
+    function renderNcdrAlerts() {
+      const box = document.getElementById('ncdr-alerts-box');
+      if (!alertsCache || alertsCache.length === 0) {
+        box.innerHTML = '<div style="padding:6px 0;">目前尚無快取的示警資料（有網路時點擊「🔄 更新」抓取）</div>';
+        return;
+      }
+      const filtered = selectedAlertCity === '全部'
+        ? alertsCache
+        : alertsCache.filter(a => matchAlertRegion(a, selectedAlertCity));
+
+      if (filtered.length === 0) {
+        box.innerHTML = `<div style="padding:6px 0;">✅ 【${selectedAlertCity}】目前無最新災害示警。</div>`;
+        return;
+      }
+      box.innerHTML = filtered.slice(0, 12).map(a => `
+        <div class="alert-item">
+          <div style="font-weight:800; color:var(--danger);">
+            ${a.isCbs ? '<span class="cbs-badge">📲 災防告警</span>' : '⚠️ '}${a.title}
+          </div>
+          <div style="font-size:0.78rem; color:var(--text); margin-top:2px;">${a.summary.slice(0, 130)}${a.summary.length > 130 ? '...' : ''}</div>
+          <div style="font-size:0.72rem; color:var(--text-muted); margin-top:2px;">${a.author}・${a.updated.slice(0, 16).replace('T', ' ')}</div>
+        </div>
+      `).join('');
+    }
+
+    async function fetchNcdrAlerts(manual = false) {
+      const url = getGasUrl();
+      if (!navigator.onLine || !url) { if (manual) showToast('🟠 離線顯示最後快取示警', 'warn'); return; }
+      try {
+        if (manual) showToast('📡 正在同步 NCDR 即時示警...');
+        const res = await fetch(`${url}?action=getAlerts&_t=${Date.now()}`);
+        const json = await res.json();
+        if (json.ok && Array.isArray(json.alerts)) {
+          alertsCache = json.alerts;
+          localStorage.setItem(STORAGE_KEYS.ALERTS, JSON.stringify(alertsCache));
+          updateGlobalAlertTicker();
+          renderNcdrAlerts();
+          if (manual) showToast(`✅ 已更新 ${alertsCache.length} 則 NCDR 示警`, 'success');
+        } else if (manual) {
+          showToast('⚠️ 無法取得 NCDR 示警：' + (json.error || ''), 'warn');
+        }
+      } catch (e) {
+        if (manual) showToast('⚠️ NCDR 連線逾時', 'warn');
+      }
     }
   </script>
 </body>

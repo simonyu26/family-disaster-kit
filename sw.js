@@ -1,10 +1,12 @@
-const APP_CACHE = 'disaster-app-v1.7';
+const APP_CACHE = 'disaster-app-v1.8';
 const TILE_CACHE = 'disaster-map-tiles-v1';
 
 const APP_ASSETS = [
   './',
   './index.html',
   './manifest.json',
+  './icon-192.png',
+  './icon-512.png',
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
 ];
@@ -32,12 +34,10 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // GAS API 請求直接走網路，不透過 Service Worker 快取（由前端 localStorage 處理離線佇列）
   if (url.hostname.includes('script.google.com') || url.hostname.includes('script.googleusercontent.com')) {
     return;
   }
 
-  // OpenStreetMap 圖磚：快取優先（支援完全離線瀏覽已下載的區域地圖）
   if (url.hostname.includes('tile.openstreetmap.org')) {
     event.respondWith(
       caches.open(TILE_CACHE).then((cache) =>
@@ -55,7 +55,6 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // App Shell 與靜態資源：快取優先，背景更新或網路回退
   event.respondWith(
     caches.match(event.request).then((cached) => {
       if (cached) return cached;

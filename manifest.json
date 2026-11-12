@@ -1,7 +1,7 @@
 {
-  "name": "森林露營小隊・防災生存整備系統",
+  "name": "森林露營小隊・防災系統",
   "short_name": "防災小隊",
-  "description": "支援離線盤點與離線避難地圖的家族防災物資整備系統",
+  "description": "支援離線盤點、家族成員協作與離線避難地圖的防災系統",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#F4EAD4",
@@ -9,9 +9,15 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='96' fill='%2352796F'/%3E%3Cpath d='M256 96L96 384h320L256 96z' fill='%23F4EAD4'/%3E%3Cpath d='M256 220l-68 164h136L256 220z' fill='%23E07A5F'/%3E%3C/svg%3E",
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icon-512.png",
       "sizes": "512x512",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ]

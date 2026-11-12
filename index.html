@@ -1,0 +1,1508 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#52796F">
+  <title>🏕️ 森林露營小隊・防災整備 v1.7</title>
+  <link rel="manifest" href="./manifest.json">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    :root {
+      --bg: #F4EAD4;
+      --card-bg: #FCF8F0;
+      --primary: #52796F;
+      --primary-dark: #3D5A52;
+      --primary-light: #CAD2C5;
+      --accent: #E07A5F;
+      --warning: #F4A261;
+      --danger: #E76F51;
+      --text: #3D3425;
+      --text-muted: #8C7A6B;
+      --border: #E6DEC9;
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 12px 14px 96px 14px;
+    }
+
+    /* 頂部標題與狀態列 */
+    .top-bar { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px; }
+    h1 { font-size: 1.25rem; color: var(--primary); margin: 0; font-weight: 800; letter-spacing: 0.5px; }
+    .top-actions { display: flex; gap: 6px; align-items: center; }
+    .icon-btn {
+      background: var(--card-bg); border: 2px solid #D1BF9A; color: var(--text);
+      border-radius: 10px; padding: 6px 10px; font-size: 0.85rem; font-weight: bold;
+      cursor: pointer; display: flex; align-items: center; gap: 4px;
+    }
+    .icon-btn:active { transform: scale(0.96); }
+
+    .status-strip {
+      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;
+      background: #EADCB9; border: 1px solid #D1BF9A; border-radius: 10px;
+      padding: 6px 10px; font-size: 0.78rem; margin-bottom: 12px;
+    }
+    .status-badge { font-weight: 800; display: flex; align-items: center; gap: 4px; }
+    .status-badge.online { color: var(--primary-dark); }
+    .status-badge.offline { color: #B85414; }
+    .sync-pill {
+      background: var(--accent); color: #FFF; padding: 2px 8px; border-radius: 12px;
+      font-weight: bold; cursor: pointer; font-size: 0.75rem;
+    }
+
+    /* 主分頁切換 */
+    .mode-toggle {
+      display: flex; background: #EADCB9; border-radius: 12px; margin-bottom: 12px;
+      padding: 4px; border: 2px solid #D1BF9A; gap: 4px;
+    }
+    .mode-btn {
+      flex: 1; padding: 9px 4px; text-align: center; cursor: pointer;
+      font-weight: bold; color: var(--text-muted); font-size: 0.88rem; border-radius: 8px; transition: 0.2s;
+    }
+    .mode-btn.active { background: var(--primary); color: #FFF; box-shadow: 0 2px 5px rgba(0,0,0,0.12); }
+
+    /* 隊員卡片列 */
+    .party-container { display: flex; overflow-x: auto; gap: 10px; padding: 4px 0 12px 0; }
+    .party-container::-webkit-scrollbar { display: none; }
+    .character-card {
+      background: var(--card-bg); border: 2px dashed #D1BF9A; border-radius: 16px;
+      padding: 10px 8px; min-width: 92px; text-align: center; cursor: pointer;
+      transition: 0.2s; position: relative; flex-shrink: 0;
+    }
+    .character-card.active {
+      border: 2px solid var(--primary); background: #EFF6F3;
+      transform: translateY(-2px); box-shadow: 0 6px 12px rgba(82,121,111,0.15);
+    }
+    .my-badge {
+      position: absolute; top: -6px; right: -4px; background: var(--accent); color: #FFF;
+      font-size: 0.65rem; font-weight: bold; padding: 2px 6px; border-radius: 10px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+    }
+    .char-avatar { font-size: 2rem; line-height: 1; margin-bottom: 3px; position: relative; display: inline-block; }
+    .char-buddy {
+      font-size: 1rem; position: absolute; bottom: -2px; right: -10px;
+      background: white; border-radius: 50%; width: 20px; height: 20px;
+      display: flex; justify-content: center; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .progress-leaf-container { display: flex; gap: 1px; justify-content: center; margin-top: 6px; flex-wrap: wrap; max-width: 82px; margin-inline: auto; }
+    .progress-leaf { font-size: 0.72rem; filter: grayscale(100%); opacity: 0.28; }
+    .progress-leaf.active { filter: none; opacity: 1; }
+
+    /* 搜尋與篩選工具列 */
+    .filter-toolbar { display: flex; gap: 8px; margin-bottom: 10px; align-items: center; }
+    .search-box {
+      flex: 1; background: #FFF; border: 2px solid #D1BF9A; border-radius: 10px;
+      padding: 8px 12px; font-size: 0.9rem; color: var(--text); outline: none;
+    }
+    .search-box:focus { border-color: var(--primary); }
+    .filter-toggle-btn {
+      background: var(--card-bg); border: 2px solid #D1BF9A; color: var(--text-muted);
+      border-radius: 10px; padding: 8px 10px; font-size: 0.82rem; font-weight: bold; cursor: pointer; white-space: nowrap;
+    }
+    .filter-toggle-btn.active { background: #F7E3DC; border-color: var(--accent); color: var(--accent); }
+
+    .other-char-banner {
+      background: #FFF3E0; border: 1px solid #F4A261; color: #9C5211;
+      border-radius: 10px; padding: 7px 12px; font-size: 0.82rem; font-weight: bold;
+      margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;
+    }
+
+    /* 分類標題（可摺疊） */
+    .category-title {
+      background: #E6D5B3; padding: 10px 14px; border-radius: 12px; margin: 12px 0 8px 0;
+      font-weight: 800; font-size: 1rem; border: 2px solid #D6C29E;
+      display: flex; justify-content: space-between; align-items: center;
+      color: var(--primary-dark); cursor: pointer; user-select: none;
+    }
+    .cat-meta { font-size: 0.8rem; font-weight: bold; color: var(--text-muted); display: flex; align-items: center; gap: 6px; }
+
+    /* 物資列 */
+    .item-row {
+      display: flex; flex-direction: column; padding: 12px; background: var(--card-bg);
+      border-radius: 16px; border: 2px solid #EDE6D6; margin-bottom: 8px;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.02);
+    }
+    .item-header { display: flex; justify-content: space-between; align-items: center; gap: 8px; width: 100%; }
+    .item-title-wrap { flex: 1; min-width: 0; }
+    .item-name-line { display: flex; align-items: center; gap: 6px; }
+    .item-name { font-size: 1.02rem; font-weight: 800; word-break: break-word; }
+    .btn-edit-item {
+      background: transparent; border: none; font-size: 0.9rem; cursor: pointer;
+      opacity: 0.6; padding: 2px 4px; border-radius: 6px;
+    }
+    .btn-edit-item:hover { opacity: 1; background: #EDE6D6; }
+
+    /* 開關 Switch */
+    .switch { position: relative; display: inline-block; width: 52px; height: 28px; flex-shrink: 0; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+      background-color: var(--accent); border-radius: 34px; border: 2px solid #DCA191; transition: .25s;
+    }
+    .slider:before {
+      position: absolute; content: "⛺"; font-size: 0.9rem; display: flex; justify-content: center;
+      align-items: center; height: 20px; width: 20px; left: 2px; bottom: 2px;
+      background-color: white; border-radius: 50%; transition: .25s;
+    }
+    input:checked + .slider { background-color: var(--primary); border-color: var(--primary-dark); }
+    input:checked + .slider:before { transform: translateX(24px); content: "🔥"; }
+
+    /* 數量步進與細節列 */
+    .util-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 10px; width: 100%; }
+    .stepper { display: flex; align-items: center; border: 2px solid var(--border); border-radius: 8px; background: #FFF; overflow: hidden; }
+    .step-btn {
+      background: #F4EAD4; border: none; color: var(--primary-dark); font-weight: 900;
+      width: 28px; height: 28px; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    }
+    .step-btn:active { background: #D6C29E; }
+    .qty-input {
+      width: 44px; border: none; text-align: center; color: var(--primary);
+      font-weight: bold; font-size: 0.85rem; padding: 4px 2px; outline: none; background: transparent;
+    }
+    .util-input {
+      background: #FFF; border: 2px solid var(--border); border-radius: 8px;
+      padding: 5px 6px; font-size: 0.8rem; color: var(--text); outline: none;
+    }
+    .util-input:focus { border-color: var(--primary); }
+    .exp-date-input { width: 118px; color-scheme: light; }
+    .note-input { flex: 1; min-width: 90px; }
+    .btn-na {
+      background: #EADCB9; color: var(--text-muted); border: 2px solid #D1BF9A;
+      border-radius: 8px; padding: 5px 8px; font-size: 0.78rem; font-weight: bold; cursor: pointer;
+    }
+
+    .exp-warning { border-color: var(--warning) !important; background-color: #FEF9EE !important; color: #C87A14 !important; }
+    .exp-danger { border-color: var(--danger) !important; background-color: #FDF4F2 !important; color: var(--danger) !important; font-weight: bold; }
+    .alert-tag { font-size: 0.74rem; margin-top: 3px; font-weight: bold; }
+
+    /* 營地物資庫 Chips */
+    .chip-container { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; width: 100%; }
+    .chip { padding: 5px 11px; border-radius: 20px; font-size: 0.82rem; font-weight: bold; cursor: pointer; user-select: none; border: 2px solid transparent; }
+    .chip.ready { background: var(--primary-light); color: var(--primary-dark); border-color: var(--primary); }
+    .chip.missing { background: #F7E3DC; color: var(--accent); border-color: var(--accent); }
+    .chip.na { background: transparent; color: #B3A08E; border: 2px dashed #D4C1AF; }
+
+    /* 離線地圖面板 */
+    #map-panel { display: none; }
+    #map { width: 100%; height: 340px; border-radius: 16px; border: 2px solid #D1BF9A; z-index: 1; background: #E5E0D5; }
+    .map-controls {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px;
+    }
+    .map-btn {
+      background: var(--primary); color: #FFF; border: none; border-radius: 10px;
+      padding: 10px 8px; font-weight: bold; font-size: 0.85rem; cursor: pointer; text-align: center;
+    }
+    .map-btn.secondary { background: var(--accent); }
+    .map-btn.outline { background: var(--card-bg); color: var(--text); border: 2px solid #D1BF9A; }
+    .map-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .tile-progress {
+      margin-top: 8px; background: var(--card-bg); border: 1px solid #D1BF9A;
+      border-radius: 10px; padding: 8px 12px; font-size: 0.8rem; display: none;
+    }
+    .loc-card {
+      background: var(--card-bg); border: 2px solid #EDE6D6; border-radius: 14px;
+      padding: 12px; margin-top: 8px; display: flex; justify-content: space-between; align-items: center; gap: 10px;
+    }
+    .loc-dist {
+      background: #EFF6F3; color: var(--primary-dark); border: 1px solid var(--primary-light);
+      border-radius: 10px; padding: 4px 8px; font-size: 0.78rem; font-weight: 800; white-space: nowrap; text-align: right;
+    }
+
+    /* 懸浮按鈕 */
+    .fab-container { position: fixed; bottom: 20px; right: 16px; display: flex; flex-direction: column; gap: 8px; z-index: 900; }
+    .fab {
+      background: var(--primary); color: #FFF; width: 52px; height: 52px; border-radius: 50%;
+      display: flex; justify-content: center; align-items: center; font-size: 20px;
+      box-shadow: 0 4px 10px rgba(82,121,111,0.35); cursor: pointer; border: 2px solid #FFF;
+    }
+    .fab.secondary { background: var(--accent); }
+
+    /* Toast 即時提示 */
+    #toast-container {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      z-index: 10000; display: flex; flex-direction: column; gap: 6px; pointer-events: none; width: 90%; max-width: 360px;
+    }
+    .toast {
+      background: rgba(61, 52, 37, 0.94); color: #FFF; padding: 10px 14px; border-radius: 12px;
+      font-size: 0.86rem; font-weight: bold; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      animation: fadeUp 0.2s ease-out;
+    }
+    .toast.success { background: rgba(61, 90, 82, 0.96); }
+    .toast.warn { background: rgba(196, 106, 22, 0.96); }
+    .toast.error { background: rgba(201, 68, 43, 0.96); }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* 通用彈窗 Modal */
+    .modal-backdrop {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+      z-index: 9500; justify-content: center; align-items: center; padding: 16px;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal-card {
+      background: var(--card-bg); border: 2px solid #D1BF9A; border-radius: 18px;
+      padding: 18px; width: 100%; max-width: 420px; max-height: 88vh; overflow-y: auto;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+    }
+    .modal-title { font-size: 1.15rem; font-weight: 800; color: var(--primary-dark); margin: 0 0 12px 0; }
+    .form-group { margin-bottom: 12px; }
+    .form-label { display: block; font-size: 0.82rem; font-weight: bold; color: var(--text-muted); margin-bottom: 4px; }
+    .form-input {
+      width: 100%; padding: 9px 10px; border: 2px solid var(--border); border-radius: 10px;
+      font-size: 0.92rem; background: #FFF; color: var(--text); outline: none;
+    }
+    .form-input:focus { border-color: var(--primary); }
+    .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px; flex-wrap: wrap; }
+    .btn { padding: 9px 14px; border-radius: 10px; border: none; font-weight: bold; font-size: 0.88rem; cursor: pointer; }
+    .btn-primary { background: var(--primary); color: #FFF; }
+    .btn-danger { background: var(--danger); color: #FFF; }
+    .btn-muted { background: #E6D5B3; color: var(--text); }
+
+    .char-check-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+    .char-check-pill {
+      display: flex; align-items: center; gap: 4px; background: #FFF;
+      border: 2px solid var(--border); padding: 5px 10px; border-radius: 20px; font-size: 0.84rem; font-weight: bold; cursor: pointer;
+    }
+
+    /* 採買清單列印 */
+    #print-modal {
+      display: none; position: fixed; inset: 0; background: #fff; color: #000;
+      z-index: 9999; overflow-y: auto; padding: 20px;
+    }
+    #print-modal h2 { color: #000; border-bottom: 2px solid #000; padding-bottom: 10px; margin-top: 10px; font-size: 1.35rem; }
+    .filter-section { background: #f4f4f4; border: 1px solid #ddd; padding: 12px; border-radius: 12px; margin-bottom: 15px; font-size: 0.9rem; }
+    .filter-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+    .filter-checkbox { display: flex; align-items: center; gap: 4px; font-weight: bold; font-size: 0.85rem; cursor: pointer; background: #e8e8e8; padding: 4px 8px; border-radius: 6px; }
+    .print-cat { font-weight: bold; font-size: 1.05rem; margin-top: 18px; background: #eaeaea; padding: 5px 10px; border-radius: 6px; }
+    .print-item { margin: 8px 0 8px 14px; border-bottom: 1px dashed #ccc; padding-bottom: 6px; font-size: 0.92rem; }
+    .print-actions { display: flex; gap: 10px; margin-bottom: 12px; }
+    .print-actions button { padding: 9px 14px; font-size: 0.9rem; font-weight: bold; cursor: pointer; background: #000; color: #fff; border: none; border-radius: 8px; }
+
+    @media print {
+      body > *:not(#print-modal) { display: none !important; }
+      #print-modal { position: static; padding: 0; display: block !important; }
+      .print-actions, .filter-section { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="top-bar">
+    <h1>🏕️ 森林露營小隊 v1.7</h1>
+    <div class="top-actions">
+      <button class="icon-btn" onclick="syncWithServer(true)" title="同步最新進度">🔄 同步</button>
+      <button class="icon-btn" onclick="openSettingsModal()" title="設定與身份">⚙️</button>
+    </div>
+  </div>
+
+  <div class="status-strip">
+    <div id="net-status" class="status-badge online">🟢 連線檢查中...</div>
+    <div style="display:flex; align-items:center; gap:6px;">
+      <span id="pending-badge" class="sync-pill" style="display:none;" onclick="flushOfflineQueue()">待同步 0 筆</span>
+      <span id="last-sync-text" style="color:var(--text-muted);">尚未同步</span>
+    </div>
+  </div>
+
+  <div class="mode-toggle">
+    <div id="btn-mode-char" class="mode-btn active" onclick="setMode('character')">🎒 夥伴背包</div>
+    <div id="btn-mode-item" class="mode-btn" onclick="setMode('item')">⛺ 物資總覽</div>
+    <div id="btn-mode-map" class="mode-btn" onclick="setMode('map')">🗺️ 離線地圖</div>
+  </div>
+
+  <!-- 盤點主畫面 -->
+  <div id="inventory-panel">
+    <div class="party-container" id="party"></div>
+
+    <div id="other-char-banner" class="other-char-banner" style="display:none;">
+      <span id="other-char-text">👀 目前正在檢視其他夥伴的背包</span>
+      <button class="btn btn-muted" style="padding:3px 8px; font-size:0.75rem;" onclick="switchToMyChar()">切回我的背包</button>
+    </div>
+
+    <div class="filter-toolbar">
+      <input type="text" id="main-search" class="search-box" placeholder="🔍 搜尋物資名稱或備註..." oninput="renderInventory()">
+      <button id="btn-only-missing" class="filter-toggle-btn" onclick="toggleOnlyMissing()">只看缺漏/過期</button>
+    </div>
+
+    <div id="inventory"></div>
+  </div>
+
+  <!-- 離線地圖面板 -->
+  <div id="map-panel">
+    <div id="map"></div>
+    <div class="map-controls">
+      <button class="map-btn" onclick="locateMe()">📍 取得目前 GPS</button>
+      <button class="map-btn secondary" onclick="openAddLocationModal()">➕ 新增避難點位</button>
+      <button class="map-btn outline" id="btn-download-tiles" onclick="downloadAreaTiles()">📥 下載此區離線地圖</button>
+      <button class="map-btn outline" onclick="centerOnFirstLocation()">🧭 檢視已存點位</button>
+    </div>
+    <div id="tile-progress" class="tile-progress"></div>
+    <div style="margin-top:14px; font-weight:800; color:var(--primary-dark); display:flex; justify-content:space-between; align-items:center;">
+      <span>📌 避難處所與集合點清單</span>
+      <span id="tile-cache-count" style="font-size:0.75rem; color:var(--text-muted);">已快取圖磚計算中...</span>
+    </div>
+    <div id="locations-list"></div>
+  </div>
+
+  <!-- 懸浮按鈕 -->
+  <div class="fab-container" id="fab-group">
+    <div class="fab secondary" onclick="openPrintModal()" title="狸貓商店採買單">🛒</div>
+    <div class="fab" onclick="openAddItemModal()" title="新增物資">+</div>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <!-- 採買清單 Modal -->
+  <div id="print-modal">
+    <div class="print-actions">
+      <button onclick="window.print()">🖨️ 列印 / 存為 PDF</button>
+      <button style="background:#666;" onclick="closePrintModal()">❌ 關閉</button>
+    </div>
+    <h2>🛒 狸貓商店採買清單</h2>
+    <div class="filter-section">
+      <input type="text" class="form-input" id="search-bar" oninput="filterPrintItems()" placeholder="🔍 輸入物資名稱快速搜尋...">
+      <div style="font-weight: bold; margin-top: 8px;">📍 篩選採購對象：</div>
+      <div class="filter-row" id="filter-partners"></div>
+    </div>
+    <div id="print-content"></div>
+  </div>
+
+  <!-- 新增/編輯物資 Modal -->
+  <div id="item-modal" class="modal-backdrop">
+    <div class="modal-card">
+      <h3 class="modal-title" id="item-modal-title">➕ 新增防災物資</h3>
+      <input type="hidden" id="edit-item-row">
+      <div class="form-group">
+        <label class="form-label">物資名稱</label>
+        <input type="text" id="modal-item-name" class="form-input" placeholder="例如：高能量口糧">
+      </div>
+      <div class="form-group">
+        <label class="form-label">所屬分類</label>
+        <input type="text" id="modal-item-cat" class="form-input" list="category-datalist" placeholder="選擇或輸入分類名稱">
+        <datalist id="category-datalist"></datalist>
+      </div>
+      <div class="form-group" id="modal-chars-group">
+        <label class="form-label">需要配備此物資的隊員</label>
+        <div class="char-check-grid" id="modal-chars-list"></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-danger" id="btn-delete-item" style="display:none; margin-right:auto;" onclick="confirmDeleteItem()">🗑️ 刪除</button>
+        <button class="btn btn-muted" onclick="closeModal('item-modal')">取消</button>
+        <button class="btn btn-primary" onclick="saveItemModal()">儲存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 新增避難點位 Modal -->
+  <div id="loc-modal" class="modal-backdrop">
+    <div class="modal-card">
+      <h3 class="modal-title">📌 新增離線避難／集合點位</h3>
+      <div class="form-group">
+        <label class="form-label">點位名稱</label>
+        <input type="text" id="loc-name" class="form-input" placeholder="例如：大安森林公園集合點">
+      </div>
+      <div class="form-group">
+        <label class="form-label">類型</label>
+        <select id="loc-type" class="form-input">
+          <option value="🏠 家庭集合點">🏠 家庭集合點</option>
+          <option value="⛺ 避難收容處所">⛺ 避難收容處所</option>
+          <option value="🏥 醫療院所">🏥 醫療院所</option>
+          <option value="💧 取水站">💧 取水站</option>
+        </select>
+      </div>
+      <div class="form-group" style="display:flex; gap:8px;">
+        <div style="flex:1;">
+          <label class="form-label">緯度 (Lat)</label>
+          <input type="number" step="any" id="loc-lat" class="form-input">
+        </div>
+        <div style="flex:1;">
+          <label class="form-label">經度 (Lng)</label>
+          <input type="number" step="any" id="loc-lng" class="form-input">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">備註（入口方向、聯絡資訊等）</label>
+        <input type="text" id="loc-note" class="form-input" placeholder="例如：靠近 2 號出口草坪">
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-muted" onclick="closeModal('loc-modal')">取消</button>
+        <button class="btn btn-primary" onclick="saveLocationModal()">儲存點位</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 連線與身份設定 Modal -->
+  <div id="settings-modal" class="modal-backdrop">
+    <div class="modal-card">
+      <h3 class="modal-title">⚙️ 營地連線與個人設定</h3>
+      <div class="form-group">
+        <label class="form-label">我的隊員身份（這支手機預設開啟的背包）</label>
+        <select id="setting-my-char" class="form-input"></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Google Apps Script API 網址</label>
+        <input type="url" id="setting-gas-url" class="form-input" placeholder="https://script.google.com/macros/s/.../exec">
+      </div>
+      <div style="font-size:0.78rem; color:var(--text-muted); line-height:1.45;">
+        提示：設定完成後資料會快取於本機，完全斷網時也能直接打開盤點與查看已下載的離線地圖。
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-muted" onclick="closeModal('settings-modal')">關閉</button>
+        <button class="btn btn-primary" onclick="saveSettings()">儲存並同步</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    // 若不想讓家人手動貼上網址，可直接在此處填入你的 GAS 部署網址
+    const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbxNnHL80l9Dih-3MEwismxS-1CQZPLVUl7StpLKxBYxjQPEy9TYBoUrxieQk_e4dUyfbA/exec';
+
+    const STORAGE_KEYS = {
+      GAS_URL: 'camp_gas_url',
+      DATA: 'camp_inventory_cache_v17',
+      LOCATIONS: 'camp_locations_cache_v17',
+      QUEUE: 'camp_offline_queue_v17',
+      MY_CHAR: 'camp_my_char',
+      COLLAPSED: 'camp_collapsed_cats',
+      LAST_SYNC: 'camp_last_sync'
+    };
+
+    const buddyMap = {
+      'Simon': { avatar: '👨', buddy: '🐶' },
+      'Isis': { avatar: '👩', buddy: '🐱' },
+      'Miracle': { avatar: '👧', buddy: '🐰' },
+      'Faith': { avatar: '👧', buddy: '🐹' },
+      'Simon+': { avatar: '👨', buddy: '🐨' },
+      'Isis+': { avatar: '👩', buddy: '🦊' },
+      '家庭儲備': { avatar: '⛺', buddy: '🐻' },
+      'default': { avatar: '🧑', buddy: '🐾' }
+    };
+
+    let globalData = null;
+    let locationsData = [];
+    let currentChar = '';
+    let myChar = localStorage.getItem(STORAGE_KEYS.MY_CHAR) || '';
+    let viewMode = 'character';
+    let onlyMissingFilter = false;
+    let collapsedCats = JSON.parse(localStorage.getItem(STORAGE_KEYS.COLLAPSED) || '{}');
+    let offlineQueue = JSON.parse(localStorage.getItem(STORAGE_KEYS.QUEUE) || '[]');
+
+    // 地圖相關變數
+    let mapInstance = null;
+    let mapInitialized = false;
+    let markersLayer = null;
+    let userPos = null;
+    let userMarker = null;
+
+    // 註冊 Service Worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js').catch(() => {});
+    }
+
+    window.addEventListener('online', () => {
+      updateNetworkUI();
+      showToast('🌐 網路已恢復，嘗試自動同步暫存資料...', 'success');
+      flushOfflineQueue();
+    });
+    window.addEventListener('offline', () => {
+      updateNetworkUI();
+      showToast('🟠 目前處於離線模式，變更將暫存於本機', 'warn');
+    });
+
+    window.onload = () => {
+      // 支援透過網址參數 ?api=... 快速匯入 GAS 網址
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('api')) {
+        localStorage.setItem(STORAGE_KEYS.GAS_URL, params.get('api'));
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+
+      updateNetworkUI();
+      updatePendingBadge();
+      updateLastSyncText();
+
+      // 優先載入本機快取（離線秒開）
+      const cachedInv = localStorage.getItem(STORAGE_KEYS.DATA);
+      const cachedLoc = localStorage.getItem(STORAGE_KEYS.LOCATIONS);
+      if (cachedInv) {
+        globalData = JSON.parse(cachedInv);
+        if (cachedLoc) locationsData = JSON.parse(cachedLoc);
+        selectInitialCharacter();
+        renderParty();
+        renderInventory();
+      }
+
+      if (!getGasUrl()) {
+        openSettingsModal();
+      } else if (navigator.onLine) {
+        syncWithServer(false);
+      }
+    };
+
+    function getGasUrl() {
+      return localStorage.getItem(STORAGE_KEYS.GAS_URL) || DEFAULT_GAS_URL;
+    }
+
+    function updateNetworkUI() {
+      const el = document.getElementById('net-status');
+      if (navigator.onLine) {
+        el.className = 'status-badge online';
+        el.innerText = '🟢 已連線';
+      } else {
+        el.className = 'status-badge offline';
+        el.innerText = '🟠 離線模式';
+      }
+    }
+
+    function updatePendingBadge() {
+      const badge = document.getElementById('pending-badge');
+      if (offlineQueue.length > 0) {
+        badge.style.display = 'inline-block';
+        badge.innerText = `待同步 ${offlineQueue.length} 筆`;
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+
+    function updateLastSyncText() {
+      const ts = localStorage.getItem(STORAGE_KEYS.LAST_SYNC);
+      const el = document.getElementById('last-sync-text');
+      if (!ts) { el.innerText = '尚未同步'; return; }
+      const d = new Date(ts);
+      const hh = String(d.getHours()).padStart(2, '0');
+      const mm = String(d.getMinutes()).padStart(2, '0');
+      el.innerText = `同步於 ${hh}:${mm}`;
+    }
+
+    function showToast(msg, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.innerText = msg;
+      container.appendChild(toast);
+      setTimeout(() => { toast.remove(); }, 2800);
+    }
+
+    // 與 GAS 後端通訊（先補傳離線佇列，再拉取最新資料）
+    async function syncWithServer(manual = false) {
+      const url = getGasUrl();
+      if (!url) {
+        if (manual) openSettingsModal();
+        return;
+      }
+      if (!navigator.onLine) {
+        if (manual) showToast('🟠 目前無網路，無法連線至 Google 試算表', 'warn');
+        return;
+      }
+
+      if (offlineQueue.length > 0) {
+        await flushOfflineQueue();
+      }
+
+      try {
+        if (manual) showToast('🔄 正在從營地同步最新進度...');
+        const res = await fetch(`${url}?action=getAll&_t=${Date.now()}`);
+        const json = await res.json();
+        if (!json.ok) throw new Error(json.error || '回傳格式錯誤');
+
+        globalData = json.inventory;
+        locationsData = json.locations || [];
+        localStorage.setItem(STORAGE_KEYS.DATA, JSON.stringify(globalData));
+        localStorage.setItem(STORAGE_KEYS.LOCATIONS, JSON.stringify(locationsData));
+        localStorage.setItem(STORAGE_KEYS.LAST_SYNC, json.serverTime || new Date().toISOString());
+
+        selectInitialCharacter();
+        updateLastSyncText();
+        renderParty();
+        renderInventory();
+        if (viewMode === 'map') renderMapLocations();
+        if (manual) showToast('✅ 已同步至最新狀態', 'success');
+      } catch (err) {
+        if (manual) showToast('❌ 同步失敗：' + err.message, 'error');
+      }
+    }
+
+    async function postToGas(payload) {
+      const url = getGasUrl();
+      if (!url) throw new Error('尚未設定 GAS API 網址');
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+      });
+      const json = await res.json();
+      if (!json.ok) throw new Error(json.error || '寫入失敗');
+      return json;
+    }
+
+    function enqueueAction(payload) {
+      // 同一位角色同一列的 updateItem 只保留最新狀態，避免無謂重複
+      if (payload.action === 'updateItem') {
+        offlineQueue = offlineQueue.filter(
+          q => !(q.action === 'updateItem' && q.row === payload.row && q.charName === payload.charName)
+        );
+      }
+      offlineQueue.push(payload);
+      localStorage.setItem(STORAGE_KEYS.QUEUE, JSON.stringify(offlineQueue));
+      updatePendingBadge();
+    }
+
+    async function flushOfflineQueue() {
+      if (offlineQueue.length === 0 || !navigator.onLine || !getGasUrl()) return;
+      const toSend = [...offlineQueue];
+      try {
+        const res = await postToGas({ action: 'batchSync', actions: toSend });
+        offlineQueue = [];
+        localStorage.setItem(STORAGE_KEYS.QUEUE, '[]');
+        updatePendingBadge();
+
+        if (res.inventory) {
+          globalData = res.inventory;
+          localStorage.setItem(STORAGE_KEYS.DATA, JSON.stringify(globalData));
+        }
+        if (res.locations) {
+          locationsData = res.locations;
+          localStorage.setItem(STORAGE_KEYS.LOCATIONS, JSON.stringify(locationsData));
+        }
+        localStorage.setItem(STORAGE_KEYS.LAST_SYNC, res.serverTime || new Date().toISOString());
+        updateLastSyncText();
+        renderParty();
+        renderInventory();
+        if (viewMode === 'map') renderMapLocations();
+        showToast(`✅ 已補傳 ${toSend.length} 筆離線變更`, 'success');
+      } catch (err) {
+        showToast('⚠️ 部分離線資料補傳失敗，稍後再試', 'warn');
+      }
+    }
+
+    function selectInitialCharacter() {
+      if (!globalData || !globalData.characters.length) return;
+      if (myChar && globalData.characters.includes(myChar)) {
+        if (!currentChar) currentChar = myChar;
+      } else if (!currentChar || !globalData.characters.includes(currentChar)) {
+        currentChar = globalData.characters[0];
+      }
+      updateOtherCharBanner();
+    }
+
+    function switchToMyChar() {
+      if (myChar && globalData.characters.includes(myChar)) {
+        currentChar = myChar;
+        renderParty();
+        renderInventory();
+        updateOtherCharBanner();
+      }
+    }
+
+    function updateOtherCharBanner() {
+      const banner = document.getElementById('other-char-banner');
+      if (viewMode === 'character' && myChar && currentChar && myChar !== currentChar) {
+        banner.style.display = 'flex';
+        document.getElementById('other-char-text').innerText = `👀 目前檢視【${currentChar}】的背包（你的身份是 ${myChar}）`;
+      } else {
+        banner.style.display = 'none';
+      }
+    }
+
+    function setMode(mode) {
+      viewMode = mode;
+      document.getElementById('btn-mode-char').className = 'mode-btn ' + (mode === 'character' ? 'active' : '');
+      document.getElementById('btn-mode-item').className = 'mode-btn ' + (mode === 'item' ? 'active' : '');
+      document.getElementById('btn-mode-map').className = 'mode-btn ' + (mode === 'map' ? 'active' : '');
+
+      const invPanel = document.getElementById('inventory-panel');
+      const mapPanel = document.getElementById('map-panel');
+      const fabGroup = document.getElementById('fab-group');
+
+      if (mode === 'map') {
+        invPanel.style.display = 'none';
+        mapPanel.style.display = 'block';
+        fabGroup.style.display = 'none';
+        initMapIfNeeded();
+      } else {
+        invPanel.style.display = 'block';
+        mapPanel.style.display = 'none';
+        fabGroup.style.display = 'flex';
+        updateOtherCharBanner();
+        renderParty();
+        renderInventory();
+      }
+    }
+
+    function toggleOnlyMissing() {
+      onlyMissingFilter = !onlyMissingFilter;
+      document.getElementById('btn-only-missing').classList.toggle('active', onlyMissingFilter);
+      renderInventory();
+    }
+
+    function toggleCategory(cat) {
+      collapsedCats[cat] = !collapsedCats[cat];
+      localStorage.setItem(STORAGE_KEYS.COLLAPSED, JSON.stringify(collapsedCats));
+      renderInventory();
+    }
+
+    function calcProgress(charName) {
+      if (!globalData) return { total: 0, checked: 0, pct: 0 };
+      let total = 0, checked = 0;
+      globalData.items.forEach(item => {
+        const st = item.status[charName];
+        if (st && st.state !== 'na') {
+          total++;
+          if (st.state === 'ready') checked++;
+        }
+      });
+      return { total, checked, pct: total === 0 ? 0 : Math.round((checked / total) * 100) };
+    }
+
+    function getCategoryIcon(cat) {
+      if (/水|飲/.test(cat)) return '💧 ';
+      if (/食|糧|口糧|麵|罐頭/.test(cat)) return '🥫 ';
+      if (/醫藥|衛生|急救|口罩/.test(cat)) return '💊 ';
+      if (/照明|保濕|保暖|毯/.test(cat)) return '🔦 ';
+      if (/通訊|電力|電/.test(cat)) return '🔋 ';
+      if (/工具|安全|繩|刀|鏟/.test(cat)) return '🛠️ ';
+      if (/身份|文件|錢|護照/.test(cat)) return '📄 ';
+      return '🎒 ';
+    }
+
+    function getExpStatus(dateString) {
+      if (!dateString) return { expired: false, warn: false };
+      const expDate = new Date(dateString);
+      if (isNaN(expDate)) return { expired: false, warn: false };
+      const now = new Date();
+      const diffMonths = (expDate - now) / (1000 * 60 * 60 * 24 * 30);
+      return {
+        expired: diffMonths < 0,
+        warn: diffMonths >= 0 && diffMonths <= 6
+      };
+    }
+
+    function renderParty() {
+      const container = document.getElementById('party');
+      container.innerHTML = '';
+      if (!globalData) return;
+
+      globalData.characters.forEach(char => {
+        const prog = calcProgress(char);
+        const card = document.createElement('div');
+        card.className = 'character-card ' + (viewMode === 'character' && char === currentChar ? 'active' : '');
+        if (viewMode === 'character') {
+          card.onclick = () => {
+            currentChar = char;
+            updateOtherCharBanner();
+            renderParty();
+            renderInventory();
+          };
+        }
+
+        const avatarInfo = buddyMap[char] || buddyMap['default'];
+        const leafCount = Math.round(prog.pct / 10);
+        let leafHTML = '<div class="progress-leaf-container">';
+        for (let l = 0; l < 10; l++) {
+          leafHTML += `<span class="progress-leaf ${l < leafCount ? 'active' : ''}">🍃</span>`;
+        }
+        leafHTML += '</div>';
+
+        const myBadgeHTML = (char === myChar) ? '<span class="my-badge">我</span>' : '';
+        card.innerHTML = `
+          ${myBadgeHTML}
+          <div class="char-avatar">${avatarInfo.avatar}<span class="char-buddy">${avatarInfo.buddy}</span></div>
+          <div style="font-weight:800; font-size:0.95rem; margin-top:4px;">${char}</div>
+          ${leafHTML}
+          <div style="font-size:0.75rem; font-weight:bold; color:var(--primary); margin-top:2px;">${prog.checked}/${prog.total} (${prog.pct}%)</div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function renderInventory() {
+      const container = document.getElementById('inventory');
+      container.innerHTML = '';
+      if (!globalData) {
+        container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--text-muted);">尚未載入物資資料，請先點擊右上角 ⚙️ 設定連線</div>';
+        return;
+      }
+
+      const searchKey = document.getElementById('main-search').value.toLowerCase().trim();
+      const grouped = {};
+
+      globalData.items.forEach(item => {
+        if (viewMode === 'character') {
+          const st = item.status[currentChar];
+          if (!st || st.state === 'na') return;
+          if (onlyMissingFilter) {
+            const expInfo = getExpStatus(st.exp);
+            if (st.state === 'ready' && !expInfo.expired && !expInfo.warn) return;
+          }
+          if (searchKey && !item.name.toLowerCase().includes(searchKey) && !(st.note || '').toLowerCase().includes(searchKey)) return;
+        } else {
+          if (onlyMissingFilter) {
+            const hasIssue = globalData.characters.some(c => {
+              const st = item.status[c];
+              const exp = getExpStatus(st.exp);
+              return st.state === 'missing' || (st.state === 'ready' && (exp.expired || exp.warn));
+            });
+            if (!hasIssue) return;
+          }
+          if (searchKey && !item.name.toLowerCase().includes(searchKey)) return;
+        }
+
+        const cat = item.category || '未分類';
+        if (!grouped[cat]) grouped[cat] = [];
+        grouped[cat].push(item);
+      });
+
+      const cats = Object.keys(grouped);
+      if (cats.length === 0) {
+        container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--text-muted); font-weight:bold;">🎉 沒有符合條件的物資項目！</div>';
+        return;
+      }
+
+      cats.forEach(cat => {
+        const list = grouped[cat];
+        const isCollapsed = !!collapsedCats[cat] && !searchKey;
+
+        let readyCount = 0;
+        if (viewMode === 'character') {
+          readyCount = list.filter(i => i.status[currentChar].state === 'ready').length;
+        }
+
+        const catEl = document.createElement('div');
+        catEl.className = 'category-title';
+        catEl.onclick = () => toggleCategory(cat);
+        catEl.innerHTML = `
+          <span>${getCategoryIcon(cat)}${cat}</span>
+          <span class="cat-meta">${viewMode === 'character' ? `${readyCount}/${list.length}` : `${list.length} 項`} ${isCollapsed ? '▶' : '▼'}</span>
+        `;
+        container.appendChild(catEl);
+
+        if (isCollapsed) return;
+
+        list.forEach(item => {
+          const row = document.createElement('div');
+          row.className = 'item-row';
+
+          if (viewMode === 'character') {
+            const charData = item.status[currentChar];
+            const isChecked = charData.state === 'ready';
+            const expInfo = getExpStatus(charData.exp);
+            const expClass = expInfo.expired ? 'exp-danger' : (expInfo.warn ? 'exp-warning' : '');
+            const alertLabel = expInfo.expired
+              ? '<div class="alert-tag" style="color:var(--danger)">⚠️ 這個物品已過期！</div>'
+              : (expInfo.warn ? '<div class="alert-tag" style="color:var(--warning)">🍂 快過期了（剩不到 6 個月）</div>' : '');
+
+            row.innerHTML = `
+              <div class="item-header">
+                <div class="item-title-wrap">
+                  <div class="item-name-line">
+                    <span class="item-name">${item.name}</span>
+                    <button class="btn-edit-item" onclick="openEditItemModal(${item.row})" title="編輯或刪除物資">✏️</button>
+                  </div>
+                  ${alertLabel}
+                </div>
+                <label class="switch">
+                  <input type="checkbox" onchange="toggleItemReady(${item.row}, '${currentChar}', this.checked)" ${isChecked ? 'checked' : ''}>
+                  <span class="slider"></span>
+                </label>
+              </div>
+              <div class="util-bar">
+                <div class="stepper">
+                  <button class="step-btn" onclick="stepQty(${item.row}, '${currentChar}', -1)">−</button>
+                  <input type="text" class="qty-input" placeholder="數量" value="${charData.qty}" onchange="updateField(${item.row}, '${currentChar}', 'qty', this.value)">
+                  <button class="step-btn" onclick="stepQty(${item.row}, '${currentChar}', 1)">+</button>
+                </div>
+                <input type="date" class="util-input exp-date-input ${expClass}" value="${charData.exp}" onchange="updateField(${item.row}, '${currentChar}', 'exp', this.value)">
+                <input type="text" class="util-input note-input" placeholder="備註..." value="${charData.note}" onchange="updateField(${item.row}, '${currentChar}', 'note', this.value)">
+                <button class="btn-na" onclick="setNa(${item.row}, '${currentChar}')">🚫 移出</button>
+              </div>
+            `;
+          } else {
+            const chipsHTML = globalData.characters.map(char => {
+              const st = item.status[char];
+              const qtyText = (st.state === 'ready' && st.qty) ? ` (${st.qty})` : '';
+              const icon = st.state === 'ready' ? '✔' : (st.state === 'missing' ? '✖' : '➖');
+              const expInfo = getExpStatus(st.exp);
+              const borderStyle = expInfo.expired ? 'border: 2px solid var(--danger);' : (expInfo.warn ? 'border: 2px solid var(--warning);' : '');
+              return `<div class="chip ${st.state}" style="${borderStyle}" onclick="cycleChipState(${item.row}, '${char}')">${char} ${icon}${qtyText}</div>`;
+            }).join('');
+
+            row.innerHTML = `
+              <div class="item-header">
+                <div class="item-name-line">
+                  <span class="item-name">${item.name}</span>
+                  <button class="btn-edit-item" onclick="openEditItemModal(${item.row})" title="編輯或刪除物資">✏️</button>
+                </div>
+              </div>
+              <div class="chip-container">${chipsHTML}</div>
+            `;
+          }
+          container.appendChild(row);
+        });
+      });
+    }
+
+    async function commitItemUpdate(rowIdx, charName) {
+      localStorage.setItem(STORAGE_KEYS.DATA, JSON.stringify(globalData));
+      const charData = globalData.items.find(i => i.row === rowIdx).status[charName];
+      const payload = {
+        action: 'updateItem',
+        row: rowIdx,
+        charName: charName,
+        state: charData.state,
+        expDate: charData.exp,
+        qty: charData.qty,
+        textNote: charData.note
+      };
+
+      if (!navigator.onLine || !getGasUrl()) {
+        enqueueAction(payload);
+        showToast('🟠 已離線暫存', 'warn');
+        return;
+      }
+
+      try {
+        const res = await postToGas(payload);
+        if (res.serverTime) {
+          localStorage.setItem(STORAGE_KEYS.LAST_SYNC, res.serverTime);
+          updateLastSyncText();
+        }
+        showToast('✅ 已儲存至營地', 'success');
+      } catch (err) {
+        enqueueAction(payload);
+        showToast('🟠 連線不穩，已轉為離線暫存', 'warn');
+      }
+    }
+
+    function toggleItemReady(rowIdx, charName, isChecked) {
+      globalData.items.find(i => i.row === rowIdx).status[charName].state = isChecked ? 'ready' : 'missing';
+      renderParty(); renderInventory();
+      commitItemUpdate(rowIdx, charName);
+    }
+
+    function stepQty(rowIdx, charName, delta) {
+      const charData = globalData.items.find(i => i.row === rowIdx).status[charName];
+      const currentNum = parseInt(charData.qty, 10);
+      const base = isNaN(currentNum) ? 0 : currentNum;
+      const next = Math.max(0, base + delta);
+      charData.qty = next === 0 ? '' : String(next);
+      if (next > 0) charData.state = 'ready';
+      renderParty(); renderInventory();
+      commitItemUpdate(rowIdx, charName);
+    }
+
+    function updateField(rowIdx, charName, field, value) {
+      const charData = globalData.items.find(i => i.row === rowIdx).status[charName];
+      charData[field] = value;
+      if (field === 'qty' && value.trim() !== '' && charData.state !== 'ready') charData.state = 'ready';
+      renderParty(); renderInventory();
+      commitItemUpdate(rowIdx, charName);
+    }
+
+    function setNa(rowIdx, charName) {
+      if (confirm('要把這項物品從此背包移出嗎？')) {
+        globalData.items.find(i => i.row === rowIdx).status[charName].state = 'na';
+        renderParty(); renderInventory();
+        commitItemUpdate(rowIdx, charName);
+      }
+    }
+
+    function cycleChipState(rowIdx, charName) {
+      const charData = globalData.items.find(i => i.row === rowIdx).status[charName];
+      if (charData.state === 'ready') charData.state = 'missing';
+      else if (charData.state === 'missing') charData.state = 'na';
+      else charData.state = 'ready';
+      renderParty(); renderInventory();
+      commitItemUpdate(rowIdx, charName);
+    }
+
+    // 新增與編輯物資 Modal
+    function populateCategoryDatalist() {
+      const dl = document.getElementById('category-datalist');
+      dl.innerHTML = '';
+      if (!globalData) return;
+      const cats = [...new Set(globalData.items.map(i => i.category))];
+      cats.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c;
+        dl.appendChild(opt);
+      });
+    }
+
+    function openAddItemModal() {
+      if (!globalData) { showToast('請先連線載入小隊資料', 'warn'); return; }
+      populateCategoryDatalist();
+      document.getElementById('item-modal-title').innerText = '➕ 新增防災物資';
+      document.getElementById('edit-item-row').value = '';
+      document.getElementById('modal-item-name').value = '';
+      document.getElementById('modal-item-cat').value = '';
+      document.getElementById('modal-chars-group').style.display = 'block';
+      document.getElementById('btn-delete-item').style.display = 'none';
+
+      const charsBox = document.getElementById('modal-chars-list');
+      charsBox.innerHTML = '';
+      globalData.characters.forEach(c => {
+        charsBox.innerHTML += `
+          <label class="char-check-pill">
+            <input type="checkbox" value="${c}" ${c === currentChar ? 'checked' : ''}> ${c}
+          </label>
+        `;
+      });
+      document.getElementById('item-modal').classList.add('open');
+    }
+
+    function openEditItemModal(rowIdx) {
+      const item = globalData.items.find(i => i.row === rowIdx);
+      if (!item) return;
+      populateCategoryDatalist();
+      document.getElementById('item-modal-title').innerText = '✏️ 編輯物資項目';
+      document.getElementById('edit-item-row').value = rowIdx;
+      document.getElementById('modal-item-name').value = item.name;
+      document.getElementById('modal-item-cat').value = item.category;
+      document.getElementById('modal-chars-group').style.display = 'none';
+      document.getElementById('btn-delete-item').style.display = 'inline-block';
+      document.getElementById('item-modal').classList.add('open');
+    }
+
+    async function saveItemModal() {
+      const rowStr = document.getElementById('edit-item-row').value;
+      const name = document.getElementById('modal-item-name').value.trim();
+      const cat = document.getElementById('modal-item-cat').value.trim() || '未分類';
+      if (!name) { showToast('請輸入物資名稱', 'warn'); return; }
+
+      if (!rowStr) {
+        const targets = Array.from(document.querySelectorAll('#modal-chars-list input:checked')).map(el => el.value);
+        if (targets.length === 0) { showToast('請至少選擇一位隊員', 'warn'); return; }
+
+        closeModal('item-modal');
+        const payload = { action: 'addItem', category: cat, itemName: name, requiredChars: targets };
+
+        if (!navigator.onLine) {
+          // 樂觀更新本機快取
+          const statusObj = {};
+          globalData.characters.forEach(c => {
+            statusObj[c] = { state: targets.includes(c) ? 'missing' : 'na', exp: '', qty: '', note: '' };
+          });
+          globalData.items.push({ row: Date.now(), category: cat, name: name, status: statusObj });
+          localStorage.setItem(STORAGE_KEYS.DATA, JSON.stringify(globalData));
+          enqueueAction(payload);
+          renderParty(); renderInventory();
+          showToast('🟠 已離線新增，連線後將同步至試算表', 'warn');
+          return;
+        }
+
+        try {
+          showToast('📡 正在新增物資...');
+          const res = await postToGas(payload);
+          globalData = res.inventory;
+          localStorage.setItem(STORAGE_KEYS.DATA, JSON.stringify(globalData));
+          renderParty(); renderInventory();
+          showToast('✅ 已新增物資：' + name, 'success');
+        } catch (err) {
+          showToast('❌ 新增失敗：' + err.message, 'error');
+        }
+      } else {
+        const rowIdx = Number(rowStr);
+        if (!navigator.onLine) {
+          showToast('🟠 編輯或刪除物資需於連線狀態執行（避免列號衝突）', 'warn');
+          return;
+        }
+        closeModal('item-modal');
+        try {
+          showToast('📡 正在更新物資資訊...');
+          const res = await postToGas({ action: 'editItem', row: rowIdx, newName: name, newCategory: cat });
+          globalData = res.inventory;
+          localStorage.setItem(STORAGE_KEYS.DATA, JSON.stringify(globalData));
+          renderParty(); renderInventory();
+          showToast('✅ 已更新物資', 'success');
+        } catch (err) {
+          showToast('❌ 更新失敗：' + err.message, 'error');
+        }
+      }
+    }
+
+    async function confirmDeleteItem() {
+      const rowIdx = Number(document.getElementById('edit-item-row').value);
+      const item = globalData.items.find(i => i.row === rowIdx);
+      if (!item) return;
+      if (!navigator.onLine) {
+        showToast('🟠 刪除物資需於連線狀態執行', 'warn');
+        return;
+      }
+      if (!confirm(`確定要從試算表永久刪除【${item.name}】嗎？所有隊員的該項紀錄都會移除。`)) return;
+
+      closeModal('item-modal');
+      try {
+        showToast('🗑️ 正在刪除物資...');
+        const res = await postToGas({ action: 'deleteItem', row: rowIdx });
+        globalData = res.inventory;
+        localStorage.setItem(STORAGE_KEYS.DATA, JSON.stringify(globalData));
+        renderParty(); renderInventory();
+        showToast('✅ 已刪除物資', 'success');
+      } catch (err) {
+        showToast('❌ 刪除失敗：' + err.message, 'error');
+      }
+    }
+
+    // 採買清單 Modal
+    function openPrintModal() {
+      if (!globalData) return;
+      const filterBox = document.getElementById('filter-partners');
+      filterBox.innerHTML = '';
+      globalData.characters.forEach(char => {
+        filterBox.innerHTML += `
+          <label class="filter-checkbox">
+            <input type="checkbox" checked value="${char}" onchange="filterPrintItems()"> ${char}
+          </label>
+        `;
+      });
+      document.getElementById('print-modal').style.display = 'block';
+      filterPrintItems();
+    }
+
+    function filterPrintItems() {
+      const content = document.getElementById('print-content');
+      content.innerHTML = '';
+      const searchKey = document.getElementById('search-bar').value.toLowerCase().trim();
+      const checkedPartners = Array.from(document.querySelectorAll('#filter-partners input:checked')).map(el => el.value);
+      const missingItemsByCategory = {};
+
+      globalData.items.forEach(item => {
+        if (searchKey && !item.name.toLowerCase().includes(searchKey)) return;
+        const missingFor = [];
+        const expFor = [];
+
+        globalData.characters.forEach(char => {
+          if (!checkedPartners.includes(char)) return;
+          const st = item.status[char];
+          const qtyText = st.qty ? ` (數量：${st.qty})` : '';
+          if (st.state === 'missing') {
+            missingFor.push(`${char}${qtyText}`);
+          } else if (st.state === 'ready' && getExpStatus(st.exp).expired) {
+            missingFor.push(`${char}${qtyText}已失效☢️`);
+          } else if (st.state === 'ready' && getExpStatus(st.exp).warn) {
+            expFor.push(`${char}${qtyText}⚠️快到期`);
+          }
+        });
+
+        const needBuy = missingFor.concat(expFor);
+        if (needBuy.length > 0) {
+          if (!missingItemsByCategory[item.category]) missingItemsByCategory[item.category] = [];
+          missingItemsByCategory[item.category].push(`
+            <div class="print-item">
+              <div style="font-weight:bold;">📦 ${item.name}</div>
+              <div style="font-size:0.85rem; color:#444; margin-top:2px;">對象：${needBuy.join('、')}</div>
+            </div>
+          `);
+        }
+      });
+
+      if (Object.keys(missingItemsByCategory).length === 0) {
+        content.innerHTML = '<p style="font-weight:bold; color:var(--primary); padding:20px 0;">🎉 所有選取夥伴的裝備都已就緒！目前無須採買。</p>';
+      } else {
+        for (let cat in missingItemsByCategory) {
+          content.innerHTML += `<div class="print-cat">${getCategoryIcon(cat)}${cat}</div>`;
+          content.innerHTML += missingItemsByCategory[cat].join('');
+        }
+      }
+    }
+
+    function closePrintModal() {
+      document.getElementById('print-modal').style.display = 'none';
+    }
+
+    // 設定 Modal
+    function openSettingsModal() {
+      document.getElementById('setting-gas-url').value = getGasUrl();
+      const select = document.getElementById('setting-my-char');
+      select.innerHTML = '<option value="">-- 不鎖定（顯示全部）--</option>';
+      if (globalData && globalData.characters) {
+        globalData.characters.forEach(c => {
+          select.innerHTML += `<option value="${c}" ${c === myChar ? 'selected' : ''}>${c}</option>`;
+        });
+      }
+      document.getElementById('settings-modal').classList.add('open');
+    }
+
+    function saveSettings() {
+      const url = document.getElementById('setting-gas-url').value.trim();
+      const selectedChar = document.getElementById('setting-my-char').value;
+      if (url) localStorage.setItem(STORAGE_KEYS.GAS_URL, url);
+      myChar = selectedChar;
+      localStorage.setItem(STORAGE_KEYS.MY_CHAR, myChar);
+      if (myChar) currentChar = myChar;
+
+      closeModal('settings-modal');
+      updateOtherCharBanner();
+      renderParty();
+      renderInventory();
+      syncWithServer(true);
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('open');
+    }
+
+    // ================= 離線地圖模組 =================
+    function initMapIfNeeded() {
+      if (!mapInitialized) {
+        mapInitialized = true;
+        // 預設中心設於台北（大安區一帶），若已有點位則會自動移動至第一個點位
+        const defaultCenter = locationsData.length > 0
+          ? [locationsData[0].lat, locationsData[0].lng]
+          : [25.0330, 121.5430];
+
+        mapInstance = L.map('map').setView(defaultCenter, 15);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 18,
+          attribution: '© OpenStreetMap'
+        }).addTo(mapInstance);
+
+        markersLayer = L.layerGroup().addTo(mapInstance);
+
+        mapInstance.on('click', (e) => {
+          document.getElementById('loc-lat').value = e.latlng.lat.toFixed(6);
+          document.getElementById('loc-lng').value = e.latlng.lng.toFixed(6);
+        });
+      }
+      setTimeout(() => { mapInstance.invalidateSize(); }, 150);
+      renderMapLocations();
+      updateTileCacheCount();
+    }
+
+    function renderMapLocations() {
+      if (markersLayer) markersLayer.clearLayers();
+      const listEl = document.getElementById('locations-list');
+      listEl.innerHTML = '';
+
+      if (!locationsData || locationsData.length === 0) {
+        listEl.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-muted);">尚未建立任何避難點位，可點擊上方「➕ 新增避難點位」建立家庭集合點。</div>';
+        return;
+      }
+
+      locationsData.forEach(loc => {
+        if (markersLayer) {
+          const marker = L.marker([loc.lat, loc.lng]).addTo(markersLayer);
+          marker.bindPopup(`<b>${loc.type} ${loc.name}</b><br>${loc.note || '無備註'}`);
+        }
+
+        let distHTML = '<span style="color:var(--text-muted); font-size:0.75rem;">未定位</span>';
+        if (userPos) {
+          const d = calcDistanceMeters(userPos.lat, userPos.lng, loc.lat, loc.lng);
+          const bearing = calcBearingText(userPos.lat, userPos.lng, loc.lat, loc.lng);
+          const distStr = d >= 1000 ? `${(d / 1000).toFixed(2)} 公里` : `${Math.round(d)} 公尺`;
+          distHTML = `<div class="loc-dist">${bearing}<br>${distStr}</div>`;
+        }
+
+        const card = document.createElement('div');
+        card.className = 'loc-card';
+        card.innerHTML = `
+          <div style="flex:1; cursor:pointer;" onclick="focusLocation(${loc.lat}, ${loc.lng})">
+            <div style="font-weight:800; font-size:0.95rem;">${loc.type} ${loc.name}</div>
+            <div style="font-size:0.78rem; color:var(--text-muted); margin-top:2px;">${loc.note || '無備註'}・(${loc.lat.toFixed(4)}, ${loc.lng.toFixed(4)})</div>
+          </div>
+          ${distHTML}
+          <button class="btn-edit-item" onclick="deleteLocation('${loc.id}', '${loc.name}')" title="刪除點位">🗑️</button>
+        `;
+        listEl.appendChild(card);
+      });
+    }
+
+    function focusLocation(lat, lng) {
+      if (mapInstance) mapInstance.setView([lat, lng], 16);
+    }
+
+    function centerOnFirstLocation() {
+      if (locationsData.length > 0 && mapInstance) {
+        mapInstance.setView([locationsData[0].lat, locationsData[0].lng], 15);
+      } else {
+        showToast('目前沒有已儲存的點位', 'warn');
+      }
+    }
+
+    function locateMe() {
+      if (!navigator.geolocation) {
+        showToast('❌ 此裝置不支援 GPS 定位', 'error');
+        return;
+      }
+      showToast('🛰️ 正在讀取 GPS 衛星座標...');
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          userPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          if (mapInstance) {
+            mapInstance.setView([userPos.lat, userPos.lng], 16);
+            if (userMarker) mapInstance.removeLayer(userMarker);
+            userMarker = L.circleMarker([userPos.lat, userPos.lng], {
+              radius: 9, fillColor: '#E07A5F', color: '#FFF', weight: 3, fillOpacity: 1
+            }).addTo(mapInstance).bindPopup('📍 我的目前位置').openPopup();
+          }
+          renderMapLocations();
+          showToast('✅ 已更新目前位置與各點位方位距離', 'success');
+        },
+        (err) => {
+          showToast('❌ 無法取得 GPS 定位：' + err.message, 'error');
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    }
+
+    function openAddLocationModal() {
+      const center = mapInstance ? mapInstance.getCenter() : { lat: 25.0330, lng: 121.5430 };
+      const latInput = document.getElementById('loc-lat');
+      const lngInput = document.getElementById('loc-lng');
+      if (!latInput.value) latInput.value = (userPos ? userPos.lat : center.lat).toFixed(6);
+      if (!lngInput.value) lngInput.value = (userPos ? userPos.lng : center.lng).toFixed(6);
+      document.getElementById('loc-name').value = '';
+      document.getElementById('loc-note').value = '';
+      document.getElementById('loc-modal').classList.add('open');
+    }
+
+    async function saveLocationModal() {
+      const name = document.getElementById('loc-name').value.trim();
+      const type = document.getElementById('loc-type').value;
+      const lat = parseFloat(document.getElementById('loc-lat').value);
+      const lng = parseFloat(document.getElementById('loc-lng').value);
+      const note = document.getElementById('loc-note').value.trim();
+
+      if (!name || isNaN(lat) || isNaN(lng)) {
+        showToast('請填寫完整的點位名稱與經緯度', 'warn');
+        return;
+      }
+
+      const newLoc = { id: 'loc_' + Date.now(), name, type, lat, lng, note, creator: myChar || '家人' };
+      locationsData.push(newLoc);
+      localStorage.setItem(STORAGE_KEYS.LOCATIONS, JSON.stringify(locationsData));
+      closeModal('loc-modal');
+      renderMapLocations();
+
+      const payload = { action: 'addLocation', location: newLoc };
+      if (!navigator.onLine || !getGasUrl()) {
+        enqueueAction(payload);
+        showToast('🟠 已離線儲存點位，連線後自動同步', 'warn');
+        return;
+      }
+
+      try {
+        await postToGas(payload);
+        showToast('✅ 已同步新避難點位', 'success');
+      } catch (err) {
+        enqueueAction(payload);
+        showToast('🟠 連線不穩，點位已轉入離線佇列', 'warn');
+      }
+    }
+
+    async function deleteLocation(id, name) {
+      if (!confirm(`確定要刪除點位【${name}】嗎？`)) return;
+      locationsData = locationsData.filter(l => l.id !== id);
+      localStorage.setItem(STORAGE_KEYS.LOCATIONS, JSON.stringify(locationsData));
+      renderMapLocations();
+
+      const payload = { action: 'deleteLocation', id };
+      if (!navigator.onLine || !getGasUrl()) {
+        enqueueAction(payload);
+        showToast('🟠 已於本機移除，連線後同步刪除', 'warn');
+        return;
+      }
+      try {
+        await postToGas(payload);
+        showToast('🗑️ 已刪除點位', 'success');
+      } catch (err) {
+        enqueueAction(payload);
+      }
+    }
+
+    // 離線地圖圖磚區域預載（Cache Storage）
+    function lat2tile(lat, zoom) {
+      return Math.floor((1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, zoom));
+    }
+    function lng2tile(lon, zoom) {
+      return Math.floor((lon + 180) / 360 * Math.pow(2, zoom));
+    }
+
+    async function downloadAreaTiles() {
+      if (!navigator.onLine) {
+        showToast('🟠 下載離線地圖需要網路連線', 'warn');
+        return;
+      }
+      if (!mapInstance) return;
+      const center = mapInstance.getCenter();
+      // 約方圓 1.5~2 公里（緯度 ±0.014, 經度 ±0.016）
+      const minLat = center.lat - 0.014, maxLat = center.lat + 0.014;
+      const minLng = center.lng - 0.016, maxLng = center.lng + 0.016;
+      const zooms = [13, 14, 15, 16];
+      const urls = [];
+
+      zooms.forEach(z => {
+        const x1 = lng2tile(minLng, z), x2 = lng2tile(maxLng, z);
+        const y1 = lat2tile(maxLat, z), y2 = lat2tile(minLat, z);
+        for (let x = Math.min(x1, x2); x <= Math.max(x1, x2); x++) {
+          for (let y = Math.min(y1, y2); y <= Math.max(y1, y2); y++) {
+            urls.push(`https://tile.openstreetmap.org/${z}/${x}/${y}.png`);
+          }
+        }
+      });
+
+      if (!confirm(`準備下載目前畫面周邊約 2 公里範圍的離線圖磚（共 ${urls.length} 張，約數 MB），是否繼續？`)) return;
+
+      const btn = document.getElementById('btn-download-tiles');
+      const progEl = document.getElementById('tile-progress');
+      btn.disabled = true;
+      progEl.style.display = 'block';
+
+      const cache = await caches.open('disaster-map-tiles-v1');
+      let done = 0;
+      const batchSize = 6;
+
+      for (let i = 0; i < urls.length; i += batchSize) {
+        const batch = urls.slice(i, i + batchSize);
+        await Promise.all(batch.map(async (u) => {
+          try {
+            const existing = await cache.match(u);
+            if (!existing) {
+              const res = await fetch(u);
+              if (res.ok) await cache.put(u, res);
+            }
+          } catch (e) {}
+          done++;
+        }));
+        progEl.innerText = `📥 下載離線地圖中：${done} / ${urls.length} 張 (${Math.round((done / urls.length) * 100)}%)`;
+      }
+
+      btn.disabled = false;
+      progEl.innerText = `✅ 已完成區域離線地圖快取！斷網時可瀏覽此區街道。`;
+      updateTileCacheCount();
+      showToast('✅ 離線地圖下載完成', 'success');
+    }
+
+    async function updateTileCacheCount() {
+      if (!('caches' in window)) return;
+      const cache = await caches.open('disaster-map-tiles-v1');
+      const keys = await cache.keys();
+      document.getElementById('tile-cache-count').innerText = `本機已快取 ${keys.length} 張圖磚`;
+    }
+
+    // 計算直線距離（Haversine 公式）與方位角
+    function calcDistanceMeters(lat1, lon1, lat2, lon2) {
+      const R = 6371000;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    function calcBearingText(lat1, lon1, lat2, lon2) {
+      const y = Math.sin((lon2 - lon1) * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180);
+      const x = Math.cos(lat1 * Math.PI / 180) * Math.sin(lat2 * Math.PI / 180) -
+                Math.sin(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.cos((lon2 - lon1) * Math.PI / 180);
+      const brng = ((Math.atan2(y, x) * 180 / Math.PI) + 360) % 360;
+      const dirs = ['北', '東北', '東', '東南', '南', '西南', '西', '西北'];
+      const dirText = dirs[Math.round(brng / 45) % 8];
+      return `🧭 ${dirText}方 (${Math.round(brng)}°)`;
+    }
+  </script>
+</body>
+</html>

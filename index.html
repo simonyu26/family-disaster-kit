@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#52796F">
-  <title>🏕️ 森林露營小隊・防災系統 v2.0-dev</title>
+  <title>🏕️ 森林露營小隊・防災生存整備系統 v2.4</title>
   <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
   <link rel="apple-touch-icon" href="./icon-192.png">
   <link rel="manifest" href="./manifest.json">
@@ -512,7 +512,180 @@
       body > *:not(#print-modal):not(#plan-print-modal) { display: none !important; }
       #plan-print-modal { position: static; padding: 0; }
     }
+
+    /* ================= Arter UI/UX v2.4 Design System (Editorial Warmth + Tactile Clarity) ================= */
+    :root {
+      --bg: #F6F3EB;
+      --card-bg: #FFFFFF;
+      --primary: #3B6E5C;
+      --primary-dark: #264A3E;
+      --primary-light: #E6F0EC;
+      --accent: #D96B43;
+      --warning: #D98A2B;
+      --danger: #C93B2B;
+      --text: #2C261E;
+      --text-muted: #786E60;
+      --border: #E6E0D2;
+      --shadow-sm: 0 2px 8px rgba(44, 38, 30, 0.05);
+      --shadow-md: 0 6px 18px rgba(44, 38, 30, 0.08);
+    }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 12px 16px 96px 16px;
+      font-feature-settings: "tnum";
+      letter-spacing: 0.01em;
+    }
+    /* 1. 頂部列與連線狀態二合一瘦身 */
+    .top-bar {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 10px 14px;
+      margin-bottom: 10px;
+      box-shadow: var(--shadow-sm);
+    }
+    .brand-col { display: flex; flex-direction: column; gap: 2px; }
+    .brand-title-row { display: flex; align-items: center; gap: 8px; }
+    .top-bar h1 { font-size: 1.12rem; color: var(--primary-dark); letter-spacing: -0.01em; }
+    .ver-pill { background: var(--primary-light); color: var(--primary-dark); font-size: 0.68rem; font-weight: 800; padding: 2px 7px; border-radius: 99px; }
+    .status-inline { display: flex; align-items: center; gap: 8px; font-size: 0.73rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+    .status-strip { display: none !important; }
+    .icon-btn {
+      background: #F8F5EE; border: 1px solid var(--border); color: var(--text);
+      border-radius: 10px; padding: 6px 11px; font-size: 0.8rem; font-weight: 700;
+      display: inline-flex; align-items: center; gap: 5px; transition: 0.15s;
+    }
+    .icon-btn:active { transform: scale(0.97); }
+    .btn-emergency-toggle {
+      background: #FFF2F0; border: 1.5px solid var(--danger); color: var(--danger);
+      border-radius: 10px; padding: 6px 11px; font-size: 0.8rem; font-weight: 800;
+    }
+
+    /* 2. 子視角切換與營火＋每日任務合一膠囊 */
+    .sub-toggle {
+      background: #EAE4D7; border: none; border-radius: 12px; padding: 4px; margin-bottom: 10px;
+    }
+    .sub-btn { border-radius: 9px; font-size: 0.84rem; padding: 7px 10px; transition: 0.15s; }
+    .sub-btn.active { background: var(--card-bg); color: var(--primary-dark); box-shadow: 0 2px 6px rgba(0,0,0,0.06); }
+
+    .daily-quest-box { display: none !important; } /* 已整併至營火狀態膠囊 */
+    .sustain-card {
+      margin: 0 0 10px 0; padding: 10px 14px; background: var(--card-bg);
+      border-radius: 14px; border: 1px solid var(--border); box-shadow: var(--shadow-sm);
+    }
+    .sustain-header { font-size: 0.85rem; gap: 8px; flex-wrap: wrap; }
+    .sustain-hours-badge { font-variant-numeric: tabular-nums; font-size: 0.78rem; padding: 3px 9px; }
+    .quest-inline-bar {
+      margin-top: 8px; padding: 8px 10px; background: #F5F9F6; border: 1px solid #CFE3D8;
+      border-radius: 10px; display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 0.8rem;
+    }
+
+    /* 3. 夥伴背包橫向卡片精緻化 */
+    .party-container { gap: 8px; padding: 2px 0 10px 0; }
+    .character-card {
+      background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px;
+      padding: 9px 10px; min-width: 98px; box-shadow: var(--shadow-sm); transition: 0.18s;
+    }
+    .character-card.active {
+      border: 2px solid var(--primary); background: #F4F9F6;
+      box-shadow: 0 4px 12px rgba(59, 110, 92, 0.14); transform: translateY(-1px);
+    }
+    .progress-track { height: 6px; background: #EAE4D7; margin-top: 5px; }
+    .mood-bubble { font-size: 0.65rem; background: #F8F5EE; color: var(--text-muted); border: 1px solid var(--border); margin-top: 4px; }
+
+    /* 4. 搜尋與工具列整合（取代遮擋視線的右下 FAB） */
+    .fab-container { display: none !important; }
+    .filter-toolbar { gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
+    .search-box {
+      border: 1px solid var(--border); border-radius: 11px; padding: 8px 12px;
+      font-size: 0.86rem; background: var(--card-bg); box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);
+    }
+    .search-box:focus { border-color: var(--primary); }
+    .filter-toggle-btn {
+      border: 1px solid var(--border); border-radius: 11px; padding: 8px 10px;
+      font-size: 0.78rem; background: var(--card-bg); color: var(--text);
+    }
+    .toolbar-action-btn {
+      border: 1px solid var(--border); border-radius: 11px; padding: 8px 11px;
+      font-size: 0.78rem; font-weight: 800; cursor: pointer; white-space: nowrap;
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .toolbar-action-btn.shop { background: #FFF5EE; color: var(--accent); border-color: #F2D0C2; }
+    .toolbar-action-btn.add { background: var(--primary); color: #FFF; border-color: var(--primary); }
+    .layer-chips { padding: 0 0 8px 0; gap: 6px; }
+    .city-chip {
+      background: var(--card-bg); border: 1px solid var(--border); color: var(--text-muted);
+      border-radius: 99px; padding: 4px 11px; font-size: 0.76rem; transition: 0.15s;
+    }
+    .city-chip.active { background: var(--primary); color: #FFF; border-color: var(--primary); }
+
+    /* 5. 分類標題與兩段式物資卡片（Progressive Disclosure） */
+    .category-title {
+      background: #EAE4D7; border: none; border-radius: 11px; padding: 8px 12px;
+      margin: 12px 0 6px 0; font-size: 0.88rem; color: var(--text);
+    }
+    .item-row {
+      padding: 9px 12px; background: var(--card-bg); border: 1px solid var(--border);
+      border-radius: 12px; margin-bottom: 6px; box-shadow: var(--shadow-sm); transition: 0.15s;
+    }
+    .item-row:hover { border-color: #D0C7B4; }
+    .item-summary-pills { display: inline-flex; align-items: center; gap: 5px; margin-left: 6px; flex-wrap: wrap; }
+    .meta-pill {
+      font-size: 0.72rem; font-weight: 700; padding: 1px 7px; border-radius: 99px;
+      background: #F4F1E8; color: var(--text-muted); font-variant-numeric: tabular-nums;
+    }
+    .meta-pill.qty { background: var(--primary-light); color: var(--primary-dark); }
+    .meta-pill.warn { background: #FFF4E5; color: #B86B11; }
+    .meta-pill.danger { background: #FDECEB; color: var(--danger); }
+    .item-row .util-bar {
+      display: none; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border);
+    }
+    .item-row.expanded .util-bar { display: flex; }
+    .expand-hint { font-size: 0.72rem; color: var(--text-muted); cursor: pointer; padding: 2px 5px; border-radius: 6px; }
+    .expand-hint:hover { background: #F4F1E8; }
+
+    /* 6. 區段卡片與底部 5 鍵拇指熱區導覽列（中央突顯 🆘 應變鈕） */
+    .section-card {
+      background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px;
+      padding: 13px 15px; margin-bottom: 10px; box-shadow: var(--shadow-sm);
+    }
+    .bottom-nav {
+      max-width: 760px; margin: 0 auto; height: 64px;
+      background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(10px);
+      border-top: 1px solid var(--border); border-radius: 18px 18px 0 0;
+      box-shadow: 0 -4px 16px rgba(44, 38, 30, 0.06);
+    }
+    .nav-item { font-size: 0.72rem; color: var(--text-muted); border-radius: 12px; margin: 4px 2px; height: 54px; }
+    .nav-item.active { color: var(--primary-dark); background: var(--primary-light); }
+    .nav-item.sos-center {
+      background: linear-gradient(135deg, #E0533C, #C93B2B); color: #FFF !important;
+      border-radius: 16px; height: 50px; margin: 0 4px; padding: 0 6px;
+      box-shadow: 0 4px 12px rgba(201, 59, 43, 0.32); font-weight: 900;
+    }
+    .nav-item.sos-center .nav-icon { font-size: 1.15rem; }
+    body.emergency-mode .nav-item.sos-center {
+      background: #FFD60A !important; color: #000000 !important; box-shadow: 0 0 14px rgba(255, 214, 10, 0.6);
+    }
+
+    /* 7. 災時 3 秒決策英雄區（Zero-Scroll Emergency Hero） */
+    .sos-hero-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px;
+    }
+    .sos-hero-card {
+      background: #FFF5F4; border: 1.5px solid #F5C2BC; border-radius: 14px;
+      padding: 10px 8px; text-align: center; cursor: pointer; text-decoration: none;
+      color: var(--danger); font-weight: 800; font-size: 0.8rem;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+    }
+    .sos-hero-card .hero-ic { font-size: 1.35rem; }
+    body.emergency-mode .sos-hero-card {
+      background: #1A1A1A !important; border: 2px solid #FFD60A !important; color: #FFD60A !important;
+    }
   </style>
+
 
 
 
@@ -520,20 +693,25 @@
 <body>
 
   <div class="top-bar">
-    <h1>🏕️ 森林露營小隊 v2.3</h1>
+    <div class="brand-col">
+      <div class="brand-title-row">
+        <h1>🏕️ 森林露營小隊</h1>
+        <span class="ver-pill">v2.4</span>
+      </div>
+      <div class="status-inline">
+        <span id="net-status" class="status-badge online">🟢 連線檢查中...</span>
+        <span>·</span>
+        <span id="last-sync-text">尚未同步</span>
+        <span id="pending-badge" class="sync-pill" style="display:none;" onclick="flushOfflineQueue()">待同步 0 筆</span>
+      </div>
+    </div>
     <div style="display:flex; gap:6px; align-items:center;">
-      <button id="btn-emergency-mode" class="btn-emergency-toggle" onclick="toggleEmergencyMode()" title="切換平時整備／緊急危難模式">🆘 緊急應變</button>
-      <button class="icon-btn" onclick="syncWithServer(true)" title="同步最新進度">🔄 同步</button>
+      <button id="btn-emergency-mode" class="btn-emergency-toggle" onclick="toggleEmergencyMode()" title="切換平時整備／緊急應變模式">🆘 應變</button>
+      <button class="icon-btn" onclick="syncWithServer(true)" title="同步雲端試算表">🔄 同步</button>
     </div>
   </div>
 
-  <div class="status-strip">
-    <div id="net-status" class="status-badge online">🟢 連線檢查中...</div>
-    <div style="display:flex; align-items:center; gap:6px;">
-      <span id="pending-badge" class="sync-pill" style="display:none;" onclick="flushOfflineQueue()">待同步 0 筆</span>
-      <span id="last-sync-text" style="color:var(--text-muted);">尚未同步</span>
-    </div>
-  </div>
+
 
   <!-- 頂部連動：全站重大示警快訊條（預設臺北市最近 12 小時示警，顯示標題＋摘要） -->
   <div id="global-alert-ticker" class="global-alert-ticker" onclick="switchTab('guide')">
@@ -551,25 +729,29 @@
       <div id="btn-sub-item" class="sub-btn" onclick="setInvSubMode('item')">⛺ 物資總覽</div>
     </div>
 
-    <!-- P2-3: 每日營地 30 秒小任務（原工序 6） -->
-    <div class="daily-quest-box" id="daily-quest-box">
-      <div style="flex:1; min-width:0;">
-        <div style="font-weight:800; color:var(--primary-dark);">🐾 今日 30 秒小任務 <span id="quest-streak-badge" style="color:#C84B31;">🔥 0 天</span></div>
-        <div id="daily-quest-text" style="color:var(--text); margin-top:2px;">載入今日任務中...</div>
-      </div>
-      <button id="btn-daily-quest" class="btn btn-primary" style="padding:5px 10px; font-size:0.76rem; white-space:nowrap;" onclick="completeDailyQuest()">✅ 完成打卡</button>
-    </div>
 
-    <!-- P1-3: 72h～10天生存支撐時數儀表板＋滾動式輪替任務 -->
+
+    <!-- P1-3 & P2-3 整合：單行營火支撐力＋每日 30 秒小任務膠囊 -->
     <div class="sustain-card" id="sustain-dashboard">
       <div class="sustain-header" onclick="toggleInfoSection('sustain-body')">
-        <span>🔥 營火生存支撐力：<span id="sustain-title-hours">計算中...</span></span>
+        <span style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+          <span>🔥 營火支撐：<strong id="sustain-title-hours">計算中...</strong></span>
+          <span style="color:var(--border);">|</span>
+          <span id="quest-header-summary" style="font-size:0.78rem; color:var(--primary);">🐾 每日任務</span>
+        </span>
         <div style="display:flex; align-items:center; gap:6px;">
           <span id="sustain-hours-badge" class="sustain-hours-badge">0h</span>
-          <span id="sustain-body-arrow" style="font-size:0.78rem; color:var(--text-muted);">▶</span>
+          <span id="sustain-body-arrow" style="font-size:0.75rem; color:var(--text-muted);">▶</span>
         </div>
       </div>
       <div id="sustain-body" style="display:none; margin-top:8px;">
+        <div class="quest-inline-bar">
+          <div style="flex:1; min-width:0;">
+            <div style="font-weight:800; color:var(--primary-dark);">🐾 今日 30 秒小任務 <span id="quest-streak-badge" style="color:var(--accent);">🔥 0 天</span></div>
+            <div id="daily-quest-text" style="color:var(--text); margin-top:2px;">載入今日任務中...</div>
+          </div>
+          <button id="btn-daily-quest" class="btn btn-primary" style="padding:5px 10px; font-size:0.75rem; white-space:nowrap;" onclick="completeDailyQuest()">✅ 打卡</button>
+        </div>
         <div id="sustain-pillars" class="sustain-grid"></div>
         <div id="rolling-stock-box" class="rolling-box" style="display:none;"></div>
         <div style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;">
@@ -587,7 +769,9 @@
 
     <div class="filter-toolbar">
       <input type="text" id="main-search" class="search-box" placeholder="🔍 搜尋物資名稱或備註..." oninput="renderInventory()">
-      <button id="btn-only-missing" class="filter-toggle-btn" onclick="toggleOnlyMissing()">只看缺漏/過期</button>
+      <button id="btn-only-missing" class="filter-toggle-btn" onclick="toggleOnlyMissing()">缺漏/過期</button>
+      <button class="toolbar-action-btn shop" onclick="openPrintModal()" title="開啟採買清單">🛒 採買單</button>
+      <button class="toolbar-action-btn add" onclick="openAddItemModal()" title="新增防災物資">＋ 新增</button>
     </div>
     <div class="layer-chips" id="inv-layer-chips">
       <span class="city-chip active" data-layer="all" onclick="setInvLayerFilter('all')">📦 全部物資</span>
@@ -758,8 +942,22 @@
       </div>
     </div>
 
-    <!-- 子分頁 2：🆘 緊急應變（永遠免密碼秒開，含 OLED 黑底戰術模式） -->
+    <!-- 子分頁 2：🆘 緊急應變（永遠免密碼秒開，含 OLED 黑底戰術模式＋3 秒零捲動快捷列） -->
     <div id="guide-sop-pane" style="display:none;">
+      <div class="sos-hero-grid">
+        <a href="tel:119" class="sos-hero-card">
+          <span class="hero-ic">🚒</span>
+          <span>119 救護報案</span>
+        </a>
+        <div class="sos-hero-card" onclick="document.getElementById('sos-firstaid-sec').style.display='block'; document.getElementById('sos-firstaid-sec').scrollIntoView({behavior:'smooth'});">
+          <span class="hero-ic">🩸</span>
+          <span>止血 / CPR 節拍</span>
+        </div>
+        <div class="sos-hero-card" onclick="toggleWhistle('sos')">
+          <span class="hero-ic">📢</span>
+          <span>3000Hz 求救哨</span>
+        </div>
+      </div>
       <div class="section-card">
         <div class="section-title" onclick="toggleInfoSection('sos-gps-sec')">
           <span>🆘 一鍵報案、官方 App 入口與 GPS 座標</span>
@@ -1105,7 +1303,7 @@
       </div>
       <div class="section-body" id="camp-changelog-sec" style="display:none; font-size:0.82rem; line-height:1.55;">
         <div style="padding-bottom:8px; border-bottom:1px dashed #E6DEC9;">
-          <strong style="color:var(--primary-dark);">v2.3（P2 外地關注 × 演練排程 × QR Code 與動物夥伴任務）</strong><ul style="margin:4px 0 0 0; padding-left:18px;"><li>即時情報新增「多點位外地親友縣市」同時關注（最多 3 縣市）。</li><li>應變計畫新增「半年家庭演練提醒」、純前端「離線平安卡 QR Code」與「可列印家庭應變計畫 PDF」。</li><li>地圖新增附近防空／避難設施（OSM）查詢與 NCDR 災害潛勢圖入口；夥伴卡片加入動物心情氣泡與每日 30 秒小任務連勝打卡。</li></ul></div><div style="padding:8px 0; border-bottom:1px dashed #E6DEC9;"><strong>v2.2（2026-11-14）</strong><ul style="margin:4px 0 0 0; padding-left:18px;"><li>地圖支援「點擊放圖釘＋拖曳微調」、集合點安全檢核與「一鍵下載全部避難點離線圖磚＋周邊 AED」；AED 支援依點位離線切換。</li><li>應變計畫新增「在宅／撤離互動式判定樹」與「歸宅困難失聯匯合協議＋照顧分工」。</li><li>物資新增隨身 EDC／72h／居家／WASH 分層篩選、營火可持續支撐時數計算（木桶短板）與一鍵換新滾動輪替任務。</li></ul></div><div style="padding:8px 0; border-bottom:1px dashed #E6DEC9;"><strong>v2.1（2026-11-14）</strong>
+          <strong style="color:var(--primary-dark);">v2.4（Arter UI/UX 全面改版：日系手冊美學 × 頂部瘦身 × 兩段式清單 × 底部 🆘 拇指熱區）</strong><ul style="margin:4px 0 0 0; padding-left:18px;"><li>視覺升級：導入暖米白日系手冊配色、降噪 1px 細邊框、柔和陰影與等寬數據字體（tabular-nums）。</li><li>版面瘦身：頂部列與連線狀態二合一、營火支撐力與每日任務合併為單一膠囊、760px 寬螢幕置中容器、移除右下遮擋懸浮球並整合至工具列。</li><li>動線優化：物資列改為「點擊展開數量／效期」兩段式設計、底部導覽列正中央配置「🆘 緊急應變」拇指熱區主鈕、緊急應變頁頂部增設 3 秒零捲動快捷列。</li></ul></div><div style="padding:8px 0; border-bottom:1px dashed #E6DEC9;"><strong>v2.3（2026-11-14）</strong><ul style="margin:4px 0 0 0; padding-left:18px;"><li>即時情報新增「多點位外地親友縣市」同時關注（最多 3 縣市）。</li><li>應變計畫新增「半年家庭演練提醒」、純前端「離線平安卡 QR Code」與「可列印家庭應變計畫 PDF」。</li><li>地圖新增附近防空／避難設施（OSM）查詢與 NCDR 災害潛勢圖入口；夥伴卡片加入動物心情氣泡與每日 30 秒小任務連勝打卡。</li></ul></div><div style="padding:8px 0; border-bottom:1px dashed #E6DEC9;"><strong>v2.2（2026-11-14）</strong><ul style="margin:4px 0 0 0; padding-left:18px;"><li>地圖支援「點擊放圖釘＋拖曳微調」、集合點安全檢核與「一鍵下載全部避難點離線圖磚＋周邊 AED」；AED 支援依點位離線切換。</li><li>應變計畫新增「在宅／撤離互動式判定樹」與「歸宅困難失聯匯合協議＋照顧分工」。</li><li>物資新增隨身 EDC／72h／居家／WASH 分層篩選、營火可持續支撐時數計算（木桶短板）與一鍵換新滾動輪替任務。</li></ul></div><div style="padding:8px 0; border-bottom:1px dashed #E6DEC9;"><strong>v2.1（2026-11-14）</strong>
           <ul style="margin:4px 0 0 0; padding-left:18px;">
             <li>雙層個資防護：GAS 後端通行碼驗證＋健康個資本機優先加密＋應變計畫 PIN 碼遮罩（急救頁免鎖秒開）。</li>
             <li>統一「🆘 緊急應變」OLED 純黑高對比戰術介面，情報區劃分為即時情報／緊急應變／應變計畫三子分頁。</li>
@@ -1129,13 +1327,16 @@
     <div class="fab" onclick="openAddItemModal()" title="新增物資">+</div>
   </div>
 
-  <!-- 底部導覽列 -->
+  <!-- 底部導覽列（5 鍵拇指熱區：中央配置 🆘 應變快捷鈕） -->
   <div class="bottom-nav">
     <div class="nav-item active" id="nav-inventory" onclick="switchTab('inventory')">
       <span class="nav-icon">🎒</span><span>物資</span>
     </div>
     <div class="nav-item" id="nav-map" onclick="switchTab('map')">
       <span class="nav-icon">🗺️</span><span>地圖</span>
+    </div>
+    <div class="nav-item sos-center" id="nav-sos-quick" onclick="openEmergencyQuick()">
+      <span class="nav-icon">🆘</span><span>緊急應變</span>
     </div>
     <div class="nav-item" id="nav-guide" onclick="switchTab('guide')">
       <span class="nav-icon">📡</span><span>情報</span>
@@ -2625,19 +2826,31 @@
               ? '<div class="alert-tag" style="color:var(--danger)">⚠️ 這個物品已過期！</div>'
               : (expInfo.warn ? '<div class="alert-tag" style="color:var(--warning)">🍂 快過期了（剩不到 6 個月）</div>' : '');
 
+            const isExpRow = !!expandedItems[item.row];
+            if (isExpRow) row.classList.add('expanded');
+            const qtyPill = charData.qty ? `<span class="meta-pill qty">×${charData.qty}</span>` : '';
+            const expPill = charData.exp
+              ? `<span class="meta-pill ${expInfo.expired ? 'danger' : (expInfo.warn ? 'warn' : '')}">${expInfo.expired ? '⚠️過期 ' : (expInfo.warn ? '🍂快到期 ' : '')}${charData.exp}</span>`
+              : '';
+            const notePill = charData.note ? `<span class="meta-pill">${charData.note.slice(0, 10)}${charData.note.length > 10 ? '…' : ''}</span>` : '';
+
             row.innerHTML = `
               <div class="item-header">
-                <div style="flex:1; min-width:0;">
-                  <div class="item-name-line">
+                <div style="flex:1; min-width:0; cursor:pointer;" onclick="toggleItemExpand(${item.row})">
+                  <div class="item-name-line" style="flex-wrap:wrap;">
                     <span class="item-name">${item.name}</span>
-                    <button class="btn-edit-item" onclick="openEditItemModal(${item.row})" title="編輯、移出或刪除物資">✏️</button>
+                    <span class="item-summary-pills">${qtyPill}${expPill}${notePill}</span>
+                    <span class="expand-hint">${isExpRow ? '▲ 收合' : '▾ 數量/效期'}</span>
                   </div>
                   ${alertLabel}
                 </div>
-                <label class="switch">
-                  <input type="checkbox" onchange="toggleItemReady(${item.row}, '${currentChar}', this.checked)" ${isChecked ? 'checked' : ''}>
-                  <span class="slider"></span>
-                </label>
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <button class="btn-edit-item" onclick="openEditItemModal(${item.row})" title="編輯、移出或刪除物資">✏️</button>
+                  <label class="switch">
+                    <input type="checkbox" onchange="toggleItemReady(${item.row}, '${currentChar}', this.checked)" ${isChecked ? 'checked' : ''}>
+                    <span class="slider"></span>
+                  </label>
+                </div>
               </div>
               <div class="util-bar">
                 <div class="stepper">
@@ -4187,6 +4400,8 @@
       const strEl = document.getElementById('quest-streak-badge');
       if (txtEl) txtEl.innerText = DAILY_QUESTS[dayIdx];
       if (strEl) strEl.innerText = `🔥 連勝 ${streak} 天`;
+      const qSum = document.getElementById('quest-header-summary');
+      if (qSum) qSum.innerText = (doneDate === today) ? `🐾 今日任務已完成 (🔥${streak}天)` : `🐾 今日小任務待打卡 (🔥${streak}天)`;
       if (btnEl) {
         const isDone = doneDate === today;
         btnEl.innerText = isDone ? '🎉 今日已完成' : '✅ 完成打卡';
@@ -4216,6 +4431,20 @@
       if (pct === 100) return '✨ 元氣滿點！';
       if (pct >= 70) return '🏕️ 整備得不錯';
       return '🔥 一起補裝備吧';
+    }
+
+
+    // ================= Arter v2.4: 兩段式物資展開與底部拇指熱區 🆘 應變快捷 =================
+    let expandedItems = {};
+
+    function toggleItemExpand(rowIdx) {
+      expandedItems[rowIdx] = !expandedItems[rowIdx];
+      renderInventory();
+    }
+
+    function openEmergencyQuick() {
+      switchTab('guide');
+      setGuideSubMode('sop');
     }
 
   </script>

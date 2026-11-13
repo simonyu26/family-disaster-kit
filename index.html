@@ -435,14 +435,94 @@
       #print-modal { position: static; padding: 0; display: block !important; }
       .print-actions, .filter-section { display: none !important; }
     }
+
+    /* P0-2: OLED 純黑高對比緊急應變戰術模式 */
+    body.emergency-mode { background: #000000 !important; color: #FFFFFF !important; }
+    body.emergency-mode .top-bar { background: #000000 !important; border-bottom: 2px solid #FFD60A; }
+    body.emergency-mode .top-bar h1 { color: #FFD60A !important; }
+    body.emergency-mode .status-strip { background: #111111 !important; color: #E5E5E5 !important; border-bottom: 1px solid #333; }
+    body.emergency-mode .section-card { background: #111111 !important; border: 2px solid #FFD60A !important; color: #FFFFFF !important; box-shadow: none !important; }
+    body.emergency-mode .section-title { color: #FFD60A !important; font-size: 1.08rem !important; }
+    body.emergency-mode .sub-toggle { background: #1A1A1A !important; border: 1px solid #444; }
+    body.emergency-mode .sub-btn { color: #CCCCCC !important; }
+    body.emergency-mode .sub-btn.active { background: #FFD60A !important; color: #000000 !important; }
+    body.emergency-mode .btn, body.emergency-mode .dial-btn, body.emergency-mode .whistle-btn, body.emergency-mode .cpr-metro-btn {
+      min-height: 48px; font-size: 0.98rem !important; font-weight: 800 !important;
+    }
+    body.emergency-mode .fa-step-box { background: #1A1A1A !important; color: #FFFFFF !important; border: 1px solid #555; font-size: 0.95rem !important; line-height: 1.65 !important; }
+    body.emergency-mode .sos-coord-box { background: #1A1A1A !important; border: 2px solid #FF453A !important; color: #FFFFFF !important; }
+    body.emergency-mode .sos-coord-num { color: #FFD60A !important; font-size: 1.25rem !important; }
+    body.emergency-mode .bottom-nav { background: #000000 !important; border-top: 2px solid #FFD60A !important; }
+    body.emergency-mode .nav-item { color: #BBBBBB !important; }
+    body.emergency-mode .nav-item.active { color: #FFD60A !important; }
+    body.emergency-mode .tl-item { background: #1A1A1A !important; color: #FFFFFF !important; border: 1px solid #444; font-size: 0.94rem !important; }
+    body.emergency-mode .id-card { background: #111111 !important; color: #FFFFFF !important; border: 1px solid #FFD60A !important; }
+
+    /* P0-3: 止血帶計時與螢幕 SOS 閃爍 */
+    .tourniquet-box { margin-top: 10px; padding: 10px; border-radius: 10px; background: #FFF1F0; border: 2px solid #C84B31; }
+    body.emergency-mode .tourniquet-box { background: #2A0A08 !important; border-color: #FF453A !important; }
+    .tq-time { font-size: 1.25rem; font-weight: 900; color: #C84B31; font-family: monospace; }
+    body.emergency-mode .tq-time { color: #FFD60A !important; }
+    #sos-flash-overlay {
+      display: none; position: fixed; inset: 0; z-index: 9999;
+      background: #000; color: #FFF; align-items: center; justify-content: center; flex-direction: column;
+    }
+
+    /* P0-4: 聯絡人關係圖譜 & 集合點階層 & 資料來源頁腳 */
+    .contact-group { margin-bottom: 12px; padding: 10px; border-radius: 12px; background: #FAF6EC; border: 1px solid #E2D9C2; }
+    body.emergency-mode .contact-group { background: #161616 !important; border-color: #555 !important; }
+    .contact-group-title { font-size: 0.85rem; font-weight: 800; color: var(--primary-dark); margin-bottom: 6px; display:flex; justify-content:space-between; align-items:center; }
+    body.emergency-mode .contact-group-title { color: #FFD60A !important; }
+    .contact-card { display:flex; justify-content:space-between; align-items:center; gap:8px; padding: 8px; background:#fff; border-radius:8px; border:1px solid #EAE2CE; margin-bottom:6px; }
+    body.emergency-mode .contact-card { background: #222 !important; border-color: #555 !important; color: #fff !important; }
+    .rally-card { padding: 8px 10px; background: #F4F9F4; border-left: 4px solid var(--primary); border-radius: 8px; margin-bottom: 6px; font-size: 0.84rem; }
+    body.emergency-mode .rally-card { background: #1A241A !important; border-left-color: #FFD60A !important; }
+    .badge-pill { display:inline-block; padding: 2px 7px; border-radius: 10px; font-size: 0.72rem; font-weight: 700; margin-left: 4px; }
+    .badge-pack { background: #EFE7D6; color: #6E5D46; }
+    .badge-cpr { background: #FDE8E8; color: #C84B31; }
+    .badge-mob { background: #E3F2FD; color: #1565C0; }
+    .source-footer { margin-top: 10px; padding: 8px 10px; background: #F9F5EB; border-radius: 8px; font-size: 0.74rem; color: var(--text-muted); line-height: 1.5; }
+
+    /* P1: 生存支撐時數儀表板、情境分層、判定樹與匯合時間軸 */
+    .sustain-card { margin: 10px 12px 6px; padding: 10px 12px; background: #FFFDF7; border-radius: 14px; border: 2px solid #E2D9C2; box-shadow: 0 2px 6px rgba(0,0,0,0.04); }
+    .sustain-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-weight: 800; color: var(--primary-dark); font-size: 0.92rem; }
+    .sustain-hours-badge { background: linear-gradient(135deg, #E07A5F, #C84B31); color: #fff; padding: 3px 10px; border-radius: 20px; font-size: 0.82rem; font-weight: 800; }
+    .sustain-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-top: 8px; }
+    .sustain-pillar { background: #FAF6EC; padding: 6px 8px; border-radius: 8px; font-size: 0.78rem; border: 1px solid #E8DFC8; }
+    .rolling-box { margin-top: 8px; padding: 8px; background: #FFF8E7; border: 1px dashed #D99B26; border-radius: 10px; font-size: 0.78rem; }
+    .rolling-row { display: flex; justify-content: space-between; align-items: center; gap: 6px; padding: 4px 0; border-bottom: 1px solid #F0E6CE; }
+    .rolling-row:last-child { border-bottom: none; }
+    .layer-chips { display: flex; gap: 6px; overflow-x: auto; padding: 2px 12px 6px; scrollbar-width: none; }
+    .layer-chips::-webkit-scrollbar { display: none; }
+    .map-btn.pin-active { background: #C84B31 !important; color: #fff !important; animation: pulseBorder 1.2s infinite; }
+    @keyframes pulseBorder { 0%,100% { box-shadow: 0 0 0 0 rgba(200,75,49,0.5); } 50% { box-shadow: 0 0 0 6px rgba(200,75,49,0); } }
+    .decision-result { margin-top: 8px; padding: 10px; border-radius: 10px; background: #EDF6F2; border-left: 4px solid #2A9D8F; font-size: 0.84rem; line-height: 1.55; }
+    .decision-result.warn { background: #FFF1F0; border-left-color: #C84B31; }
+    body.emergency-mode .sustain-card, body.emergency-mode .decision-result { background: #161616 !important; color: #fff !important; border-color: #FFD60A !important; }
+
+    /* P2: 多點位關注、每日任務、夥伴心情氣泡、QR Code 與家庭計畫列印 */
+    .watch-bar { margin-top: 8px; padding: 8px; background: #FAF6EC; border-radius: 10px; border: 1px solid #E2D9C2; font-size: 0.78rem; }
+    .watch-pill { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 14px; background: #fff; border: 1px solid #D8CEB6; margin: 2px; cursor: pointer; font-weight: 700; }
+    .watch-pill.active { background: #2A9D8F; color: #fff; border-color: #2A9D8F; }
+    .mood-bubble { font-size: 0.66rem; background: #FFF8E7; color: #8C5811; border: 1px solid #E9C46A; border-radius: 10px; padding: 1px 6px; margin-top: 3px; display: inline-block; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .daily-quest-box { margin: 8px 12px 4px; padding: 9px 12px; background: linear-gradient(135deg, #F4F9F4, #FFFDF7); border: 1.5px solid #B7D3C4; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 0.82rem; }
+    #qr-modal-box { display: flex; justify-content: center; padding: 14px; background: #fff; border-radius: 12px; margin: 10px 0; }
+    #plan-print-modal { display: none; position: fixed; inset: 0; background: #fff; z-index: 2100; overflow-y: auto; padding: 20px; color: #222; }
+    @media print {
+      body > *:not(#print-modal):not(#plan-print-modal) { display: none !important; }
+      #plan-print-modal { position: static; padding: 0; }
+    }
   </style>
+
+
+
 </head>
 <body>
 
   <div class="top-bar">
-    <h1>🏕️ 森林露營小隊 v2.0</h1>
+    <h1>🏕️ 森林露營小隊 v2.3</h1>
     <div style="display:flex; gap:6px; align-items:center;">
-      <button id="btn-emergency-mode" class="btn-emergency-toggle" onclick="toggleEmergencyMode()" title="切換平時整備／緊急危難模式">🆘 緊急模式</button>
+      <button id="btn-emergency-mode" class="btn-emergency-toggle" onclick="toggleEmergencyMode()" title="切換平時整備／緊急危難模式">🆘 緊急應變</button>
       <button class="icon-btn" onclick="syncWithServer(true)" title="同步最新進度">🔄 同步</button>
     </div>
   </div>
@@ -471,6 +551,33 @@
       <div id="btn-sub-item" class="sub-btn" onclick="setInvSubMode('item')">⛺ 物資總覽</div>
     </div>
 
+    <!-- P2-3: 每日營地 30 秒小任務（原工序 6） -->
+    <div class="daily-quest-box" id="daily-quest-box">
+      <div style="flex:1; min-width:0;">
+        <div style="font-weight:800; color:var(--primary-dark);">🐾 今日 30 秒小任務 <span id="quest-streak-badge" style="color:#C84B31;">🔥 0 天</span></div>
+        <div id="daily-quest-text" style="color:var(--text); margin-top:2px;">載入今日任務中...</div>
+      </div>
+      <button id="btn-daily-quest" class="btn btn-primary" style="padding:5px 10px; font-size:0.76rem; white-space:nowrap;" onclick="completeDailyQuest()">✅ 完成打卡</button>
+    </div>
+
+    <!-- P1-3: 72h～10天生存支撐時數儀表板＋滾動式輪替任務 -->
+    <div class="sustain-card" id="sustain-dashboard">
+      <div class="sustain-header" onclick="toggleInfoSection('sustain-body')">
+        <span>🔥 營火生存支撐力：<span id="sustain-title-hours">計算中...</span></span>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span id="sustain-hours-badge" class="sustain-hours-badge">0h</span>
+          <span id="sustain-body-arrow" style="font-size:0.78rem; color:var(--text-muted);">▶</span>
+        </div>
+      </div>
+      <div id="sustain-body" style="display:none; margin-top:8px;">
+        <div id="sustain-pillars" class="sustain-grid"></div>
+        <div id="rolling-stock-box" class="rolling-box" style="display:none;"></div>
+        <div style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;">
+          <button class="btn btn-muted" style="font-size:0.75rem; padding:4px 8px;" onclick="quickAddWashTemplate()">🧼 一鍵帶入 WASH 斷水衛生清單</button>
+        </div>
+      </div>
+    </div>
+
     <div class="party-container" id="party"></div>
 
     <div id="other-char-banner" class="other-char-banner" style="display:none;">
@@ -481,6 +588,13 @@
     <div class="filter-toolbar">
       <input type="text" id="main-search" class="search-box" placeholder="🔍 搜尋物資名稱或備註..." oninput="renderInventory()">
       <button id="btn-only-missing" class="filter-toggle-btn" onclick="toggleOnlyMissing()">只看缺漏/過期</button>
+    </div>
+    <div class="layer-chips" id="inv-layer-chips">
+      <span class="city-chip active" data-layer="all" onclick="setInvLayerFilter('all')">📦 全部物資</span>
+      <span class="city-chip" data-layer="edc" onclick="setInvLayerFilter('edc')">🔑 隨身 EDC</span>
+      <span class="city-chip" data-layer="72h" onclick="setInvLayerFilter('72h')">🎒 72h 撤離包</span>
+      <span class="city-chip" data-layer="home" onclick="setInvLayerFilter('home')">🏠 7–10天居家</span>
+      <span class="city-chip" data-layer="wash" onclick="setInvLayerFilter('wash')">🧼 WASH 衛生</span>
     </div>
 
     <div id="inventory"></div>
@@ -506,9 +620,17 @@
 
     <div class="map-controls">
       <button class="map-btn" onclick="locateMe()">📍 取得目前 GPS</button>
-      <button class="map-btn secondary" onclick="openAddLocationModal()">➕ 新增避難點位</button>
-      <button class="map-btn outline" id="btn-download-tiles" onclick="downloadAreaTiles()">📥 下載此區離線地圖</button>
-      <button class="map-btn outline" style="border-color:var(--danger); color:var(--danger);" onclick="loadNearbyAeds(true)">⚡❤️ 載入周邊 AED</button>
+      <button class="map-btn secondary" id="btn-pin-drop" onclick="togglePinDropMode()">📌 點擊地圖放圖釘</button>
+      <button class="map-btn secondary" onclick="openAddLocationModal()">➕ 手動輸入點位</button>
+      <button class="map-btn outline" id="btn-download-all-pack" onclick="downloadAllLocationsOfflinePack()">📥 一鍵下載全部避難點離線包(含AED)</button>
+      <button class="map-btn outline" id="btn-download-tiles" onclick="downloadAreaTiles()">🗺️ 只載目前畫面圖磚</button>
+      <button class="map-btn outline" style="border-color:var(--danger); color:var(--danger);" onclick="loadNearbyAeds(true)">⚡❤️ 載入目前周邊 AED</button>
+      <button class="map-btn outline" style="border-color:#2A6F97; color:#2A6F97;" onclick="loadNearbyShelters()">🛡️ 附近防空／避難設施</button>
+      <a href="https://dmap.ncdr.nat.gov.tw/" target="_blank" class="map-btn outline" style="text-decoration:none; border-color:#2D6A4F; color:#2D6A4F;">🌊 NCDR 災害潛勢圖</a>
+    </div>
+    <div id="pin-drop-banner" style="display:none; margin-top:6px; padding:8px 10px; background:#FFF1F0; border:1px solid #C84B31; border-radius:8px; font-size:0.82rem; justify-content:space-between; align-items:center; gap:8px;">
+      <span id="pin-drop-text">📌 圖釘模式已開啟：請點擊地圖任意位置放置可拖曳圖釘</span>
+      <button class="btn btn-primary" style="padding:4px 10px; font-size:0.78rem; white-space:nowrap;" onclick="saveDroppedPinAsLocation()">➕ 存此圖釘為點位</button>
     </div>
     <div id="tile-progress" class="tile-progress"></div>
     <div style="margin-top:12px; font-weight:800; color:var(--primary-dark); display:flex; justify-content:space-between; align-items:center;">
@@ -516,9 +638,14 @@
       <span id="tile-cache-count" style="font-size:0.75rem; color:var(--text-muted);">計算快取中...</span>
     </div>
     <div id="locations-list"></div>
-    <div style="margin-top:14px; font-weight:800; color:var(--danger); display:flex; justify-content:space-between; align-items:center;">
+    <div style="margin-top:14px; font-weight:800; color:var(--danger); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
       <span>⚡❤️ 周邊 AED 自動體外心臟電擊去顫器</span>
-      <span id="aed-cache-count" style="font-size:0.75rem; color:var(--text-muted);">尚未快取</span>
+      <div style="display:flex; align-items:center; gap:6px;">
+        <select id="aed-loc-select" class="city-select" onchange="onSelectAedSource(this.value)">
+          <option value="current">📍 目前／畫面周邊 AED</option>
+        </select>
+        <span id="aed-cache-count" style="font-size:0.75rem; color:var(--text-muted);">尚未快取</span>
+      </div>
     </div>
     <div id="aed-list"></div>
   </div>
@@ -527,11 +654,12 @@
   <div id="tab-guide" style="display:none;">
     <div class="sub-toggle">
       <div id="btn-guide-live" class="sub-btn active" onclick="setGuideSubMode('live')">📡 即時情報</div>
-      <div id="btn-guide-sop" class="sub-btn" onclick="setGuideSubMode('sop')">📋 應變指南</div>
+      <div id="btn-guide-sop" class="sub-btn" onclick="setGuideSubMode('sop')">🆘 緊急應變</div>
+      <div id="btn-guide-plan" class="sub-btn" onclick="setGuideSubMode('plan')">🤝 應變計畫</div>
     </div>
 
+    <!-- 子分頁 1：📡 即時情報 -->
     <div id="guide-live-pane">
-      <!-- 1. 天氣區塊（可折疊，預設展開；預設臺北市，含 24h 與 7日預報） -->
       <div class="section-card">
         <div class="section-title" onclick="toggleInfoSection('weather-sec')">
           <span>🌦️ 天氣與 24h／一週預報</span>
@@ -560,7 +688,6 @@
         </div>
       </div>
 
-      <!-- 2. NCDR 災害示警區塊（可折疊，預設展開；預設臺北市、全國放最後、僅保留 12 小時內） -->
       <div class="section-card">
         <div class="section-title" onclick="toggleInfoSection('ncdr-sec')">
           <span>🚨 NCDR 示警與細胞告警（近 12h）</span>
@@ -591,14 +718,16 @@
             </select>
             <button class="btn btn-muted" style="padding:3px 8px; font-size:0.75rem; margin-left:auto;" onclick="fetchNcdrAlerts(true)">🔄</button>
           </div>
+          <div id="ncdr-alerts-meta" style="font-size:0.74rem; color:var(--text-muted); margin-bottom:4px;"></div>
           <div id="ncdr-alerts-box" style="font-size:0.85rem; color:var(--text-muted);">點擊更新抓取最新民生示警</div>
-          <div style="margin-top:8px;">
-            <a href="https://alerts.ncdr.nat.gov.tw/web/" target="_blank" style="font-size:0.78rem; font-weight:bold; color:var(--primary-dark);">🔗 NCDR 民生示警公開資料平台</a>
+          <div class="watch-bar">
+            <div style="font-weight:800; color:var(--primary-dark); margin-bottom:4px;">👀 同時關注外地親友縣市（點擊切換釘選，最多 3 個）：</div>
+            <div id="watch-city-pills"></div>
+            <div id="watch-city-summary" style="margin-top:6px;"></div>
           </div>
         </div>
       </div>
 
-      <!-- 3. 警廣與離線 FM 頻率表（可折疊，預設收合以節省版面，含線上收聽連結） -->
       <div class="section-card">
         <div class="section-title" onclick="toggleInfoSection('pbs-sec')">
           <span>📻 警廣線上收聽與離線 FM 頻率表</span>
@@ -623,81 +752,89 @@
           </table>
         </div>
       </div>
+
+      <div class="source-footer">
+        <strong>📌 資料來源與免責聲明：</strong>天氣預報由 <a href="https://open-meteo.com/" target="_blank">Open-Meteo</a> 提供；災害示警串接 <a href="https://alerts.ncdr.nat.gov.tw/web/" target="_blank">國家災害防救科技中心（NCDR）民生示警公開資料</a>；廣播資訊引自 <a href="https://www.pbs.npa.gov.tw/ch/index" target="_blank">警察廣播電臺</a>。本系統僅供家庭整備輔助，危急時請優先依國家災防告警（CBS）與地方政府疏散指示行動。
+      </div>
     </div>
 
+    <!-- 子分頁 2：🆘 緊急應變（永遠免密碼秒開，含 OLED 黑底戰術模式） -->
     <div id="guide-sop-pane" style="display:none;">
-      <!-- 應變功能 1：一鍵報案與離線 GPS 座標卡 -->
       <div class="section-card">
         <div class="section-title" onclick="toggleInfoSection('sos-gps-sec')">
-          <span>🆘 一鍵報案與離線 GPS 座標卡</span>
+          <span>🆘 一鍵報案、官方 App 入口與 GPS 座標</span>
           <span id="sos-gps-sec-arrow" style="font-size:0.8rem; color:var(--text-muted);">▼</span>
         </div>
         <div class="section-body" id="sos-gps-sec">
           <div class="sos-coord-box">
-            <div style="font-size:0.76rem; color:var(--text-muted); font-weight:bold; margin-bottom:4px;">📍 目前衛星定位經緯度（報案可直接唸出）</div>
+            <div style="font-size:0.78rem; font-weight:bold; margin-bottom:4px;">📍 目前衛星定位經緯度（無網路亦可讀取 GPS 晶片）</div>
             <div id="sos-coord-display" class="sos-coord-num">尚未定位</div>
-            <div id="sos-coord-meta" style="font-size:0.74rem; color:var(--text-muted); margin-top:3px;">點擊下方按鈕讀取手機 GPS 晶片座標（無網路亦可用）</div>
-            <div style="display:flex; gap:8px; justify-content:center; margin-top:8px;">
-              <button class="btn btn-primary" style="padding:6px 12px; font-size:0.8rem;" onclick="refreshSosGps()">🛰️ 更新 GPS 座標</button>
-              <button class="btn btn-muted" style="padding:6px 12px; font-size:0.8rem;" onclick="copySosCoord()">📋 複製報案座標文字</button>
+            <div id="sos-coord-meta" style="font-size:0.75rem; margin-top:3px;">點擊下方按鈕更新精準座標</div>
+            <div style="display:flex; gap:8px; justify-content:center; margin-top:8px; flex-wrap:wrap;">
+              <button class="btn btn-primary" onclick="refreshSosGps()">🛰️ 更新 GPS 座標</button>
+              <button class="btn btn-muted" onclick="copySosCoord()">📋 複製報案簡訊（含座標）</button>
             </div>
           </div>
-          <div style="font-size:0.78rem; font-weight:bold; color:var(--text-muted);">📞 緊急專線一鍵直撥：</div>
+          <div style="font-size:0.8rem; font-weight:bold; margin-bottom:4px;">📞 緊急專線一鍵直撥：</div>
           <div class="dial-grid">
             <a href="tel:119" class="dial-btn urgent">🚒 119 消防救護</a>
             <a href="tel:110" class="dial-btn urgent">🚓 110 報案專線</a>
-            <a href="tel:112" class="dial-btn warn">📱 112 手機無訊號緊急救難</a>
-            <a href="tel:1999" class="dial-btn">🏛️ 1999 縣市災情通報</a>
-            <a href="tel:1911" class="dial-btn">⚡ 1911 台電停電搶修</a>
-            <a href="tel:1910" class="dial-btn">💧 1910 台水停水搶修</a>
+            <a href="tel:112" class="dial-btn warn">📱 112 無訊號緊急救難</a>
+            <a href="tel:1999" class="dial-btn">🏛️ 1999 縣市災情</a>
+            <a href="tel:1911" class="dial-btn">⚡ 1911 台電搶修</a>
+            <a href="tel:1910" class="dial-btn">💧 1910 台水搶修</a>
+          </div>
+          <div style="font-size:0.8rem; font-weight:bold; margin-top:10px; margin-bottom:4px;">📲 官方線上／視訊報案 App 入口：</div>
+          <div class="stream-links">
+            <a href="https://www.nfa.gov.tw/cht/index.php?code=list&ids=1600" target="_blank" class="stream-btn" style="background:#C84B31;">🚒 消防署 119 報案 APP</a>
+            <a href="https://apps.apple.com/tw/app/%E6%B6%88%E9%98%B2%E9%98%B2%E7%81%BDe%E9%BB%9E%E9%80%9A/id1500403641" target="_blank" class="stream-btn" style="background:#A63822;">📲 消防防災 e 點通</a>
+            <a href="https://play.google.com/store/apps/details?id=tw.gov.npa.videocall&hl=zh_TW" target="_blank" class="stream-btn" style="background:#2A6F97;">🚓 110 視訊報案 (Android)</a>
+            <a href="https://apps.apple.com/tw/app/110%E8%A6%96%E8%A8%8A%E5%A0%B1%E6%A1%88/id1172052836" target="_blank" class="stream-btn" style="background:#1D5273;">🚓 110 視訊報案 (iOS)</a>
           </div>
         </div>
       </div>
 
-            <!-- 應變功能 2：離線高頻求救哨音 -->
-      <div class="section-card">
-        <div class="section-title" onclick="toggleInfoSection('sos-whistle-sec')">
-          <span>📢 離線高頻求救哨音（3000Hz）</span>
-          <span id="sos-whistle-sec-arrow" style="font-size:0.8rem; color:var(--text-muted);">▼</span>
-        </div>
-        <div class="section-body" id="sos-whistle-sec">
-          <div style="font-size:0.78rem; color:var(--text-muted); margin-bottom:6px;">
-            免網路、免音檔，直接透過手機喇叭發出高穿透力求救頻率（請將媒體音量調至最大）：
-          </div>
-          <div id="whistle-status" style="font-size:0.82rem; font-weight:bold; color:var(--primary-dark); margin-bottom:4px;">目前狀態：待機中</div>
-          <div class="whistle-grid">
-            <button id="btn-whistle-sos" class="whistle-btn" onclick="toggleWhistle('sos')">🆘 SOS 摩斯密碼</button>
-            <button id="btn-whistle-pulse" class="whistle-btn" onclick="toggleWhistle('pulse')">📣 間歇長哨音</button>
-          </div>
-          <button class="btn btn-muted" style="width:100%; margin-top:8px;" onclick="stopWhistle()">⏹️ 停止發聲</button>
-        </div>
-      </div>
-
-      <!-- 工序 2：黃金救命急救處置卡（叫叫壓電＋110BPM 節拍器／止血／哈姆立克） -->
+      <!-- 黃金救命急救處置（P0-3：創傷止血優先＋止血帶計時＋離線語音朗讀＋CPR節拍器） -->
       <div class="section-card">
         <div class="section-title" onclick="toggleInfoSection('sos-firstaid-sec')">
-          <span>🚑 黃金 4 分鐘急救處置卡（CPR／止血／哽塞）</span>
+          <span>🚑 黃金急救處置（創傷止血優先／CPR／哽塞）</span>
           <span id="sos-firstaid-sec-arrow" style="font-size:0.8rem; color:var(--text-muted);">▼</span>
         </div>
         <div class="section-body" id="sos-firstaid-sec">
-          <div class="city-chips" id="fa-tab-chips">
-            <span class="city-chip active" data-fa="cpr" onclick="setFirstAidTab('cpr')">💓 CPR+AED (叫叫壓電)</span>
-            <span class="city-chip" data-fa="bleed" onclick="setFirstAidTab('bleed')">🩸 直接加壓止血</span>
-            <span class="city-chip" data-fa="choke" onclick="setFirstAidTab('choke')">🫁 哈姆立克法</span>
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:6px; margin-bottom:8px; flex-wrap:wrap;">
+            <div class="city-chips" id="fa-tab-chips" style="margin-bottom:0;">
+              <span class="city-chip active" data-fa="bleed" onclick="setFirstAidTab('bleed')">🩸 創傷大出血 (MARCH)</span>
+              <span class="city-chip" data-fa="cpr" onclick="setFirstAidTab('cpr')">💓 CPR+AED</span>
+              <span class="city-chip" data-fa="choke" onclick="setFirstAidTab('choke')">🫁 哈姆立克法</span>
+            </div>
+            <button id="btn-fa-speech" class="btn btn-primary" style="padding:4px 10px; font-size:0.78rem;" onclick="toggleFirstAidSpeech()">🔊 語音朗讀步驟</button>
           </div>
 
-          <div id="fa-pane-cpr" class="fa-step-box">
-            <div><strong>1. 叫（確認意識与呼吸）</strong>：輕拍雙肩大聲呼喚，觀察胸腹有無正常起伏（無反應且無正常呼吸即開始）。</div>
+          <div id="fa-pane-bleed" class="fa-step-box">
+            <div><strong>1. 大出血控制（MARCH 首位）</strong>：戴上手套或隔著塑膠袋，立即找出噴濺或大量湧血部位。</div>
+            <div style="margin-top:4px;"><strong>2. 直接加壓／填塞止血</strong>：以乾淨紗布、毛巾覆蓋傷口，用掌根<strong>持續用力垂直下壓 10～15 分鐘</strong>（滲血時直接疊加新紗布，切勿掀開）。</div>
+            <div style="margin-top:4px;"><strong>3. 四肢動脈噴血使用止血帶</strong>：綁於傷口上方約 5 公分處（避開關節），旋緊至出血完全停止並<strong>務必記錄時間</strong>；同時覆蓋保暖毯防失溫，立即送醫。</div>
+            <div class="tourniquet-box">
+              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+                <div>
+                  <div style="font-size:0.78rem; font-weight:800;">⏱️ 止血帶綁紮計時器</div>
+                  <div id="tq-display" class="tq-time">尚未開始計時</div>
+                  <div id="tq-meta" style="font-size:0.74rem; color:var(--text-muted);">綁紮超過 120 分鐘恐造成組織壞死，需向醫護明確告知起始時間</div>
+                </div>
+                <div style="display:flex; gap:6px;">
+                  <button id="btn-tq-toggle" class="btn btn-danger" onclick="toggleTourniquetTimer()">⏱️ 開始記錄綁紮時間</button>
+                  <button class="btn btn-muted" onclick="resetTourniquetTimer()">🔄 重置</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="fa-pane-cpr" class="fa-step-box" style="display:none;">
+            <div><strong>1. 叫（確認意識與呼吸）</strong>：輕拍雙肩大聲呼喚，觀察胸腹有無正常起伏（無反應且無正常呼吸即開始）。</div>
             <div style="margin-top:4px;"><strong>2. 叫（求救打 119 拿 AED）</strong>：指定旁人撥打 119 並開啟擴音，同時請人去拿最近的 AED。</div>
             <div style="margin-top:4px;"><strong>3. 壓（胸外按壓莫中斷）</strong>：雙手交疊於<strong>兩乳頭連線中央</strong>，手肘打直垂直下壓<strong>至少 5～6 公分</strong>，速度<strong>每分鐘 100～120 下（約每秒 2 下）</strong>，每次確保胸部完全回彈。</div>
             <div style="margin-top:4px;"><strong>4. 電（依 AED 語音操作）</strong>：開電源 ➔ 貼電極片（右上胸、左下肋）➔ 插入導線分析心律（分析與電擊時<strong>全體離開勿觸碰患者</strong>）➔ 電擊後立即繼續壓胸。</div>
             <button id="btn-cpr-metro" class="cpr-metro-btn" onclick="toggleCprMetronome()">💓 啟動 110 下/分 CPR 壓胸聲音節拍器</button>
-          </div>
-
-          <div id="fa-pane-bleed" class="fa-step-box" style="display:none;">
-            <div><strong>1. 保護自身與暴露傷口</strong>：戴上手套或隔著塑膠袋，確認出血位置。</div>
-            <div style="margin-top:4px;"><strong>2. 直接加壓止血</strong>：以乾淨紗布、毛巾或衣物覆蓋傷口，用掌根<strong>持續用力直接加壓至少 10～15 分鐘</strong>（若血液滲透請直接疊加新紗布，切勿掀開舊布以免破壞凝血）。</div>
-            <div style="margin-top:4px;"><strong>3. 包紮與防休克</strong>：出血減緩後以彈性繃帶纏繞固定；讓傷患平躺、注意保暖並立即撥打 119 送醫。</div>
           </div>
 
           <div id="fa-pane-choke" class="fa-step-box" style="display:none;">
@@ -708,7 +845,26 @@
         </div>
       </div>
 
-            <!-- 應變功能 3：情境處置檢查表 (My Timeline) -->
+      <!-- 離線高頻求救哨音＋螢幕 SOS 閃光 -->
+      <div class="section-card">
+        <div class="section-title" onclick="toggleInfoSection('sos-whistle-sec')">
+          <span>📢 離線求救哨音（3000Hz）與螢幕 SOS 閃光</span>
+          <span id="sos-whistle-sec-arrow" style="font-size:0.8rem; color:var(--text-muted);">▼</span>
+        </div>
+        <div class="section-body" id="sos-whistle-sec">
+          <div id="whistle-status" style="font-size:0.82rem; font-weight:bold; color:var(--primary-dark); margin-bottom:6px;">目前狀態：待機中（請將媒體音量調至最大）</div>
+          <div class="whistle-grid">
+            <button id="btn-whistle-sos" class="whistle-btn" onclick="toggleWhistle('sos')">🆘 SOS 摩斯哨音</button>
+            <button id="btn-whistle-pulse" class="whistle-btn" onclick="toggleWhistle('pulse')">📣 間歇長哨音</button>
+          </div>
+          <div style="display:flex; gap:8px; margin-top:8px;">
+            <button class="btn btn-warn" style="flex:1;" onclick="startScreenSosFlash()">🔦 螢幕 SOS 閃光</button>
+            <button class="btn btn-muted" style="flex:1;" onclick="stopWhistle()">⏹️ 停止發聲</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 情境處置檢查表 (My Timeline) -->
       <div class="section-card">
         <div class="section-title" onclick="toggleInfoSection('sos-timeline-sec')">
           <span>📋 情境處置檢查表（My Timeline）</span>
@@ -726,68 +882,142 @@
         </div>
       </div>
 
-            <!-- 應變功能 4：家庭防災卡（跨裝置同步與離線出示） -->
-      <div class="section-card">
-        <div class="section-title" onclick="toggleInfoSection('sos-idcard-sec')">
-          <span>🪪 家庭防災卡（醫療與緊急聯絡）</span>
-          <span id="sos-idcard-sec-arrow" style="font-size:0.8rem; color:var(--text-muted);">▼</span>
+      <div style="text-align:center; margin-top:8px;">
+        <button class="btn btn-muted" style="font-size:0.8rem;" onclick="switchTab('camp'); setTimeout(()=>{const el=document.getElementById('camp-pfa-sec'); if(el&&el.style.display==='none') toggleInfoSection('camp-pfa-sec');}, 80);">🌿 需要深呼吸穩定情緒？前往營火靜心 ▶</button>
+      </div>
+    </div>
+
+    <!-- 子分頁 3：🤝 應變計畫（個人防災卡瘦身去重 ＋ 家庭聯絡圖譜 ＋ 集合點階層 ＋ 隱私保護鎖） -->
+    <div id="guide-plan-pane" style="display:none;">
+      <div class="section-card" style="background:#FFFDF7;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+          <div>
+            <div style="font-weight:800; font-size:0.9rem; color:var(--primary-dark);">🔐 家庭隱私保護狀態</div>
+            <div id="privacy-status-text" style="font-size:0.76rem; color:var(--text-muted);">醫療與聯絡電話預設遮罩保護</div>
+          </div>
+          <div style="display:flex; gap:6px;">
+            <button id="btn-toggle-privacy" class="btn btn-primary" style="padding:5px 10px; font-size:0.78rem;" onclick="togglePrivacyReveal()">🔓 顯示完整個資</button>
+          </div>
         </div>
-        <div class="section-body" id="sos-idcard-sec">
-          <div style="font-size:0.78rem; color:var(--text-muted); margin-bottom:8px;">
-            記錄隊員血型、過敏／常用藥、緊急聯絡電話與集合約定，災時斷網可直接出示給救護人員（點擊「✏️ 編輯」即可補充並同步至試算表）：
+      </div>
+
+      <div class="section-card">
+        <div class="section-title" onclick="toggleInfoSection('plan-idcard-sec')">
+          <span>🪪 個人防災醫療卡（已過濾備用背包）</span>
+          <span id="plan-idcard-sec-arrow" style="font-size:0.8rem; color:var(--text-muted);">▼</span>
+        </div>
+        <div class="section-body" id="plan-idcard-sec">
+          <div style="font-size:0.76rem; color:var(--text-muted); margin-bottom:8px;">
+            僅顯示主要隊員的血型、過敏史、用藥與行動能力分級；如誤列入備用背包，可點右上角「🚫 移出防災卡」隱藏或刪除。
           </div>
           <div id="family-idcards-box" class="id-card-grid"></div>
         </div>
       </div>
 
-      <!-- 工序 4：災時心理安定 PFA（營火 4-4-6 靜心呼吸＋離線森林白噪音＋親子安撫小謎題） -->
       <div class="section-card">
-        <div class="section-title" onclick="toggleInfoSection('sos-pfa-sec')">
-          <span>🌿 營火靜心與減壓放鬆（心理急救 PFA）</span>
-          <span id="sos-pfa-sec-arrow" style="font-size:0.8rem; color:var(--text-muted);">▼</span>
+        <div class="section-title">
+          <span>👨‍👩‍👧‍👦 家庭與親友緊急聯絡網（關係圖譜）</span>
+          <button class="btn btn-primary" style="padding:4px 10px; font-size:0.78rem;" onclick="openContactModal()">➕ 新增聯絡人</button>
         </div>
-        <div class="section-body" id="sos-pfa-sec">
-          <div class="breath-wrap">
-            <div id="breath-circle" class="breath-circle">🔥</div>
-            <div id="breath-instruction" style="font-weight:800; font-size:0.95rem; color:var(--primary-dark); margin-top:16px;">
-              點擊下方按鈕，跟著營火做 4-4-6 減壓呼吸
+        <div class="section-body" id="contacts-graph-box"></div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-title">
+          <span>📍 共同約定集合點階層（Plan A / B / C）</span>
+          <button class="btn btn-muted" style="padding:4px 10px; font-size:0.78rem;" onclick="switchTab('map')">🗺️ 前往地圖設定</button>
+        </div>
+        <div class="section-body" id="rally-hierarchy-box"></div>
+      </div>
+
+      <!-- P1-2: 互動式避難行動判定樹 -->
+      <div class="section-card">
+        <div class="section-title" onclick="toggleInfoSection('plan-decision-sec')">
+          <span>🧭 避難行動判定樹（留在家 vs 前往避難所）</span>
+          <span id="plan-decision-sec-arrow" style="font-size:0.8rem; color:var(--text-muted);">▼</span>
+        </div>
+        <div class="section-body" id="plan-decision-sec">
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:6px;">
+            <div class="form-group" style="margin-bottom:4px;">
+              <label class="form-label">居住樓層</label>
+              <select id="dec-floor" class="form-input" onchange="saveDecisionProfile()">
+                <option value="low">1～2 樓（低樓層）</option>
+                <option value="mid">3～5 樓（中樓層）</option>
+                <option value="high">6 樓以上（高樓層）</option>
+              </select>
             </div>
-            <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">
-              吸氣 4 秒 ➔ 屏息 4 秒 ➔ 緩慢吐氣 6 秒（穩定自律神經）
+            <div class="form-group" style="margin-bottom:4px;">
+              <label class="form-label">建物耐震狀況</label>
+              <select id="dec-struct" class="form-input" onchange="saveDecisionProfile()">
+                <option value="good">921 後新制或耐震良好</option>
+                <option value="old">老舊公寓／結構有疑慮</option>
+              </select>
             </div>
-            <div style="display:flex; gap:8px; margin-top:10px; width:100%; justify-content:center; flex-wrap:wrap;">
-              <button id="btn-breath-toggle" class="btn btn-primary" onclick="toggleBreathingGuide()">🌿 開始 4-4-6 呼吸引導</button>
-              <button id="btn-noise-toggle" class="btn btn-muted" onclick="toggleForestWhiteNoise()">🌧️ 播放離線森林細雨聲</button>
+            <div class="form-group" style="margin-bottom:4px;">
+              <label class="form-label">周邊水災／坡地風險</label>
+              <select id="dec-hazard" class="form-input" onchange="saveDecisionProfile()">
+                <option value="safe">低風險區域</option>
+                <option value="flood">低窪淹水／土石流潛勢區</option>
+              </select>
             </div>
           </div>
+          <div id="decision-result-box" class="decision-result"></div>
+        </div>
+      </div>
 
-          <div class="riddle-box">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <strong style="color:#9C5211;">🏕️ 營地親子安定小謎題／安心語錄</strong>
-              <button class="btn btn-muted" style="padding:2px 8px; font-size:0.74rem;" onclick="nextCalmCard()">🔄 換一則</button>
-            </div>
-            <div id="calm-card-question" style="margin-top:5px; font-weight:bold;"></div>
-            <div id="calm-card-answer" style="margin-top:4px; color:var(--primary-dark); display:none; font-weight:800;"></div>
-            <button id="btn-show-calm-ans" class="btn btn-muted" style="margin-top:6px; padding:3px 10px; font-size:0.74rem;" onclick="revealCalmAnswer()">💡 看答案／安心小叮嚀</button>
+      <!-- P1-2: 歸宅困難與失聯匯合協議＋照顧分工 -->
+      <div class="section-card">
+        <div class="section-title" onclick="toggleInfoSection('plan-reunify-sec')">
+          <span>🕰️ 歸宅困難與失聯匯合協議（照顧分工）</span>
+          <span id="plan-reunify-sec-arrow" style="font-size:0.8rem; color:var(--text-muted);">▼</span>
+        </div>
+        <div class="section-body" id="plan-reunify-sec">
+          <div id="care-division-box" style="margin-bottom:8px; font-size:0.8rem;"></div>
+          <div class="form-group" style="margin-bottom:6px;">
+            <label class="form-label">0～1 小時（剛發生時）</label>
+            <input type="text" id="reunify-h1" class="form-input" placeholder="如：各自就地安全待命，以簡訊或 1991 報平安，不急著上路" onchange="saveReunifyPlan()">
+          </div>
+          <div class="form-group" style="margin-bottom:6px;">
+            <label class="form-label">1～6 小時（通訊／交通中斷）</label>
+            <input type="text" id="reunify-h6" class="form-input" placeholder="如：確認返家路線安全後徒步返家；若無法返家則留在公司／學校" onchange="saveReunifyPlan()">
+          </div>
+          <div class="form-group" style="margin-bottom:6px;">
+            <label class="form-label">6 小時以上（失聯最終匯合規則）</label>
+            <input type="text" id="reunify-h24" class="form-input" placeholder="如：若住家受損或失聯逾 6 小時，全員前往 Plan A／Plan B 集合點會合" onchange="saveReunifyPlan()">
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label class="form-label">接送與照顧責任分工備註</label>
+            <input type="text" id="reunify-care" class="form-input" placeholder="如：Simon 負責接送孩子、Isis 負責照顧長輩與寵物" onchange="saveReunifyPlan()">
+          </div>
+        </div>
+      </div>
+
+      <!-- P2-2: 半年演練排程、離線 QR Code 平安卡與可列印 PDF 家庭應變計畫 -->
+      <div class="section-card">
+        <div class="section-title">
+          <span>🗓️ 半年家庭防災演練與離線交換／匯出</span>
+        </div>
+        <div class="section-body">
+          <div id="drill-status-box" style="padding:8px 10px; border-radius:8px; background:#FAF6EC; font-size:0.82rem; margin-bottom:8px;"></div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="btn btn-primary" style="flex:1; min-width:140px;" onclick="completeFamilyDrill()">✅ 完成今日家庭演練</button>
+            <button class="btn btn-warn" style="flex:1; min-width:140px;" onclick="openFamilyQrModal()">📱 產生離線平安 QR Code</button>
+            <button class="btn btn-muted" style="flex:1; min-width:140px;" onclick="openPlanPrintModal()">🖨️ 匯出／列印應變計畫 PDF</button>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- 分頁 4：營地與成員管理（含版本更新摘要） -->
+  <!-- 分頁 4：營地（依重要性由上而下排序，全部預設折疊） -->
   <div id="tab-camp" style="display:none;">
+    <!-- 1. 系統、個人身份與隱私保護設定 -->
     <div class="section-card">
-      <div class="section-title">
-        <span>👥 小隊成員與頭像管理</span>
-        <button class="btn btn-primary" style="padding:5px 10px; font-size:0.8rem;" onclick="openMemberModal()">➕ 新增成員</button>
+      <div class="section-title" onclick="toggleInfoSection('camp-sys-sec')">
+        <span>🪪 系統連線、個人身份與隱私安全</span>
+        <span id="camp-sys-sec-arrow" style="font-size:0.8rem; color:var(--text-muted);">▶</span>
       </div>
-      <div class="section-body" id="members-manage-list"></div>
-    </div>
-
-    <div class="section-card">
-      <div class="section-title"><span>⚙️ 系統連線與個人身份</span></div>
-      <div class="section-body">
+      <div class="section-body" id="camp-sys-sec" style="display:none;">
         <div class="form-group">
           <label class="form-label">我的隊員身份（此手機預設開啟的背包）</label>
           <select id="setting-my-char" class="form-input"></select>
@@ -796,31 +1026,98 @@
           <label class="form-label">Google Apps Script API 網址</label>
           <input type="url" id="setting-gas-url" class="form-input" placeholder="https://script.google.com/macros/s/.../exec">
         </div>
+        <div class="form-group">
+          <label class="form-label">🔐 雲端家庭通行碼（驗證 GAS API 存取，外人無碼無法讀取試算表）</label>
+          <div style="display:flex; gap:6px;">
+            <input type="password" id="setting-gas-pin" class="form-input" placeholder="輸入或設定家庭通行碼" style="flex:1;">
+            <button class="btn btn-muted" style="white-space:nowrap;" onclick="saveGasServerPin()">更新雲端密碼</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">🔢 畫面防窺 PIN 碼（展開「應變計畫」遮罩個資用，留空則不鎖）</label>
+          <input type="password" id="setting-ui-pin" class="form-input" placeholder="建議 4 位數字，例如 1234">
+        </div>
+        <div class="form-group" style="background:#FAF6EC; padding:8px 10px; border-radius:8px; border:1px solid #E2D9C2;">
+          <label style="display:flex; align-items:flex-start; gap:8px; cursor:pointer; font-size:0.82rem; font-weight:bold;">
+            <input type="checkbox" id="setting-sync-health" style="margin-top:3px;">
+            <span>🛡️ 允許將健康個資（血型／過敏／用藥）加密後同步至試算表（預設僅存於本機；勾選代表了解並同意透過您自建的 GAS 進行家庭共享加密同步）</span>
+          </label>
+        </div>
         <button class="btn btn-primary" style="width:100%;" onclick="saveSettings()">儲存設定並同步資料</button>
       </div>
     </div>
 
-    <!-- 新增：營地版本更新摘要區 -->
+    <!-- 2. 小隊成員與背包名單管理 -->
+    <div class="section-card">
+      <div class="section-title" onclick="toggleInfoSection('camp-members-sec')">
+        <span>👥 小隊成員與背包名單管理</span>
+        <span id="camp-members-sec-arrow" style="font-size:0.8rem; color:var(--text-muted);">▶</span>
+      </div>
+      <div class="section-body" id="camp-members-sec" style="display:none;">
+        <div style="display:flex; justify-content:flex-end; margin-bottom:8px;">
+          <button class="btn btn-primary" style="padding:5px 10px; font-size:0.8rem;" onclick="openMemberModal()">➕ 新增成員／背包</button>
+        </div>
+        <div id="members-manage-list"></div>
+      </div>
+    </div>
+
+    <!-- 3. 營火靜心與減壓放鬆（心理急救 PFA） -->
+    <div class="section-card">
+      <div class="section-title" onclick="toggleInfoSection('camp-pfa-sec')">
+        <span>🌿 營火靜心與減壓放鬆（心理急救 PFA）</span>
+        <span id="camp-pfa-sec-arrow" style="font-size:0.8rem; color:var(--text-muted);">▶</span>
+      </div>
+      <div class="section-body" id="camp-pfa-sec" style="display:none;">
+        <div class="breath-wrap">
+          <div id="breath-circle" class="breath-circle">🔥</div>
+          <div id="breath-instruction" style="font-weight:800; font-size:0.95rem; color:var(--primary-dark); margin-top:16px;">
+            點擊下方按鈕，跟著營火做 4-4-6 減壓呼吸
+          </div>
+          <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">
+            吸氣 4 秒 ➔ 屏息 4 秒 ➔ 緩慢吐氣 6 秒（穩定自律神經）
+          </div>
+          <div style="display:flex; gap:8px; margin-top:10px; width:100%; justify-content:center; flex-wrap:wrap;">
+            <button id="btn-breath-toggle" class="btn btn-primary" onclick="toggleBreathingGuide()">🌿 開始 4-4-6 呼吸引導</button>
+            <button id="btn-noise-toggle" class="btn btn-muted" onclick="toggleForestWhiteNoise()">🌧️ 播放離線森林細雨聲</button>
+          </div>
+          <label style="font-size:0.76rem; color:var(--text-muted); margin-top:8px; display:flex; align-items:center; gap:4px; cursor:pointer;">
+            <input type="checkbox" id="chk-breath-speech"> 🔊 同時啟用離線語音引導吸吐節奏
+          </label>
+        </div>
+
+        <div class="riddle-box">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <strong style="color:#9C5211;">🏕️ 營地親子安定小謎題／安心語錄</strong>
+            <button class="btn btn-muted" style="padding:2px 8px; font-size:0.74rem;" onclick="nextCalmCard()">🔄 換一則</button>
+          </div>
+          <div id="calm-card-question" style="margin-top:5px; font-weight:bold;"></div>
+          <div id="calm-card-answer" style="margin-top:4px; color:var(--primary-dark); display:none; font-weight:800;"></div>
+          <button id="btn-show-calm-ans" class="btn btn-muted" style="margin-top:6px; padding:3px 10px; font-size:0.74rem;" onclick="revealCalmAnswer()">💡 看答案／安心小叮嚀</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. 營地版本更新摘要區 -->
     <div class="section-card">
       <div class="section-title" onclick="toggleInfoSection('camp-changelog-sec')">
         <span>📜 營地版本更新摘要</span>
-        <span id="camp-changelog-sec-arrow" style="font-size:0.8rem; color:var(--text-muted);">▼</span>
+        <span id="camp-changelog-sec-arrow" style="font-size:0.8rem; color:var(--text-muted);">▶</span>
       </div>
-      <div class="section-body" id="camp-changelog-sec" style="font-size:0.82rem; line-height:1.55;">
+      <div class="section-body" id="camp-changelog-sec" style="display:none; font-size:0.82rem; line-height:1.55;">
         <div style="padding-bottom:8px; border-bottom:1px dashed #E6DEC9;">
-          <strong style="color:var(--primary-dark);">v2.0（預排批次更新）</strong>
+          <strong style="color:var(--primary-dark);">v2.3（P2 外地關注 × 演練排程 × QR Code 與動物夥伴任務）</strong><ul style="margin:4px 0 0 0; padding-left:18px;"><li>即時情報新增「多點位外地親友縣市」同時關注（最多 3 縣市）。</li><li>應變計畫新增「半年家庭演練提醒」、純前端「離線平安卡 QR Code」與「可列印家庭應變計畫 PDF」。</li><li>地圖新增附近防空／避難設施（OSM）查詢與 NCDR 災害潛勢圖入口；夥伴卡片加入動物心情氣泡與每日 30 秒小任務連勝打卡。</li></ul></div><div style="padding:8px 0; border-bottom:1px dashed #E6DEC9;"><strong>v2.2（2026-11-14）</strong><ul style="margin:4px 0 0 0; padding-left:18px;"><li>地圖支援「點擊放圖釘＋拖曳微調」、集合點安全檢核與「一鍵下載全部避難點離線圖磚＋周邊 AED」；AED 支援依點位離線切換。</li><li>應變計畫新增「在宅／撤離互動式判定樹」與「歸宅困難失聯匯合協議＋照顧分工」。</li><li>物資新增隨身 EDC／72h／居家／WASH 分層篩選、營火可持續支撐時數計算（木桶短板）與一鍵換新滾動輪替任務。</li></ul></div><div style="padding:8px 0; border-bottom:1px dashed #E6DEC9;"><strong>v2.1（2026-11-14）</strong>
           <ul style="margin:4px 0 0 0; padding-left:18px;">
-            <li>頂部示警快訊條改為預設臺北市，並同時顯示標題與摘要前段。</li>
-            <li>天氣支援地區切換（預設臺北市）並新增 24 小時逐時與未來 7 天預報。</li>
-            <li>NCDR 示警預設臺北市、全國放最後、支援全台縣市選單與最近 12 小時過濾。</li>
-            <li>警廣 FM 頻率表加入線上直播連結，情報頁三大區塊支援點擊折疊收納。</li>
+            <li>雙層個資防護：GAS 後端通行碼驗證＋健康個資本機優先加密＋應變計畫 PIN 碼遮罩（急救頁免鎖秒開）。</li>
+            <li>統一「🆘 緊急應變」OLED 純黑高對比戰術介面，情報區劃分為即時情報／緊急應變／應變計畫三子分頁。</li>
+            <li>急救模組置頂 MARCH 創傷止血與止血帶計時器，加入離線語音朗讀步驟、螢幕 SOS 閃光與 119/110 官方報案 App 入口。</li>
+            <li>個人防災卡自動過濾備用背包（如 Simon+）並支援刪除，獨立建立家庭聯絡網關係圖譜與集合點階層；營地 4 大區預設折疊排序。</li>
           </ul>
         </div>
         <div style="padding:8px 0; border-bottom:1px dashed #E6DEC9;">
-          <strong>v1.9（2026-11-13）</strong>：升級 `sw.js` Network-First 自動更新、成員改名與自訂照片頭像、地圖搜尋與雙模路線規劃、新增 `📡 情報` 分頁。
+          <strong>v2.0（2026-11-13）</strong>：緊急模式、急救 110BPM 節拍器、全國 AED 地圖、PFA 4-4-6 呼吸、天氣 24h/7 日預報與 NCDR 12h 示警。
         </div>
         <div style="padding-top:8px;">
-          <strong>v1.7 ~ v1.8（2026-11-12）</strong>：升級 GitHub Pages 真離線 PWA 架構、離線圖磚預載與底部 4 分頁模組骨架。
+          <strong>v1.7 ~ v1.9（2026-11-12 ~ 13）</strong>：PWA 真離線架構、離線圖磚預載、Network-First 升版與 4 分頁模組骨架。
         </div>
       </div>
     </div>
@@ -928,14 +1225,32 @@
         <div class="emoji-picker" id="buddy-emoji-picker"></div>
       </div>
 
-            <div style="display:flex; gap:8px;">
-        <div class="form-group" style="width:110px;">
+      <div style="display:flex; gap:8px;">
+        <div class="form-group" style="flex:1;">
+          <label class="form-label">身份類型（影響防災卡顯示）</label>
+          <select id="member-type-input" class="form-input">
+            <option value="main">🧑 主要隊員（顯示防災卡）</option>
+            <option value="pack">🎒 備用背包／儲備（不列防災卡）</option>
+          </select>
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label class="form-label">行動能力分級</label>
+          <select id="member-mobility-input" class="form-input">
+            <option value="self">🚶 自行行動</option>
+            <option value="assist">🤝 需攙扶引導</option>
+            <option value="carry">🦽 需輪椅／抬送</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <div class="form-group" style="width:120px;">
           <label class="form-label">血型 / Rh</label>
           <input type="text" id="member-blood-input" class="form-input" placeholder="如：O型">
         </div>
-        <div class="form-group" style="flex:1;">
-          <label class="form-label">緊急聯絡人與電話</label>
-          <input type="text" id="member-ice-input" class="form-input" placeholder="如：外婆 0912-345678">
+        <div class="form-group" style="flex:1; padding-top:16px;">
+          <label style="display:flex; align-items:center; gap:6px; font-size:0.85rem; font-weight:bold; cursor:pointer;">
+            <input type="checkbox" id="member-cpr-input"> 💓 我會 CPR 急救
+          </label>
         </div>
       </div>
       <div class="form-group">
@@ -943,8 +1258,8 @@
         <input type="text" id="member-medical-input" class="form-input" placeholder="如：無藥物過敏 / 氣喘吸入劑">
       </div>
       <div class="form-group">
-        <label class="form-label">個人約定集合點／避難備註</label>
-        <input type="text" id="member-rally-input" class="form-input" placeholder="如：優先至大安森林公園 2 號出口集合">
+        <label class="form-label">特殊醫療或照顧備註</label>
+        <input type="text" id="member-rally-input" class="form-input" placeholder="如：佩戴眼鏡、需隨身攜帶備份處方">
       </div>
       <div class="form-group" id="member-default-state-group">
         <label class="form-label">現有物資預設狀態</label>
@@ -971,7 +1286,9 @@
       <div class="form-group">
         <label class="form-label">類型</label>
         <select id="loc-type" class="form-input">
-          <option value="🏠 家庭集合點">🏠 家庭集合點</option>
+          <option value="🏠 Plan A 第一集合點（住家周邊）">🏠 Plan A 第一集合點（住家周邊）</option>
+          <option value="🏫 Plan B 第二集合點（跨區避難所）">🏫 Plan B 第二集合點（跨區避難所）</option>
+          <option value="🚗 Plan C 外縣市投靠點">🚗 Plan C 外縣市投靠點</option>
           <option value="⛺ 避難收容處所">⛺ 避難收容處所</option>
           <option value="🏥 醫療院所">🏥 醫療院所</option>
           <option value="💧 取水站">💧 取水站</option>
@@ -991,6 +1308,12 @@
         <label class="form-label">備註</label>
         <input type="text" id="loc-note" class="form-input" placeholder="例如：靠近 2 號出口草坪">
       </div>
+      <div class="form-group" style="background:#F4F9F4; padding:8px; border-radius:8px; border:1px solid #C8E0D2; font-size:0.78rem;">
+        <div style="font-weight:800; color:var(--primary-dark); margin-bottom:4px;">✅ 集合點選址安全檢核（建議全數符合）：</div>
+        <label style="display:block; margin-bottom:2px;"><input type="checkbox" id="chk-loc-glass"> 遠離玻璃帷幕、招牌、高架橋與騎樓倒塌風險</label>
+        <label style="display:block; margin-bottom:2px;"><input type="checkbox" id="chk-loc-flood"> 地勢非低窪易淹水處，且有兩條以上道路可達</label>
+        <label style="display:block;"><input type="checkbox" id="chk-loc-type"> 已區分「緊急空曠集合場所」與「長期收容處所」</label>
+      </div>
       <div class="modal-actions">
         <button class="btn btn-muted" onclick="closeModal('loc-modal')">取消</button>
         <button class="btn btn-primary" onclick="saveLocationModal()">儲存點位</button>
@@ -998,15 +1321,97 @@
     </div>
   </div>
 
+
+  <!-- 新增/編輯家庭緊急聯絡人 Modal -->
+  <div id="contact-modal" class="modal-backdrop">
+    <div class="modal-card">
+      <h3 class="modal-title" id="contact-modal-title">➕ 新增緊急聯絡人</h3>
+      <input type="hidden" id="contact-edit-id" value="">
+      <div style="display:flex; gap:8px;">
+        <div class="form-group" style="flex:1;">
+          <label class="form-label">姓名</label>
+          <input type="text" id="contact-name" class="form-input" placeholder="例如：王大明">
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label class="form-label">關係分群</label>
+          <select id="contact-group" class="form-input">
+            <option value="core">🏠 核心家庭</option>
+            <option value="relative">🌳 親屬支援</option>
+            <option value="friend">🤝 好友／外縣市／鄰里</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <div class="form-group" style="flex:1;">
+          <label class="form-label">關係稱謂</label>
+          <input type="text" id="contact-relation" class="form-input" placeholder="如：外婆 / 鄰居 / 桃園姑姑">
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label class="form-label">聯絡電話</label>
+          <input type="tel" id="contact-phone" class="form-input" placeholder="如：0912-345-678">
+        </div>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <div class="form-group" style="flex:1;">
+          <label class="form-label">居住地區</label>
+          <input type="text" id="contact-region" class="form-input" placeholder="如：臺中市 / 社區一樓">
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label class="form-label">備註</label>
+          <input type="text" id="contact-note" class="form-input" placeholder="如：外縣市災後聯絡中繼人">
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-muted" onclick="closeModal('contact-modal')">取消</button>
+        <button class="btn btn-primary" onclick="saveContactModal()">儲存聯絡人</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- QR Code 離線平安卡 Modal -->
+  <div id="qr-modal" class="modal-backdrop">
+    <div class="modal-card" style="text-align:center;">
+      <h3 class="modal-title">📱 家庭離線平安卡 QR Code</h3>
+      <div style="font-size:0.78rem; color:var(--text-muted);">斷網時可用另一支手機相機掃描讀取文字摘要（含成員醫療重點、集合點與主要聯絡人）</div>
+      <div id="qr-modal-box"></div>
+      <div id="qr-text-preview" style="font-size:0.74rem; text-align:left; background:#FAF6EC; padding:8px; border-radius:8px; max-height:110px; overflow-y:auto; white-space:pre-wrap;"></div>
+      <div class="modal-actions" style="justify-content:center;">
+        <button class="btn btn-primary" onclick="closeModal('qr-modal')">關閉</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 家庭應變計畫列印／存為 PDF Modal -->
+  <div id="plan-print-modal">
+    <div class="print-actions">
+      <button onclick="window.print()">🖨️ 列印 / 存為 PDF 放入避難包</button>
+      <button style="background:#666;" onclick="document.getElementById('plan-print-modal').style.display='none'">❌ 關閉</button>
+    </div>
+    <div id="plan-print-content"></div>
+  </div>
+
+  <!-- 螢幕 SOS 閃光全螢幕覆蓋層 -->
+  <div id="sos-flash-overlay" onclick="stopScreenSosFlash()">
+    <div style="font-size:2rem; font-weight:900; text-align:center;">🆘 SOS 求救閃光中</div>
+    <div style="margin-top:14px; font-size:1rem;">點擊螢幕任意位置即可停止</div>
+  </div>
+
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script>
     const DEFAULT_GAS_URL = '';
 
     const STORAGE_KEYS = {
       GAS_URL: 'camp_gas_url',
+      GAS_PIN: 'camp_gas_pin',
+      UI_PIN: 'camp_ui_pin',
+      SYNC_HEALTH: 'camp_sync_health_consent',
+      LOCAL_HEALTH: 'camp_local_health_v21',
       DATA: 'camp_inventory_cache_v19',
       MEMBERS: 'camp_members_cache_v19',
       LOCATIONS: 'camp_locations_cache_v19',
+      CONTACTS: 'camp_contacts_cache_v21',
       QUEUE: 'camp_offline_queue_v19',
       ALERTS: 'camp_ncdr_alerts_cache',
       WEATHER: 'camp_weather_cache_v20',
@@ -1015,6 +1420,44 @@
       COLLAPSED: 'camp_collapsed_cats',
       LAST_SYNC: 'camp_last_sync'
     };
+
+    let contactsData = JSON.parse(localStorage.getItem(STORAGE_KEYS.CONTACTS) || '[]');
+    let localHealthMap = JSON.parse(localStorage.getItem(STORAGE_KEYS.LOCAL_HEALTH) || '{}');
+    let privacyRevealed = false;
+    let tqTimer = null;
+    let tqStartMs = parseInt(localStorage.getItem('camp_tq_start_ms') || '0', 10) || 0;
+    let sosFlashTimer = null;
+
+    function getGasPin() { return localStorage.getItem(STORAGE_KEYS.GAS_PIN) || ''; }
+    function getUiPin() { return localStorage.getItem(STORAGE_KEYS.UI_PIN) || ''; }
+    function isHealthSyncEnabled() { return localStorage.getItem(STORAGE_KEYS.SYNC_HEALTH) === '1'; }
+
+    // 前端欄位輕量 XOR + Base64 加密（以家庭通行碼為金鑰，避免試算表直接明文暴露）
+    function encryptField(plain) {
+      if (!plain) return '';
+      const key = getGasPin() || 'ForestCamp2026';
+      const bytes = new TextEncoder().encode(plain);
+      const kBytes = new TextEncoder().encode(key);
+      const out = new Uint8Array(bytes.length);
+      for (let i = 0; i < bytes.length; i++) out[i] = bytes[i] ^ kBytes[i % kBytes.length];
+      let bin = '';
+      out.forEach(b => bin += String.fromCharCode(b));
+      return 'ENC:' + btoa(bin);
+    }
+
+    function decryptField(val) {
+      if (!val || !String(val).startsWith('ENC:')) return val || '';
+      try {
+        const key = getGasPin() || 'ForestCamp2026';
+        const bin = atob(String(val).slice(4));
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        const kBytes = new TextEncoder().encode(key);
+        const out = new Uint8Array(bytes.length);
+        for (let i = 0; i < bytes.length; i++) out[i] = bytes[i] ^ kBytes[i % kBytes.length];
+        return new TextDecoder().decode(out);
+      } catch (e) { return val; }
+    }
 
     const CITY_COORDS = {
       '臺北市': { lat: 25.0330, lng: 121.5654 },
@@ -1071,7 +1514,7 @@
       document.body.classList.toggle('emergency-mode', isEmergencyMode);
       if (btn) {
         btn.classList.toggle('active', isEmergencyMode);
-        btn.innerText = isEmergencyMode ? '🆘 緊急模式開啟中' : '🆘 緊急模式';
+        btn.innerText = isEmergencyMode ? '🆘 緊急應變開啟中' : '🆘 緊急應變';
       }
       if (isEmergencyMode && navigateNow) {
         switchTab('guide');
@@ -1239,22 +1682,33 @@
 
       try {
         if (manual) showToast('🔄 正在從營地同步最新進度...');
-        const res = await fetch(`${url}?action=getAll&_t=${Date.now()}`);
+        const pinParam = getGasPin() ? `&pin=${encodeURIComponent(getGasPin())}` : '';
+        const res = await fetch(`${url}?action=getAll${pinParam}&_t=${Date.now()}`);
         const json = await res.json();
+        if (json.authRequired) {
+          const inputPin = prompt('🔐 此家庭試算表已啟用通行碼保護，請輸入家庭通行碼：');
+          if (inputPin !== null) {
+            localStorage.setItem(STORAGE_KEYS.GAS_PIN, inputPin.trim());
+            return syncWithServer(manual);
+          }
+          throw new Error(json.error || '需要家庭通行碼');
+        }
         if (!json.ok) throw new Error(json.error || '回傳格式錯誤');
 
         globalData = json.inventory;
         membersMap = json.members || {};
         locationsData = json.locations || [];
+        contactsData = json.contacts || [];
 
         localStorage.setItem(STORAGE_KEYS.DATA, JSON.stringify(globalData));
         localStorage.setItem(STORAGE_KEYS.MEMBERS, JSON.stringify(membersMap));
         localStorage.setItem(STORAGE_KEYS.LOCATIONS, JSON.stringify(locationsData));
+        localStorage.setItem(STORAGE_KEYS.CONTACTS, JSON.stringify(contactsData));
         localStorage.setItem(STORAGE_KEYS.LAST_SYNC, json.serverTime || new Date().toISOString());
 
         selectInitialCharacter();
         updateLastSyncText();
-        renderParty(); renderInventory(); renderCampTab(); renderFamilyIdCards();
+        renderParty(); renderInventory(); renderCampTab(); renderPlanTab();
         if (currentTab === 'map') renderMapLocations();
         if (manual) showToast('✅ 已同步至最新狀態', 'success');
       } catch (err) {
@@ -1265,10 +1719,11 @@
     async function postToGas(payload) {
       const url = getGasUrl();
       if (!url) throw new Error('尚未設定 GAS API 網址');
+      const finalPayload = Object.assign({}, payload, { pin: getGasPin() });
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(finalPayload)
       });
       const json = await res.json();
       if (!json.ok) throw new Error(json.error || '寫入失敗');
@@ -1295,9 +1750,10 @@
         if (res.inventory) { globalData = res.inventory; localStorage.setItem(STORAGE_KEYS.DATA, JSON.stringify(globalData)); }
         if (res.members) { membersMap = res.members; localStorage.setItem(STORAGE_KEYS.MEMBERS, JSON.stringify(membersMap)); }
         if (res.locations) { locationsData = res.locations; localStorage.setItem(STORAGE_KEYS.LOCATIONS, JSON.stringify(locationsData)); }
+        if (res.contacts) { contactsData = res.contacts; localStorage.setItem(STORAGE_KEYS.CONTACTS, JSON.stringify(contactsData)); }
         localStorage.setItem(STORAGE_KEYS.LAST_SYNC, res.serverTime || new Date().toISOString());
         updateLastSyncText();
-        renderParty(); renderInventory(); renderCampTab(); renderFamilyIdCards();
+        renderParty(); renderInventory(); renderCampTab(); renderPlanTab();
         if (currentTab === 'map') renderMapLocations();
         showToast(`✅ 已補傳 ${toSend.length} 筆離線變更`, 'success');
       } catch (err) {
@@ -1566,6 +2022,9 @@
         if (!isBreathing) return;
         circle.className = 'breath-circle inhale';
         inst.innerText = '🌬️ 鼻吸氣 4 秒...（感受溫暖營火擴張）';
+        if (document.getElementById('chk-breath-speech')?.checked && 'speechSynthesis' in window) {
+          const u = new SpeechSynthesisUtterance('吸氣四秒'); u.lang='zh-TW'; window.speechSynthesis.speak(u);
+        }
         breathTimer = setTimeout(() => {
           if (!isBreathing) return;
           circle.className = 'breath-circle hold';
@@ -1671,11 +2130,20 @@
     }
 
     function setGuideSubMode(mode) {
-      if (mode === 'sop') { renderTimelineChecklist(); renderFamilyIdCards(); renderCalmCard(); if (!userPos) refreshSosGps(); }
-      document.getElementById('btn-guide-live').classList.toggle('active', mode === 'live');
-      document.getElementById('btn-guide-sop').classList.toggle('active', mode === 'sop');
-      document.getElementById('guide-live-pane').style.display = (mode === 'live') ? 'block' : 'none';
-      document.getElementById('guide-sop-pane').style.display = (mode === 'sop') ? 'block' : 'none';
+      if (mode === 'sop') {
+        renderTimelineChecklist();
+        updateTourniquetUI();
+        if (!userPos) refreshSosGps();
+      }
+      if (mode === 'plan') {
+        renderPlanTab();
+      }
+      ['live', 'sop', 'plan'].forEach(k => {
+        const b = document.getElementById('btn-guide-' + k);
+        const p = document.getElementById('guide-' + k + '-pane');
+        if (b) b.classList.toggle('active', k === mode);
+        if (p) p.style.display = (k === mode) ? 'block' : 'none';
+      });
     }
 
     function selectInitialCharacter() {
@@ -1718,7 +2186,10 @@
     function calcProgress(charName) {
       if (!globalData) return { total: 0, checked: 0, pct: 0 };
       let total = 0, checked = 0;
+      renderDailyQuest();
+      renderSustainDashboard();
       globalData.items.forEach(item => {
+        if (invLayerFilter !== 'all' && classifyItemLayer(item) !== invLayerFilter) return;
         const st = item.status[charName];
         if (st && st.state !== 'na') { total++; if (st.state === 'ready') checked++; }
       });
@@ -1745,7 +2216,65 @@
     }
 
     function getMemberVisual(charName) {
-      return membersMap[charName] || { avatar: '🧑', buddy: '🐾', blood: '', medical: '', iceContact: '', rallyNote: '' };
+      const m = membersMap[charName] || { avatar: '🧑', buddy: '🐾', blood: '', medical: '', iceContact: '', rallyNote: '', memberType: (charName.endsWith('+') || charName === '家庭儲備') ? 'pack' : 'main', mobility: 'self', firstAidSkill: '' };
+      const localH = localHealthMap[charName] || {};
+      return {
+        ...m,
+        blood: localH.blood || decryptField(m.blood) || '',
+        medical: localH.medical || decryptField(m.medical) || '',
+        rallyNote: localH.rallyNote || decryptField(m.rallyNote) || ''
+      };
+    }
+
+    function maskText(str) {
+      if (!str) return '';
+      if (privacyRevealed || !getUiPin()) return str;
+      if (str.length <= 2) return '**';
+      return str.slice(0, 2) + '***' + str.slice(-1);
+    }
+
+    function maskPhone(phone) {
+      if (!phone) return '';
+      if (privacyRevealed || !getUiPin()) return phone;
+      return phone.replace(/(\d{2,4})[-\s]?(\d{2,4})[-\s]?(\d{2,4})/, '$1-***-$3');
+    }
+
+    function togglePrivacyReveal() {
+      if (privacyRevealed) {
+        privacyRevealed = false;
+        renderPlanTab();
+        showToast('🔐 已重新遮罩隱私資訊', 'info');
+        return;
+      }
+      const uiPin = getUiPin();
+      if (uiPin) {
+        const entered = prompt('🔐 請輸入畫面防窺 PIN 碼以展開完整醫療與聯絡資料：');
+        if (entered === null) return;
+        if (entered.trim() !== uiPin) { showToast('❌ PIN 碼錯誤', 'error'); return; }
+      }
+      privacyRevealed = true;
+      renderPlanTab();
+    }
+
+    function renderPlanTab() {
+      const stEl = document.getElementById('privacy-status-text');
+      const btnEl = document.getElementById('btn-toggle-privacy');
+      if (stEl && btnEl) {
+        const hasPin = !!getUiPin();
+        if (!hasPin) {
+          stEl.innerText = '尚未設定畫面 PIN 碼（可至「🏕️ 營地」設定 4 位數防窺鎖）';
+          btnEl.style.display = 'none';
+        } else {
+          btnEl.style.display = 'inline-block';
+          stEl.innerText = privacyRevealed ? '🔓 已暫時解鎖顯示完整個資' : '🔐 已遮罩醫療與電話資訊（點擊按鈕輸入 PIN 碼解鎖）';
+          btnEl.innerText = privacyRevealed ? '🔒 立即遮罩' : '🔓 顯示完整個資';
+        }
+      }
+      renderFamilyIdCards();
+      renderContactsGraph();
+      renderRallyHierarchy();
+      loadDecisionAndReunify();
+      renderDrillStatus();
     }
 
     function renderFamilyIdCards() {
@@ -1755,28 +2284,241 @@
         box.innerHTML = '<div style="color:var(--text-muted);">尚未載入成員資料</div>';
         return;
       }
-      box.innerHTML = globalData.characters.map(name => {
+      const mainChars = globalData.characters.filter(name => getMemberVisual(name).memberType !== 'pack');
+      if (mainChars.length === 0) {
+        box.innerHTML = '<div style="color:var(--text-muted);">目前無主要成員防災卡（所有項目皆標記為備用背包）</div>';
+        return;
+      }
+      const mobLabels = { self: '🚶 自行行動', assist: '🤝 需攙扶', carry: '🦽 輪椅／抬送' };
+      box.innerHTML = mainChars.map(name => {
         const m = getMemberVisual(name);
-        const phoneMatch = (m.iceContact || '').match(/09\d{2}[-\s]?\d{3}[-\s]?\d{3}|0\d[-\s]?\d{7,8}/);
-        const dialBtn = phoneMatch
-          ? `<a href="tel:${phoneMatch[0].replace(/[-\s]/g, '')}" class="btn btn-primary" style="text-decoration:none; padding:2px 8px; font-size:0.74rem; margin-left:6px;">📞 撥打</a>`
-          : '';
+        const bloodShow = m.blood ? maskText(m.blood) : '';
+        const medShow = m.medical ? maskText(m.medical) : '<span style="color:var(--text-muted);">未填寫</span>';
+        const noteShow = m.rallyNote ? maskText(m.rallyNote) : '<span style="color:var(--text-muted);">未填寫</span>';
         return `
           <div class="id-card">
             <div class="id-card-header">
-              <div style="display:flex; align-items:center; gap:6px; font-size:0.95rem; font-weight:800; color:var(--primary-dark);">
+              <div style="display:flex; align-items:center; gap:6px; font-size:0.95rem; font-weight:800; color:var(--primary-dark); flex-wrap:wrap;">
                 <span>${renderAvatarHTML(m.avatar, false)}</span>
                 <span>${name}</span>
-                ${m.blood ? `<span style="background:#F7E3DC; color:var(--danger); padding:1px 7px; border-radius:10px; font-size:0.74rem;">🩸 ${m.blood}</span>` : ''}
+                ${bloodShow ? `<span style="background:#F7E3DC; color:var(--danger); padding:1px 7px; border-radius:10px; font-size:0.74rem;">🩸 ${bloodShow}</span>` : ''}
+                <span class="badge-pill badge-mob">${mobLabels[m.mobility] || '🚶 自行行動'}</span>
+                ${m.firstAidSkill === 'cpr' ? '<span class="badge-pill badge-cpr">💓 會CPR</span>' : ''}
               </div>
-              <button class="btn btn-muted" style="padding:3px 8px; font-size:0.74rem;" onclick="openMemberModal('${name}')">✏️ 編輯防災卡</button>
+              <div style="display:flex; gap:4px;">
+                <button class="btn btn-muted" style="padding:3px 7px; font-size:0.72rem;" onclick="openMemberModal('${name}')">✏️ 編輯</button>
+                <button class="btn btn-warn" style="padding:3px 7px; font-size:0.72rem;" onclick="hideFromIdCard('${name}')" title="標記為備用背包（保留物資紀錄但不列防災卡）">🚫 移出</button>
+              </div>
             </div>
-            <div><strong>💊 過敏／常用藥：</strong>${m.medical || '<span style="color:var(--text-muted);">未填寫</span>'}</div>
-            <div style="margin-top:2px;"><strong>📞 緊急聯絡人：</strong>${m.iceContact || '<span style="color:var(--text-muted);">未填寫</span>'}${dialBtn}</div>
-            <div style="margin-top:2px;"><strong>📍 約定集合點：</strong>${m.rallyNote || '<span style="color:var(--text-muted);">未填寫</span>'}</div>
+            <div><strong>💊 過敏／常用藥：</strong>${medShow}</div>
+            <div style="margin-top:2px;"><strong>🩺 醫療與照顧備註：</strong>${noteShow}</div>
           </div>
         `;
       }).join('');
+    }
+
+    async function hideFromIdCard(name) {
+      if (!confirm(`確定要將【${name}】移出家庭防災卡嗎？
+（會改標記為「備用背包」，物資紀錄仍完整保留）`)) return;
+      const m = getMemberVisual(name);
+      if (membersMap[name]) membersMap[name].memberType = 'pack';
+      localStorage.setItem(STORAGE_KEYS.MEMBERS, JSON.stringify(membersMap));
+      renderPlanTab(); renderCampTab();
+      if (navigator.onLine && getGasUrl()) {
+        try {
+          await postToGas({ action: 'updateMember', oldName: name, newName: name, avatar: m.avatar, buddy: m.buddy, memberType: 'pack', mobility: m.mobility, firstAidSkill: m.firstAidSkill });
+          showToast(`✅ 已將【${name}】設為備用背包並移出防災卡`, 'success');
+        } catch (e) { showToast('⚠️ 已於本機移出防災卡', 'warn'); }
+      }
+    }
+
+    function renderContactsGraph() {
+      const box = document.getElementById('contacts-graph-box');
+      if (!box) return;
+      const groups = [
+        { key: 'core', title: '🏠 核心家庭' },
+        { key: 'relative', title: '🌳 親屬支援（跨縣市備援）' },
+        { key: 'friend', title: '🤝 信任好友／在地鄰里' }
+      ];
+      if (!contactsData || contactsData.length === 0) {
+        box.innerHTML = '<div style="font-size:0.84rem; color:var(--text-muted);">尚未建立緊急聯絡網，點擊右上角「➕ 新增聯絡人」建立全家共用聯絡圖譜。</div>';
+        return;
+      }
+      box.innerHTML = groups.map(g => {
+        const list = contactsData.filter(c => (c.group || 'core') === g.key);
+        if (list.length === 0) return '';
+        return `
+          <div class="contact-group">
+            <div class="contact-group-title"><span>${g.title}（${list.length}）</span></div>
+            ${list.map(c => {
+              const cleanTel = (c.phone || '').replace(/[-\s]/g, '');
+              return `
+                <div class="contact-card">
+                  <div style="min-width:0; flex:1;">
+                    <div style="font-weight:800; font-size:0.9rem;">${c.name} <span class="badge-pill badge-pack">${c.relation || '親友'}</span>${c.region ? `<span style="font-size:0.74rem; color:var(--text-muted); margin-left:4px;">📍${c.region}</span>` : ''}</div>
+                    <div style="font-size:0.8rem; margin-top:2px;">📞 ${maskPhone(c.phone || '未填電話')}${c.note ? ` ・ <span style="color:var(--text-muted);">${c.note}</span>` : ''}</div>
+                  </div>
+                  <div style="display:flex; gap:4px; flex-shrink:0;">
+                    ${cleanTel ? `<a href="tel:${cleanTel}" class="btn btn-primary" style="text-decoration:none; padding:4px 8px; font-size:0.74rem;">📞 撥打</a>` : ''}
+                    <button class="btn btn-muted" style="padding:4px 7px; font-size:0.72rem;" onclick="openContactModal('${c.id}')">✏️</button>
+                    <button class="btn btn-danger" style="padding:4px 7px; font-size:0.72rem;" onclick="deleteContact('${c.id}')">🗑️</button>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function openContactModal(id = '') {
+      const c = id ? contactsData.find(x => x.id === id) : null;
+      document.getElementById('contact-modal-title').innerText = c ? `✏️ 編輯聯絡人【${c.name}】` : '➕ 新增緊急聯絡人';
+      document.getElementById('contact-edit-id').value = c ? c.id : '';
+      document.getElementById('contact-name').value = c ? c.name : '';
+      document.getElementById('contact-group').value = c ? (c.group || 'core') : 'core';
+      document.getElementById('contact-relation').value = c ? (c.relation || '') : '';
+      document.getElementById('contact-phone').value = c ? (c.phone || '') : '';
+      document.getElementById('contact-region').value = c ? (c.region || '') : '';
+      document.getElementById('contact-note').value = c ? (c.note || '') : '';
+      document.getElementById('contact-modal').classList.add('open');
+    }
+
+    async function saveContactModal() {
+      const id = document.getElementById('contact-edit-id').value;
+      const name = document.getElementById('contact-name').value.trim();
+      if (!name) { showToast('請輸入姓名', 'warn'); return; }
+      const contact = {
+        id: id || ('cnt_' + Date.now()),
+        name,
+        group: document.getElementById('contact-group').value,
+        relation: document.getElementById('contact-relation').value.trim(),
+        phone: document.getElementById('contact-phone').value.trim(),
+        region: document.getElementById('contact-region').value.trim(),
+        note: document.getElementById('contact-note').value.trim()
+      };
+      closeModal('contact-modal');
+      if (id) {
+        const idx = contactsData.findIndex(x => x.id === id);
+        if (idx >= 0) contactsData[idx] = contact; else contactsData.push(contact);
+      } else {
+        contactsData.push(contact);
+      }
+      localStorage.setItem(STORAGE_KEYS.CONTACTS, JSON.stringify(contactsData));
+      renderContactsGraph();
+      const action = id ? 'updateContact' : 'addContact';
+      if (!navigator.onLine || !getGasUrl()) { enqueueAction({ action, contact }); showToast('🟠 已離線儲存聯絡人', 'warn'); return; }
+      try {
+        const res = await postToGas({ action, contact });
+        if (res.contacts) { contactsData = res.contacts; localStorage.setItem(STORAGE_KEYS.CONTACTS, JSON.stringify(contactsData)); renderContactsGraph(); }
+        showToast('✅ 已同步家庭聯絡人', 'success');
+      } catch (e) { enqueueAction({ action, contact }); showToast('🟠 轉為離線暫存', 'warn'); }
+    }
+
+    async function deleteContact(id) {
+      if (!confirm('確定要刪除此緊急聯絡人嗎？')) return;
+      contactsData = contactsData.filter(x => x.id !== id);
+      localStorage.setItem(STORAGE_KEYS.CONTACTS, JSON.stringify(contactsData));
+      renderContactsGraph();
+      if (!navigator.onLine || !getGasUrl()) { enqueueAction({ action: 'deleteContact', id }); showToast('🟠 已離線刪除', 'warn'); return; }
+      try {
+        await postToGas({ action: 'deleteContact', id });
+        showToast('✅ 已刪除聯絡人', 'success');
+      } catch (e) { enqueueAction({ action: 'deleteContact', id }); }
+    }
+
+    function renderRallyHierarchy() {
+      const box = document.getElementById('rally-hierarchy-box');
+      if (!box) return;
+      if (!locationsData || locationsData.length === 0) {
+        box.innerHTML = '<div style="font-size:0.84rem; color:var(--text-muted);">尚未設定集合點位，請至「🗺️ 地圖」新增 Plan A / B / C 集合點。</div>';
+        return;
+      }
+      box.innerHTML = locationsData.map(loc => `
+        <div class="rally-card">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:6px;">
+            <div>
+              <strong>${loc.type}</strong>・<strong style="color:var(--primary-dark);">${loc.name}</strong>
+              ${loc.note ? `<div style="font-size:0.78rem; color:var(--text-muted); margin-top:2px;">備註：${loc.note}</div>` : ''}
+            </div>
+            <button class="btn btn-primary" style="padding:4px 8px; font-size:0.74rem; white-space:nowrap;" onclick="switchTab('map'); setTimeout(()=>{ if(mapInstance) mapInstance.setView([${loc.lat}, ${loc.lng}], 16); }, 150);">🧭 地圖查看</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // P0-3: 止血帶計時器、螢幕 SOS 閃光、離線語音朗讀
+    function updateTourniquetUI() {
+      const disp = document.getElementById('tq-display');
+      const btn = document.getElementById('btn-tq-toggle');
+      if (!disp || !btn) return;
+      if (!tqStartMs) {
+        disp.innerText = '尚未開始計時';
+        btn.innerText = '⏱️ 開始記錄綁紮時間';
+        return;
+      }
+      const startTime = new Date(tqStartMs).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+      const elapsedMin = Math.floor((Date.now() - tqStartMs) / 60000);
+      disp.innerText = `起始 ${startTime}（已綁紮 ${elapsedMin} 分鐘${elapsedMin >= 120 ? ' ⚠️ 已逾 2 小時！' : ''}）`;
+      btn.innerText = '⏹️ 停止／鎖定顯示';
+    }
+
+    function toggleTourniquetTimer() {
+      if (tqStartMs) {
+        if (tqTimer) { clearInterval(tqTimer); tqTimer = null; }
+        showToast('⏱️ 已保留止血帶紀錄時間', 'info');
+        return;
+      }
+      tqStartMs = Date.now();
+      localStorage.setItem('camp_tq_start_ms', String(tqStartMs));
+      updateTourniquetUI();
+      tqTimer = setInterval(updateTourniquetUI, 15000);
+      showToast('⏱️ 已開始記錄止血帶綁紮時間', 'error');
+    }
+
+    function resetTourniquetTimer() {
+      if (tqTimer) { clearInterval(tqTimer); tqTimer = null; }
+      tqStartMs = 0;
+      localStorage.removeItem('camp_tq_start_ms');
+      updateTourniquetUI();
+    }
+
+    function startScreenSosFlash() {
+      const ov = document.getElementById('sos-flash-overlay');
+      if (!ov) return;
+      ov.style.display = 'flex';
+      let on = false;
+      sosFlashTimer = setInterval(() => {
+        on = !on;
+        ov.style.background = on ? '#FFFFFF' : '#000000';
+        ov.style.color = on ? '#000000' : '#FFFFFF';
+      }, 350);
+    }
+
+    function stopScreenSosFlash() {
+      if (sosFlashTimer) { clearInterval(sosFlashTimer); sosFlashTimer = null; }
+      const ov = document.getElementById('sos-flash-overlay');
+      if (ov) ov.style.display = 'none';
+    }
+
+    function toggleFirstAidSpeech() {
+      if (!('speechSynthesis' in window)) { showToast('❌ 此瀏覽器不支援語音朗讀', 'warn'); return; }
+      const btn = document.getElementById('btn-fa-speech');
+      if (window.speechSynthesis.speaking) {
+        window.speechSynthesis.cancel();
+        if (btn) btn.innerText = '🔊 語音朗讀步驟';
+        return;
+      }
+      const activeChip = document.querySelector('#fa-tab-chips .city-chip.active');
+      const key = activeChip ? activeChip.getAttribute('data-fa') : 'bleed';
+      const pane = document.getElementById('fa-pane-' + key);
+      if (!pane) return;
+      const utter = new SpeechSynthesisUtterance(pane.innerText.replace(/⏱️.*/s, ''));
+      utter.lang = 'zh-TW';
+      utter.rate = 0.95;
+      utter.onend = () => { if (btn) btn.innerText = '🔊 語音朗讀步驟'; };
+      window.speechSynthesis.speak(utter);
+      if (btn) btn.innerText = '⏹️ 停止語音朗讀';
     }
 
     function renderParty() {
@@ -1804,6 +2546,7 @@
             <div class="progress-fill" style="width:${prog.pct}%; background:${barColor};"></div>
           </div>
           <div style="font-size:0.74rem; font-weight:bold; color:var(--primary-dark); margin-top:4px;">${prog.checked}/${prog.total} (${prog.pct}%)</div>
+          <div class="mood-bubble">${getBuddyMoodText(char, prog.pct)}</div>
         `;
         container.appendChild(card);
       });
@@ -1820,7 +2563,10 @@
       const searchKey = document.getElementById('main-search').value.toLowerCase().trim();
       const grouped = {};
 
+      renderDailyQuest();
+      renderSustainDashboard();
       globalData.items.forEach(item => {
+        if (invLayerFilter !== 'all' && classifyItemLayer(item) !== invLayerFilter) return;
         if (invSubMode === 'character') {
           const st = item.status[currentChar];
           if (!st || st.state === 'na') return;
@@ -2092,9 +2838,14 @@
       } catch (err) { showToast('❌ 刪除失敗：' + err.message, 'error'); }
     }
 
-    // 營地分頁：成員管理
+    // 營地分頁：成員管理與隱私設定
     function renderCampTab() {
       document.getElementById('setting-gas-url').value = getGasUrl();
+      document.getElementById('setting-gas-pin').value = getGasPin();
+      document.getElementById('setting-ui-pin').value = getUiPin();
+      document.getElementById('setting-sync-health').checked = isHealthSyncEnabled();
+      renderCalmCard();
+
       const select = document.getElementById('setting-my-char');
       select.innerHTML = '<option value="">-- 不鎖定（顯示全部）--</option>';
       if (globalData && globalData.characters) {
@@ -2115,11 +2866,13 @@
         const row = document.createElement('div');
         row.className = 'member-row';
         row.innerHTML = `
-          <div style="display:flex; align-items:center; gap:8px;">
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
             <span style="display:inline-flex; align-items:center; gap:4px; font-size:1.25rem;">
               ${renderAvatarHTML(vis.avatar, false)} ${renderAvatarHTML(vis.buddy, false)}
             </span>
             <strong>${name}</strong>
+            ${vis.memberType === 'pack' ? '<span class="badge-pill badge-pack">🎒 備用背包</span>' : ''}
+            ${vis.firstAidSkill === 'cpr' ? '<span class="badge-pill badge-cpr">💓 會CPR</span>' : ''}
           </div>
           <div style="display:flex; gap:6px;">
             <button class="btn btn-muted" style="padding:4px 9px; font-size:0.78rem;" onclick="openMemberModal('${name}')">✏️ 編輯</button>
@@ -2128,6 +2881,19 @@
         `;
         listEl.appendChild(row);
       });
+    }
+
+    async function saveGasServerPin() {
+      const newPin = document.getElementById('setting-gas-pin').value.trim();
+      const oldPin = getGasPin();
+      if (!navigator.onLine || !getGasUrl()) { showToast('🟠 變更雲端通行碼需於連線狀態執行', 'warn'); return; }
+      try {
+        showToast('🔐 正在更新 GAS 雲端家庭通行碼...');
+        await postToGas({ action: 'setFamilyPin', oldPin, newPin });
+        if (newPin) localStorage.setItem(STORAGE_KEYS.GAS_PIN, newPin);
+        else localStorage.removeItem(STORAGE_KEYS.GAS_PIN);
+        showToast(newPin ? '✅ 已啟用雲端家庭通行碼保護' : '🔓 已解除雲端通行碼', 'success');
+      } catch (e) { showToast('❌ 更新失敗：' + e.message, 'error'); }
     }
 
     function openMemberModal(editName = '') {
@@ -2142,16 +2908,20 @@
         const vis = getMemberVisual(editName);
         document.getElementById('member-avatar-input').value = vis.avatar;
         document.getElementById('member-buddy-input').value = vis.buddy;
+        document.getElementById('member-type-input').value = vis.memberType || 'main';
+        document.getElementById('member-mobility-input').value = vis.mobility || 'self';
+        document.getElementById('member-cpr-input').checked = vis.firstAidSkill === 'cpr';
         document.getElementById('member-blood-input').value = vis.blood || '';
         document.getElementById('member-medical-input').value = vis.medical || '';
-        document.getElementById('member-ice-input').value = vis.iceContact || '';
         document.getElementById('member-rally-input').value = vis.rallyNote || '';
       } else {
         document.getElementById('member-avatar-input').value = '🧑';
         document.getElementById('member-buddy-input').value = '🐾';
+        document.getElementById('member-type-input').value = 'main';
+        document.getElementById('member-mobility-input').value = 'self';
+        document.getElementById('member-cpr-input').checked = false;
         document.getElementById('member-blood-input').value = '';
         document.getElementById('member-medical-input').value = '';
-        document.getElementById('member-ice-input').value = '';
         document.getElementById('member-rally-input').value = '';
       }
       syncPhotoPreview('avatar');
@@ -2164,35 +2934,48 @@
       const newName = document.getElementById('member-name-input').value.trim();
       const avatar = document.getElementById('member-avatar-input').value.trim() || '🧑';
       const buddy = document.getElementById('member-buddy-input').value.trim() || '🐾';
+      const memberType = document.getElementById('member-type-input').value;
+      const mobility = document.getElementById('member-mobility-input').value;
+      const firstAidSkill = document.getElementById('member-cpr-input').checked ? 'cpr' : '';
       const blood = document.getElementById('member-blood-input').value.trim();
       const medical = document.getElementById('member-medical-input').value.trim();
-      const iceContact = document.getElementById('member-ice-input').value.trim();
       const rallyNote = document.getElementById('member-rally-input').value.trim();
       const defaultState = document.getElementById('member-default-state').value;
 
       if (!newName) { showToast('請輸入成員名稱', 'warn'); return; }
       closeModal('member-modal');
 
+      // 永遠先儲存於本機健康快取
+      if (oldName && oldName !== newName) delete localHealthMap[oldName];
+      localHealthMap[newName] = { blood, medical, rallyNote };
+      localStorage.setItem(STORAGE_KEYS.LOCAL_HEALTH, JSON.stringify(localHealthMap));
+
+      // 若使用者同意加密雲端同步，才加密送往試算表
+      const syncHealth = isHealthSyncEnabled();
+      const cloudBlood = syncHealth ? encryptField(blood) : '';
+      const cloudMed = syncHealth ? encryptField(medical) : '';
+      const cloudRally = syncHealth ? encryptField(rallyNote) : '';
+
       try {
         if (oldName) {
           showToast('📡 正在更新成員資料...');
-          const res = await postToGas({ action: 'updateMember', oldName, newName, avatar, buddy, blood, medical, iceContact, rallyNote });
+          const res = await postToGas({ action: 'updateMember', oldName, newName, avatar, buddy, blood: cloudBlood, medical: cloudMed, iceContact: '', rallyNote: cloudRally, memberType, mobility, firstAidSkill });
           if (res.inventory) globalData = res.inventory;
           membersMap = res.members || membersMap;
           if (myChar === oldName) { myChar = newName; localStorage.setItem(STORAGE_KEYS.MY_CHAR, myChar); }
           if (currentChar === oldName) currentChar = newName;
           localStorage.setItem(STORAGE_KEYS.DATA, JSON.stringify(globalData));
           localStorage.setItem(STORAGE_KEYS.MEMBERS, JSON.stringify(membersMap));
-          renderParty(); renderInventory(); renderCampTab(); renderFamilyIdCards();
-          showToast('✅ 已更新成員資料', 'success');
+          renderParty(); renderInventory(); renderCampTab(); renderPlanTab();
+          showToast(syncHealth ? '✅ 已更新成員資料（健康欄位已加密同步）' : '✅ 已更新成員（健康欄位僅存本機）', 'success');
         } else {
           showToast('📡 正在新增成員與試算表欄位...');
-          const res = await postToGas({ action: 'addMember', name: newName, avatar, buddy, defaultState, blood, medical, iceContact, rallyNote });
+          const res = await postToGas({ action: 'addMember', name: newName, avatar, buddy, defaultState, blood: cloudBlood, medical: cloudMed, iceContact: '', rallyNote: cloudRally, memberType, mobility, firstAidSkill });
           globalData = res.inventory;
           membersMap = res.members || membersMap;
           localStorage.setItem(STORAGE_KEYS.DATA, JSON.stringify(globalData));
           localStorage.setItem(STORAGE_KEYS.MEMBERS, JSON.stringify(membersMap));
-          renderParty(); renderInventory(); renderCampTab(); renderFamilyIdCards();
+          renderParty(); renderInventory(); renderCampTab(); renderPlanTab();
           showToast('✅ 已新增成員：' + newName, 'success');
         }
       } catch (err) { showToast('❌ 操作失敗：' + err.message, 'error'); }
@@ -2210,19 +2993,25 @@
         localStorage.setItem(STORAGE_KEYS.MEMBERS, JSON.stringify(membersMap));
         if (myChar === name) { myChar = ''; localStorage.removeItem(STORAGE_KEYS.MY_CHAR); }
         if (currentChar === name) currentChar = globalData.characters[0] || '';
-        renderParty(); renderInventory(); renderCampTab(); renderFamilyIdCards();
+        renderParty(); renderInventory(); renderCampTab(); renderPlanTab();
         showToast('✅ 已移除成員：' + name, 'success');
       } catch (err) { showToast('❌ 移除失敗：' + err.message, 'error'); }
     }
 
     function saveSettings() {
       const url = document.getElementById('setting-gas-url').value.trim();
+      const gasPin = document.getElementById('setting-gas-pin').value.trim();
+      const uiPin = document.getElementById('setting-ui-pin').value.trim();
+      const syncHealth = document.getElementById('setting-sync-health').checked;
       const selectedChar = document.getElementById('setting-my-char').value;
       if (url) localStorage.setItem(STORAGE_KEYS.GAS_URL, url);
+      if (gasPin) localStorage.setItem(STORAGE_KEYS.GAS_PIN, gasPin); else localStorage.removeItem(STORAGE_KEYS.GAS_PIN);
+      if (uiPin) localStorage.setItem(STORAGE_KEYS.UI_PIN, uiPin); else localStorage.removeItem(STORAGE_KEYS.UI_PIN);
+      localStorage.setItem(STORAGE_KEYS.SYNC_HEALTH, syncHealth ? '1' : '0');
       myChar = selectedChar;
       localStorage.setItem(STORAGE_KEYS.MY_CHAR, myChar);
       if (myChar) currentChar = myChar;
-      updateOtherCharBanner(); renderParty(); renderInventory(); syncWithServer(true);
+      updateOtherCharBanner(); renderParty(); renderInventory(); renderPlanTab(); syncWithServer(true);
     }
 
     function openPrintModal() {
@@ -2243,7 +3032,10 @@
       const checkedPartners = Array.from(document.querySelectorAll('#filter-partners input:checked')).map(el => el.value);
       const missingItemsByCategory = {};
 
+      renderDailyQuest();
+      renderSustainDashboard();
       globalData.items.forEach(item => {
+        if (invLayerFilter !== 'all' && classifyItemLayer(item) !== invLayerFilter) return;
         if (searchKey && !item.name.toLowerCase().includes(searchKey)) return;
         const missingFor = [], expFor = [];
         globalData.characters.forEach(char => {
@@ -2292,6 +3084,9 @@
         mapInstance.on('click', (e) => {
           document.getElementById('loc-lat').value = e.latlng.lat.toFixed(6);
           document.getElementById('loc-lng').value = e.latlng.lng.toFixed(6);
+          if (pinDropMode) {
+            placeOrMoveDroppedPin(e.latlng.lat, e.latlng.lng);
+          }
         });
       }
       setTimeout(() => { mapInstance.invalidateSize(); }, 150);
@@ -2320,7 +3115,7 @@
         const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=5&countrycodes=tw&q=${encodeURIComponent(q)}`);
         const items = await res.json();
         if (!items.length) {
-          box.innerHTML = '<div class="map-search-item">找不到相關地點，請換個關鍵字</div>';
+          box.innerHTML = '<div class="map-search-item">找不到精確門牌，建議改搜尋「路段名稱」，再點「📌 點擊地圖放圖釘」手動微調位置</div>';
           return;
         }
         box.innerHTML = '';
@@ -2372,13 +3167,20 @@
         iconAnchor: [13, 13]
       });
 
-      listEl.innerHTML = aedsData.slice(0, 15).map(aed => {
+      const activeAeds = (currentAedSourceKey !== 'current' && aedsByLocCache[currentAedSourceKey]) ? aedsByLocCache[currentAedSourceKey] : aedsData;
+      const srcLoc = currentAedSourceKey !== 'current' ? locationsData.find(l => l.id === currentAedSourceKey) : null;
+      if (countEl) countEl.innerText = `顯示 ${activeAeds.length} 台 AED`;
+      if (!activeAeds || activeAeds.length === 0) {
+        listEl.innerHTML = '<div style="text-align:center; padding:14px; color:var(--text-muted); font-size:0.82rem;">尚無此點位之 AED 快取，請點「📥 一鍵下載全部避難點離線包」或「⚡❤️ 載入目前周邊 AED」。</div>';
+        return;
+      }
+      listEl.innerHTML = activeAeds.slice(0, 15).map(aed => {
         if (aedLayer) {
           L.marker([aed.lat, aed.lng], { icon: aedIcon })
             .addTo(aedLayer)
             .bindPopup(`<b>⚡❤️ ${aed.name}</b><br>${aed.place || ''}<br><small>${aed.addr || ''}</small>`);
         }
-        const refPos = userPos || (mapInstance ? mapInstance.getCenter() : { lat: 25.0330, lng: 121.5430 });
+        const refPos = srcLoc ? { lat: srcLoc.lat, lng: srcLoc.lng } : (userPos || (mapInstance ? mapInstance.getCenter() : { lat: 25.0330, lng: 121.5430 }));
         const d = Math.round(calcDistanceMeters(refPos.lat, refPos.lng, aed.lat, aed.lng));
         const bearing = calcBearingText(refPos.lat, refPos.lng, aed.lat, aed.lng);
         return `
@@ -2445,6 +3247,7 @@
     }
 
     function renderMapLocations() {
+      populateAedLocationSelect();
       if (markersLayer) markersLayer.clearLayers();
       const listEl = document.getElementById('locations-list');
       listEl.innerHTML = '';
@@ -2660,10 +3463,11 @@
       return `🧭 ${['北', '東北', '東', '東南', '南', '西南', '西', '西北'][Math.round(brng / 45) % 8]}方 (${Math.round(brng)}°)`;
     }
 
-    // ================= 情報分頁：天氣（地區選擇＋24h＋7日）与 NCDR 近 12h 示警 =================
+    // ================= 情報分頁：天氣（地區選擇＋24h＋7日）與 NCDR 近 12h 示警 =================
     function initGuideTab() {
       renderWeatherCache();
       renderNcdrAlerts();
+      renderWatchCities();
       if (navigator.onLine) {
         fetchWeather(false);
         fetchNcdrAlerts(false);
@@ -2845,6 +3649,7 @@
         el.classList.toggle('active', el.getAttribute('data-acity') === city);
       });
       renderNcdrAlerts();
+      renderWatchCities();
     }
 
     function renderNcdrAlerts() {
@@ -2881,8 +3686,11 @@
         if (json.ok && Array.isArray(json.alerts)) {
           alertsCache = json.alerts;
           localStorage.setItem(STORAGE_KEYS.ALERTS, JSON.stringify(alertsCache));
+          const metaEl = document.getElementById('ncdr-alerts-meta');
+          if (metaEl) metaEl.innerText = '資料來源：NCDR 民生示警公開平台 ・ 更新於 ' + new Date().toLocaleTimeString('zh-TW', { hour:'2-digit', minute:'2-digit' });
           updateGlobalAlertTicker();
           renderNcdrAlerts();
+      renderWatchCities();
           if (manual) showToast(`✅ 已同步 NCDR 示警並過濾近 12 小時資料`, 'success');
         } else if (manual) {
           showToast('⚠️ 無法取得 NCDR 示警：' + (json.error || ''), 'warn');
@@ -2891,6 +3699,531 @@
         if (manual) showToast('⚠️ NCDR 連線逾時', 'warn');
       }
     }
+
+    // ================= P1-1: 地圖點擊放圖釘、全點位離線包與 AED 依點位切換 =================
+    let pinDropMode = false;
+    let droppedPinMarker = null;
+    let droppedPinCoords = null;
+    let aedsByLocCache = JSON.parse(localStorage.getItem('camp_aeds_by_loc_v22') || '{}');
+    let currentAedSourceKey = 'current';
+
+    function togglePinDropMode() {
+      pinDropMode = !pinDropMode;
+      const btn = document.getElementById('btn-pin-drop');
+      const banner = document.getElementById('pin-drop-banner');
+      if (btn) btn.classList.toggle('pin-active', pinDropMode);
+      if (banner) banner.style.display = pinDropMode ? 'flex' : 'none';
+      if (pinDropMode) {
+        showToast('📌 請直接點擊地圖任意位置放置圖釘（可拖曳微調）', 'info');
+      }
+    }
+
+    function placeOrMoveDroppedPin(lat, lng) {
+      if (!mapInstance) return;
+      droppedPinCoords = { lat, lng };
+      if (!droppedPinMarker) {
+        droppedPinMarker = L.marker([lat, lng], { draggable: true }).addTo(mapInstance);
+        droppedPinMarker.bindPopup('📌 自訂圖釘（拖曳可微調位置）').openPopup();
+        droppedPinMarker.on('dragend', () => {
+          const p = droppedPinMarker.getLatLng();
+          droppedPinCoords = { lat: p.lat, lng: p.lng };
+          const txt = document.getElementById('pin-drop-text');
+          if (txt) txt.innerText = `📌 已微調圖釘：(${p.lat.toFixed(5)}, ${p.lng.toFixed(5)})`;
+        });
+      } else {
+        droppedPinMarker.setLatLng([lat, lng]).openPopup();
+      }
+      const txt = document.getElementById('pin-drop-text');
+      if (txt) txt.innerText = `📌 已放置圖釘：(${lat.toFixed(5)}, ${lng.toFixed(5)})，可拖曳微調`;
+    }
+
+    function saveDroppedPinAsLocation() {
+      if (!droppedPinCoords) { showToast('請先點擊地圖放置圖釘', 'warn'); return; }
+      prefillLocation('自訂集合點', droppedPinCoords.lat, droppedPinCoords.lng);
+      pinDropMode = false;
+      const btn = document.getElementById('btn-pin-drop');
+      const banner = document.getElementById('pin-drop-banner');
+      if (btn) btn.classList.remove('pin-active');
+      if (banner) banner.style.display = 'none';
+    }
+
+    function populateAedLocationSelect() {
+      const sel = document.getElementById('aed-loc-select');
+      if (!sel) return;
+      const prev = sel.value || 'current';
+      sel.innerHTML = '<option value="current">📍 目前／畫面周邊 AED</option>';
+      (locationsData || []).forEach(loc => {
+        const cnt = (aedsByLocCache[loc.id] || []).length;
+        sel.innerHTML += `<option value="${loc.id}">📌 ${loc.name}（已存 ${cnt} 台）</option>`;
+      });
+      sel.value = [...sel.options].some(o => o.value === prev) ? prev : 'current';
+    }
+
+    function onSelectAedSource(val) {
+      currentAedSourceKey = val;
+      if (val !== 'current') {
+        const loc = locationsData.find(l => l.id === val);
+        if (loc && mapInstance) mapInstance.setView([loc.lat, loc.lng], 15);
+      }
+      renderAedLocations();
+    }
+
+    async function fetchAedsForCoord(lat, lng) {
+      const url = getGasUrl();
+      if (url) {
+        try {
+          const res = await fetch(`${url}?action=getAeds&lat=${lat}&lng=${lng}&_t=${Date.now()}`);
+          const json = await res.json();
+          if (json.ok && Array.isArray(json.aeds) && json.aeds.length > 0) return json.aeds;
+        } catch (e) {}
+      }
+      try {
+        const query = `[out:json][timeout:10];node["emergency"="defibrillator"](around:2000,${lat},${lng});out body 20;`;
+        const res = await fetch('https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(query));
+        const data = await res.json();
+        if (data.elements && data.elements.length > 0) {
+          return data.elements.map(el => ({
+            name: (el.tags && (el.tags['defibrillator:location'] || el.tags.name || el.tags.operator)) || '公共 AED 點位',
+            place: (el.tags && (el.tags['defibrillator:location'] || el.tags.description)) || 'OpenStreetMap 登錄點',
+            addr: (el.tags && el.tags['addr:full']) || '',
+            lat: el.lat, lng: el.lon
+          }));
+        }
+      } catch (e) {}
+      return [];
+    }
+
+    async function downloadAllLocationsOfflinePack() {
+      if (!navigator.onLine) { showToast('🟠 預載離線包需要網路連線', 'warn'); return; }
+      const targets = (locationsData && locationsData.length > 0)
+        ? locationsData
+        : [{ id: 'current', name: '目前地圖中心', lat: mapInstance ? mapInstance.getCenter().lat : 25.0330, lng: mapInstance ? mapInstance.getCenter().lng : 121.5430 }];
+
+      const urlSet = new Set();
+      targets.forEach(t => {
+        const minLat = t.lat - 0.011, maxLat = t.lat + 0.011;
+        const minLng = t.lng - 0.013, maxLng = t.lng + 0.013;
+        [14, 15, 16].forEach(z => {
+          const x1 = lng2tile(minLng, z), x2 = lng2tile(maxLng, z), y1 = lat2tile(maxLat, z), y2 = lat2tile(minLat, z);
+          for (let x = Math.min(x1, x2); x <= Math.max(x1, x2); x++) {
+            for (let y = Math.min(y1, y2); y <= Math.max(y1, y2); y++) urlSet.add(`https://tile.openstreetmap.org/${z}/${x}/${y}.png`);
+          }
+        });
+      });
+
+      const urls = [...urlSet];
+      if (!confirm(`準備為 ${targets.length} 個避難點位統一下載周邊離線圖磚（共 ${urls.length} 張）並同步快取各點周邊 AED，是否繼續？`)) return;
+
+      const btn = document.getElementById('btn-download-all-pack'), progEl = document.getElementById('tile-progress');
+      btn.disabled = true; progEl.style.display = 'block';
+      const cache = await caches.open('disaster-map-tiles-v1');
+      let done = 0;
+      for (let i = 0; i < urls.length; i += 6) {
+        await Promise.all(urls.slice(i, i + 6).map(async (u) => {
+          try { if (!(await cache.match(u))) { const res = await fetch(u); if (res.ok) await cache.put(u, res); } } catch (e) {}
+          done++;
+        }));
+        progEl.innerText = `📥 預載全點位圖磚中：${done} / ${urls.length} 張 (${Math.round((done / urls.length) * 100)}%)`;
+      }
+
+      for (let i = 0; i < targets.length; i++) {
+        const t = targets[i];
+        progEl.innerText = `⚡❤️ 預載【${t.name}】周邊 AED（${i + 1}/${targets.length}）...`;
+        const aeds = await fetchAedsForCoord(t.lat, t.lng);
+        if (t.id === 'current') {
+          aedsData = aeds;
+          localStorage.setItem('camp_aeds_cache_v20', JSON.stringify(aedsData));
+        } else {
+          aedsByLocCache[t.id] = aeds;
+        }
+      }
+      localStorage.setItem('camp_aeds_by_loc_v22', JSON.stringify(aedsByLocCache));
+      btn.disabled = false;
+      progEl.innerText = `✅ 已完成 ${targets.length} 個避難點之離線地圖與 AED 預載！`;
+      populateAedLocationSelect();
+      renderAedLocations();
+      updateTileCacheCount();
+      showToast('✅ 全點位離線地圖與周邊 AED 已安裝完成！', 'success');
+    }
+
+    // ================= P1-2: 避難行動判定樹與歸宅困難匯合協議 =================
+    function loadDecisionAndReunify() {
+      const dec = JSON.parse(localStorage.getItem('camp_decision_profile_v22') || '{"floor":"mid","struct":"good","hazard":"safe"}');
+      if (document.getElementById('dec-floor')) document.getElementById('dec-floor').value = dec.floor;
+      if (document.getElementById('dec-struct')) document.getElementById('dec-struct').value = dec.struct;
+      if (document.getElementById('dec-hazard')) document.getElementById('dec-hazard').value = dec.hazard;
+      renderDecisionResult(dec);
+
+      const reu = JSON.parse(localStorage.getItem('camp_reunify_plan_v22') || '{}');
+      if (document.getElementById('reunify-h1')) document.getElementById('reunify-h1').value = reu.h1 || '';
+      if (document.getElementById('reunify-h6')) document.getElementById('reunify-h6').value = reu.h6 || '';
+      if (document.getElementById('reunify-h24')) document.getElementById('reunify-h24').value = reu.h24 || '';
+      if (document.getElementById('reunify-care')) document.getElementById('reunify-care').value = reu.care || '';
+
+      const careBox = document.getElementById('care-division-box');
+      if (careBox && globalData && globalData.characters) {
+        const needCare = globalData.characters.filter(n => {
+          const m = getMemberVisual(n);
+          return m.memberType !== 'pack' && (m.mobility === 'assist' || m.mobility === 'carry');
+        });
+        careBox.innerHTML = needCare.length > 0
+          ? `<div style="padding:6px 8px; background:#FFF8E7; border-radius:8px; border:1px solid #E9C46A;">⚠️ <strong>需協助避難成員：</strong>${needCare.join('、')}（請於下方明確約定誰負責攙扶或接送）</div>`
+          : '<div style="color:var(--primary-dark);">✅ 目前主要成員皆標記為可自行行動。</div>';
+      }
+    }
+
+    function saveDecisionProfile() {
+      const dec = {
+        floor: document.getElementById('dec-floor').value,
+        struct: document.getElementById('dec-struct').value,
+        hazard: document.getElementById('dec-hazard').value
+      };
+      localStorage.setItem('camp_decision_profile_v22', JSON.stringify(dec));
+      renderDecisionResult(dec);
+    }
+
+    function renderDecisionResult(dec) {
+      const box = document.getElementById('decision-result-box');
+      if (!box) return;
+      const eqAdvice = dec.struct === 'old'
+        ? '🚨 <strong>強震後建議【立即撤離至 Plan A 空曠集合點】</strong>（因建物老舊或結構有疑慮，應優先避開餘震倒塌風險）。'
+        : '🏠 <strong>強震後建議【優先在宅確認安全（留守避難）】</strong>（確認瓦斯電線安全、無結構龜裂且水糧充足時，留在家中比湧入避難所更安全）。';
+      const floodAdvice = dec.hazard === 'flood'
+        ? (dec.floor === 'low'
+          ? '🚨 <strong>豪雨／颱風建議【發布警戒即提前撤離至 Plan B】</strong>（低樓層且位於淹水／坡地潛勢區，不可等積水才走）。'
+          : '🏠 <strong>豪雨／颱風建議【就地垂直避難】</strong>（位於 3 樓以上較不易受淹水波及，提前儲水備電即可）。')
+        : '✅ <strong>豪雨／颱風建議【在宅避難為主】</strong>（周邊屬低風險區，留意停水停電備援即可）。';
+      box.className = 'decision-result' + ((dec.struct === 'old' || (dec.hazard === 'flood' && dec.floor === 'low')) ? ' warn' : '');
+      box.innerHTML = `<div>${eqAdvice}</div><div style="margin-top:4px;">${floodAdvice}</div>`;
+    }
+
+    function saveReunifyPlan() {
+      const reu = {
+        h1: document.getElementById('reunify-h1').value.trim(),
+        h6: document.getElementById('reunify-h6').value.trim(),
+        h24: document.getElementById('reunify-h24').value.trim(),
+        care: document.getElementById('reunify-care').value.trim()
+      };
+      localStorage.setItem('camp_reunify_plan_v22', JSON.stringify(reu));
+    }
+
+    // ================= P1-3: 物資情境分層、72h 支撐時數與滾動式輪替任務 =================
+    let invLayerFilter = 'all';
+
+    function setInvLayerFilter(layer) {
+      invLayerFilter = layer;
+      document.querySelectorAll('#inv-layer-chips .city-chip').forEach(el => {
+        el.classList.toggle('active', el.getAttribute('data-layer') === layer);
+      });
+      renderInventory();
+    }
+
+    function classifyItemLayer(item) {
+      const text = (item.category + ' ' + item.name).toLowerCase();
+      if (/衛生|馬桶|清潔|濕紙巾|垃圾袋|衛生棉|尿布|洗|消毒|洗手|口罩/.test(text)) return 'wash';
+      if (/隨身|edc|證件|現金|哨子|鑰匙|手機|行動電源/.test(text)) return 'edc';
+      if (/儲備|備用|桶|大瓶|瓦斯|卡式爐|發電機|居家|七天|十天/.test(text)) return 'home';
+      return '72h';
+    }
+
+    function renderSustainDashboard() {
+      if (!globalData || !globalData.items) return;
+      const targetChar = (invSubMode === 'character' && currentChar) ? currentChar : (myChar || globalData.characters[0]);
+      if (!targetChar) return;
+
+      const pillars = {
+        water: { label: '💧 飲水', ready: 0, total: 0 },
+        food: { label: '🥫 食物', ready: 0, total: 0 },
+        med: { label: '💊 醫藥／WASH', ready: 0, total: 0 },
+        power: { label: '🔦 電力／照明', ready: 0, total: 0 }
+      };
+      const rollingItems = [];
+
+      renderDailyQuest();
+      renderSustainDashboard();
+      globalData.items.forEach(item => {
+        if (invLayerFilter !== 'all' && classifyItemLayer(item) !== invLayerFilter) return;
+        const st = item.status[targetChar];
+        if (!st || st.state === 'na') return;
+        const cat = item.category + ' ' + item.name;
+        let key = null;
+        if (/水|飲/.test(cat)) key = 'water';
+        else if (/食|糧|麵|罐/.test(cat)) key = 'food';
+        else if (/醫|藥|衛|急|罩|馬桶|紙巾/.test(cat)) key = 'med';
+        else if (/電|燈|照明|電池|手電筒/.test(cat)) key = 'power';
+
+        if (key) {
+          pillars[key].total++;
+          if (st.state === 'ready') pillars[key].ready++;
+        }
+
+        const expInfo = getExpStatus(st.exp);
+        if (st.state === 'ready' && (expInfo.expired || expInfo.warn)) {
+          rollingItems.push({ row: item.row, name: item.name, exp: st.exp, expired: expInfo.expired, charName: targetChar });
+        }
+      });
+
+      const pcts = Object.values(pillars).filter(p => p.total > 0).map(p => p.ready / p.total);
+      const minRatio = pcts.length > 0 ? Math.min(...pcts) : 0;
+      const sustainHours = Math.round(minRatio * 72);
+
+      const titleEl = document.getElementById('sustain-title-hours');
+      const badgeEl = document.getElementById('sustain-hours-badge');
+      if (titleEl) titleEl.innerText = `【${targetChar}】可支撐約 ${sustainHours} 小時（短板評估）`;
+      if (badgeEl) badgeEl.innerText = `${sustainHours}h / 72h`;
+
+      const pBox = document.getElementById('sustain-pillars');
+      if (pBox) {
+        pBox.innerHTML = Object.values(pillars).map(p => {
+          const pct = p.total ? Math.round((p.ready / p.total) * 100) : 100;
+          return `<div class="sustain-pillar"><strong>${p.label}</strong>：${p.ready}/${p.total} (${pct}%)</div>`;
+        }).join('');
+      }
+
+      const rBox = document.getElementById('rolling-stock-box');
+      if (rBox) {
+        if (rollingItems.length === 0) {
+          rBox.style.display = 'none';
+        } else {
+          rBox.style.display = 'block';
+          rBox.innerHTML = `<div style="font-weight:800; color:#9C5211; margin-bottom:4px;">🍂 滾動式消耗輪替任務（${rollingItems.length} 項需消耗換新）：</div>` +
+            rollingItems.slice(0, 6).map(r => `
+              <div class="rolling-row">
+                <span>${r.expired ? '☢️' : '⚠️'} <strong>${r.name}</strong>（${r.exp}）</span>
+                <button class="btn btn-primary" style="padding:2px 8px; font-size:0.72rem;" onclick="rollStockItem(${r.row}, '${r.charName}', '${r.exp}')">✅ 已換新(+1年)</button>
+              </div>
+            `).join('');
+        }
+      }
+    }
+
+    function rollStockItem(rowIdx, charName, oldExp) {
+      const item = globalData.items.find(i => i.row === rowIdx);
+      if (!item || !item.status[charName]) return;
+      const d = oldExp ? new Date(oldExp) : new Date();
+      if (isNaN(d)) d = new Date();
+      const base = d < new Date() ? new Date() : d;
+      base.setFullYear(base.getFullYear() + 1);
+      const nextExp = base.toISOString().slice(0, 10);
+      item.status[charName].exp = nextExp;
+      item.status[charName].state = 'ready';
+      renderParty(); renderInventory(); commitItemUpdate(rowIdx, charName);
+      showToast(`🍂 已完成輪替換新！新效期：${nextExp}`, 'success');
+    }
+
+    async function quickAddWashTemplate() {
+      if (!globalData || !globalData.characters.length) { showToast('請先連線載入資料', 'warn'); return; }
+      if (!navigator.onLine) { showToast('🟠 批次新增模板需於連線狀態執行', 'warn'); return; }
+      const washItems = ['簡易馬桶凝固劑與便袋', '大容量黑色垃圾袋（1捲）', '無水清潔抗菌濕紙巾', '備用衛生棉／濕式衛生紙'];
+      const existing = new Set(globalData.items.map(i => i.name));
+      const toAdd = washItems.filter(n => !existing.has(n));
+      if (toAdd.length === 0) { showToast('✅ 您的清單已包含所有 WASH 斷水衛生項目！', 'success'); return; }
+      if (!confirm(`將自動新增以下 ${toAdd.length} 項斷水衛生（WASH）物資至「醫藥衛生」分類：
+・${toAdd.join('\n・')}`)) return;
+      const target = myChar || globalData.characters[0];
+      showToast('🧼 正在新增 WASH 斷水衛生清單...');
+      for (const name of toAdd) {
+        try {
+          const res = await postToGas({ action: 'addItem', category: '醫藥衛生', itemName: name, requiredChars: [target] });
+          if (res.inventory) globalData = res.inventory;
+        } catch (e) {}
+      }
+      localStorage.setItem(STORAGE_KEYS.DATA, JSON.stringify(globalData));
+      renderParty(); renderInventory();
+      showToast(`✅ 已新增 ${toAdd.length} 項 WASH 斷水衛生建議物資`, 'success');
+    }
+
+
+    // ================= P2-1: 多點位外地親友縣市關注 =================
+    const WATCH_CANDIDATES = ['新北市', '桃園市', '臺中市', '彰化市', '臺南市', '高雄市', '宜蘭縣', '花蓮縣'];
+    let watchCities = JSON.parse(localStorage.getItem('camp_watch_cities_v23') || '["彰化市","高雄市"]');
+
+    function toggleWatchCity(city) {
+      if (watchCities.includes(city)) {
+        watchCities = watchCities.filter(c => c !== city);
+      } else {
+        if (watchCities.length >= 3) { showToast('最多同時釘選 3 個外地親友縣市', 'warn'); return; }
+        watchCities.push(city);
+      }
+      localStorage.setItem('camp_watch_cities_v23', JSON.stringify(watchCities));
+      renderWatchCities();
+    }
+
+    function renderWatchCities() {
+      const pillsEl = document.getElementById('watch-city-pills');
+      const sumEl = document.getElementById('watch-city-summary');
+      if (!pillsEl || !sumEl) return;
+      pillsEl.innerHTML = WATCH_CANDIDATES.map(c =>
+        `<span class="watch-pill ${watchCities.includes(c) ? 'active' : ''}" onclick="toggleWatchCity('${c}')">${c}</span>`
+      ).join('');
+      if (watchCities.length === 0) {
+        sumEl.innerHTML = '<span style="color:var(--text-muted);">尚未釘選外地親友縣市</span>';
+        return;
+      }
+      const recent12h = (alertsCache || []).filter(a => isWithin12Hours(a.updated));
+      sumEl.innerHTML = watchCities.map(c => {
+        const matches = recent12h.filter(a => matchAlertRegion(a, c));
+        if (matches.length === 0) {
+          return `<div style="color:var(--primary-dark);">✅ <strong>${c}</strong>：近 12h 無災害示警</div>`;
+        }
+        return `<div style="color:var(--danger);">🚨 <strong>${c}</strong>（${matches.length} 則）：${matches[0].title}</div>`;
+      }).join('');
+    }
+
+    // ================= P2-2: 半年家庭演練排程、離線 QR Code 與 PDF 匯出 =================
+    function renderDrillStatus() {
+      const box = document.getElementById('drill-status-box');
+      if (!box) return;
+      const lastDrill = localStorage.getItem('camp_last_drill_date') || '';
+      if (!lastDrill) {
+        box.innerHTML = '⚠️ <strong>尚未記錄家庭演練</strong>：依消防局建議，每 6 個月應進行一次家庭防災演練與物資檢視。';
+        return;
+      }
+      const d = new Date(lastDrill);
+      const nextD = new Date(d); nextD.setMonth(nextD.getMonth() + 6);
+      const daysSince = Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24));
+      const overdue = daysSince >= 180;
+      box.innerHTML = `${overdue ? '🔔 <strong>已屆半年演練時間！</strong>' : '✅ <strong>演練進度正常</strong>'}<br>上次演練：<strong>${lastDrill}</strong>（已過 ${daysSince} 天）・下次建議：<strong>${nextD.toISOString().slice(0, 10)}</strong>`;
+    }
+
+    function completeFamilyDrill() {
+      const today = new Date().toISOString().slice(0, 10);
+      localStorage.setItem('camp_last_drill_date', today);
+      renderDrillStatus();
+      showToast(`🎉 已記錄今日（${today}）家庭演練！下次提醒：6 個月後`, 'success');
+    }
+
+    function openFamilyQrModal() {
+      const mainChars = (globalData && globalData.characters) ? globalData.characters.filter(n => getMemberVisual(n).memberType !== 'pack') : [];
+      const memberLines = mainChars.map(n => {
+        const m = getMemberVisual(n);
+        return `${n}(${m.blood || '血型未填'}):${m.medical || '無過敏'}`;
+      }).join('\n');
+      const contactLines = (contactsData || []).slice(0, 3).map(c => `${c.name}(${c.relation}):${c.phone}`).join('\n');
+      const rallyLines = (locationsData || []).slice(0, 2).map(l => `${l.type}:${l.name}`).join('\n');
+      const qrText = `[森林露營小隊・家庭平安卡]\n${memberLines}\n[聯絡人]\n${contactLines || '未設定'}\n[集合點]\n${rallyLines || '未設定'}`;
+
+      const box = document.getElementById('qr-modal-box');
+      const prev = document.getElementById('qr-text-preview');
+      if (prev) prev.innerText = qrText;
+      if (box) {
+        box.innerHTML = '';
+        if (typeof QRCode !== 'undefined') {
+          new QRCode(box, { text: qrText.slice(0, 420), width: 200, height: 200, correctLevel: QRCode.CorrectLevel.M });
+        } else {
+          box.innerHTML = '<div style="color:var(--danger);">離線尚未快取 QR 套件，請檢視下方純文字摘要</div>';
+        }
+      }
+      document.getElementById('qr-modal').classList.add('open');
+    }
+
+    function openPlanPrintModal() {
+      const box = document.getElementById('plan-print-content');
+      if (!box) return;
+      const mainChars = (globalData && globalData.characters) ? globalData.characters.filter(n => getMemberVisual(n).memberType !== 'pack') : [];
+      const dec = JSON.parse(localStorage.getItem('camp_decision_profile_v22') || '{"floor":"mid","struct":"good","hazard":"safe"}');
+      const reu = JSON.parse(localStorage.getItem('camp_reunify_plan_v22') || '{}');
+
+      box.innerHTML = `
+        <h2>🏕️ 森林露營小隊・家庭防災應變計畫書</h2>
+        <div style="font-size:0.85rem; color:#555; margin-bottom:12px;">列印日期：${new Date().toLocaleDateString('zh-TW')}（建議護貝或折疊放入個人避難包）</div>
+        <h3>1. 家庭成員醫療卡</h3>
+        ${mainChars.map(n => {
+          const m = getMemberVisual(n);
+          return `<div style="border:1px solid #ccc; padding:8px; border-radius:6px; margin-bottom:6px;">
+            <strong>${n}</strong>（血型：${m.blood || '未填'}｜行動：${m.mobility || 'self'}）<br>
+            過敏與用藥：${m.medical || '無'} ｜ 備註：${m.rallyNote || '無'}
+          </div>`;
+        }).join('')}
+        <h3>2. 緊急聯絡網</h3>
+        ${(contactsData || []).map(c => `<div>・<strong>${c.name}</strong>（${c.relation}）📞 ${c.phone} ${c.region ? '📍' + c.region : ''} ${c.note || ''}</div>`).join('') || '<div>尚未設定</div>'}
+        <h3>3. 約定集合點（Plan A / B / C）</h3>
+        ${(locationsData || []).map(l => `<div>・<strong>${l.type}</strong>：${l.name}（${l.lat.toFixed(5)}, ${l.lng.toFixed(5)}）${l.note || ''}</div>`).join('') || '<div>尚未設定</div>'}
+        <h3>4. 歸宅困難與失聯匯合協議</h3>
+        <div>・0～1 小時：${reu.h1 || '各自安全待命並報平安'}</div>
+        <div>・1～6 小時：${reu.h6 || '視交通狀況徒步返家或暫留安全處'}</div>
+        <div>・6 小時以上：${reu.h24 || '前往約定集合點會合'}</div>
+        <div>・照顧分工：${reu.care || '無特別備註'}</div>
+      `;
+      document.getElementById('plan-print-modal').style.display = 'block';
+    }
+
+    // ================= P2-3: 附近防空／避難設施（OSM）＋ 動物夥伴心情與每日 30 秒小任務 =================
+    async function loadNearbyShelters() {
+      if (!navigator.onLine) { showToast('🟠 查詢公開防空避難設施需要網路連線', 'warn'); return; }
+      const center = userPos || (mapInstance ? mapInstance.getCenter() : { lat: 25.0330, lng: 121.5430 });
+      showToast('🛡️ 查詢周邊防空／緊急避難設施中...');
+      try {
+        const query = `[out:json][timeout:10];(node["amenity"="shelter"](around:1500,${center.lat},${center.lng});node["social_facility"="shelter"](around:1500,${center.lat},${center.lng}););out body 15;`;
+        const res = await fetch('https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(query));
+        const data = await res.json();
+        const items = data.elements || [];
+        if (items.length === 0) {
+          showToast('此範圍 OSM 暫無登錄避難設施，建議改查內政部防空避難專區', 'warn');
+          return;
+        }
+        items.forEach(el => {
+          const name = (el.tags && (el.tags.name || el.tags.description)) || '緊急避難設施';
+          if (markersLayer) {
+            L.circleMarker([el.lat, el.lon], { radius: 8, fillColor: '#2A6F97', color: '#fff', weight: 2, fillOpacity: 0.9 })
+              .addTo(markersLayer)
+              .bindPopup(`<b>🛡️ ${name}</b><br><button onclick="prefillLocation('${name.replace(/'/g, '')}', ${el.lat}, ${el.lon})">➕ 存為集合點</button>`);
+          }
+        });
+        showToast(`✅ 已於地圖標記周邊 ${items.length} 處公開避難設施`, 'success');
+      } catch (e) { showToast('⚠️ 防空避難查詢逾時', 'warn'); }
+    }
+
+    const DAILY_QUESTS = [
+      '檢查客廳或床邊手電筒是否能正常點亮、電池有無漏液',
+      '確認玄關 72h 緊急避難包的拉鍊順暢且無重物壓住',
+      '問一位家人：如果現在大停電失聯，我們的 Plan A 集合點在哪裡？',
+      '檢查家中飲用水儲備的保存期限，順便輪替喝掉最舊的一瓶',
+      '確認手機「災防告警細胞廣播」與緊急聯絡人快捷設定正常',
+      '看看家裡高櫃或電視後方有沒有防傾倒固定，順手檢查逃生走道是否淨空'
+    ];
+
+    function renderDailyQuest() {
+      const today = new Date().toISOString().slice(0, 10);
+      const dayIdx = Math.floor(Date.now() / 86400000) % DAILY_QUESTS.length;
+      const doneDate = localStorage.getItem('camp_quest_done_date') || '';
+      const streak = parseInt(localStorage.getItem('camp_quest_streak') || '0', 10);
+      const txtEl = document.getElementById('daily-quest-text');
+      const btnEl = document.getElementById('btn-daily-quest');
+      const strEl = document.getElementById('quest-streak-badge');
+      if (txtEl) txtEl.innerText = DAILY_QUESTS[dayIdx];
+      if (strEl) strEl.innerText = `🔥 連勝 ${streak} 天`;
+      if (btnEl) {
+        const isDone = doneDate === today;
+        btnEl.innerText = isDone ? '🎉 今日已完成' : '✅ 完成打卡';
+        btnEl.disabled = isDone;
+      }
+    }
+
+    function completeDailyQuest() {
+      const today = new Date().toISOString().slice(0, 10);
+      const doneDate = localStorage.getItem('camp_quest_done_date') || '';
+      if (doneDate === today) return;
+      const streak = parseInt(localStorage.getItem('camp_quest_streak') || '0', 10) + 1;
+      localStorage.setItem('camp_quest_done_date', today);
+      localStorage.setItem('camp_quest_streak', String(streak));
+      renderDailyQuest();
+      showToast(`🐾 動物夥伴好開心！完成今日小任務（連勝 ${streak} 天）`, 'success');
+    }
+
+    function getBuddyMoodText(charName, pct) {
+      if (!globalData) return '🐾 準備中';
+      let expCnt = 0;
+      globalData.items.forEach(i => {
+        const st = i.status[charName];
+        if (st && st.state === 'ready' && getExpStatus(st.exp).expired) expCnt++;
+      });
+      if (expCnt > 0) return `🍂 提醒：${expCnt} 項過期`;
+      if (pct === 100) return '✨ 元氣滿點！';
+      if (pct >= 70) return '🏕️ 整備得不錯';
+      return '🔥 一起補裝備吧';
+    }
+
   </script>
 </body>
 </html>

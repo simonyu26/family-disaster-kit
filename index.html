@@ -2186,10 +2186,7 @@
     function calcProgress(charName) {
       if (!globalData) return { total: 0, checked: 0, pct: 0 };
       let total = 0, checked = 0;
-      renderDailyQuest();
-      renderSustainDashboard();
       globalData.items.forEach(item => {
-        if (invLayerFilter !== 'all' && classifyItemLayer(item) !== invLayerFilter) return;
         const st = item.status[charName];
         if (st && st.state !== 'na') { total++; if (st.state === 'ready') checked++; }
       });
@@ -3939,10 +3936,7 @@
       };
       const rollingItems = [];
 
-      renderDailyQuest();
-      renderSustainDashboard();
       globalData.items.forEach(item => {
-        if (invLayerFilter !== 'all' && classifyItemLayer(item) !== invLayerFilter) return;
         const st = item.status[targetChar];
         if (!st || st.state === 'na') return;
         const cat = item.category + ' ' + item.name;

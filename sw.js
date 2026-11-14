@@ -1,5 +1,6 @@
-const APP_CACHE = 'disaster-app-v2.4';
+const APP_CACHE = 'disaster-app-v2.5';
 const TILE_CACHE = 'disaster-map-tiles-v1';
+
 
 const APP_ASSETS = [
   './',
@@ -12,12 +13,14 @@ const APP_ASSETS = [
   'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js'
 ];
 
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(APP_CACHE).then((cache) => cache.addAll(APP_ASSETS))
   );
   self.skipWaiting();
 });
+
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
@@ -32,8 +35,10 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
+
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
+
 
   if (
     url.hostname.includes('script.google.com') ||
@@ -44,6 +49,7 @@ self.addEventListener('fetch', (event) => {
   ) {
     return;
   }
+
 
   if (url.hostname.includes('tile.openstreetmap.org')) {
     event.respondWith(
@@ -62,10 +68,12 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+
   const isHtmlNav =
     event.request.mode === 'navigate' ||
     url.pathname.endsWith('/') ||
     url.pathname.endsWith('/index.html');
+
 
   if (isHtmlNav) {
     event.respondWith(
@@ -81,6 +89,7 @@ self.addEventListener('fetch', (event) => {
     );
     return;
   }
+
 
   event.respondWith(
     caches.match(event.request).then((cached) => {

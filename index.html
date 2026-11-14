@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#52796F">
-  <title>🏕️ 森林露營小隊・防災生存整備系統 v2.4</title>
+  <title>🏕️ 森林露營小隊・防災生存整備系統 v2.5</title>
   <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
   <link rel="apple-touch-icon" href="./icon-192.png">
   <link rel="manifest" href="./manifest.json">
@@ -32,6 +32,7 @@
       padding: 12px 14px 88px 14px;
     }
 
+
     /* 頂部列與全站示警快訊條 */
     .btn-emergency-toggle {
       background: #FFF3E0; border: 2px solid var(--danger); color: var(--danger);
@@ -41,6 +42,7 @@
       background: var(--danger); color: #FFF; box-shadow: 0 0 10px rgba(231,111,81,0.5);
     }
     body.emergency-mode { background: #F9EBE6; }
+
 
     .top-bar { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px; }
     h1 { font-size: 1.2rem; color: var(--primary); margin: 0; font-weight: 800; }
@@ -69,6 +71,7 @@
     .ticker-title { font-weight: 800; color: var(--danger); font-size: 0.88rem; margin-bottom: 3px; }
     .ticker-summary { font-size: 0.78rem; color: var(--text); line-height: 1.4; }
 
+
     /* 子視角切換 */
     .sub-toggle {
       display: flex; background: #EADCB9; border-radius: 10px; margin-bottom: 10px;
@@ -79,6 +82,7 @@
       font-weight: bold; color: var(--text-muted); font-size: 0.86rem; border-radius: 7px;
     }
     .sub-btn.active { background: var(--primary); color: #FFF; }
+
 
     /* 隊員卡片與頭像 */
     .party-container { display: flex; overflow-x: auto; gap: 10px; padding: 4px 0 10px 0; }
@@ -110,6 +114,7 @@
     }
     .progress-fill { height: 100%; border-radius: 99px; transition: width 0.25s ease; }
 
+
     /* 搜尋與篩選 */
     .filter-toolbar { display: flex; gap: 8px; margin-bottom: 10px; align-items: center; }
     .search-box {
@@ -122,11 +127,13 @@
     }
     .filter-toggle-btn.active { background: #F7E3DC; border-color: var(--accent); color: var(--accent); }
 
+
     .other-char-banner {
       background: #FFF3E0; border: 1px solid #F4A261; color: #9C5211;
       border-radius: 10px; padding: 7px 10px; font-size: 0.82rem; font-weight: bold;
       margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;
     }
+
 
     /* 分類與物資列 */
     .category-title {
@@ -137,6 +144,7 @@
     }
     .cat-meta { font-size: 0.8rem; color: var(--text-muted); }
 
+
     .item-row {
       display: flex; flex-direction: column; padding: 11px 12px; background: var(--card-bg);
       border-radius: 14px; border: 2px solid #EDE6D6; margin-bottom: 8px;
@@ -145,6 +153,7 @@
     .item-name-line { display: flex; align-items: center; gap: 6px; }
     .item-name { font-size: 1rem; font-weight: 800; word-break: break-word; }
     .btn-edit-item { background: transparent; border: none; font-size: 0.9rem; cursor: pointer; opacity: 0.7; padding: 2px 4px; }
+
 
     .switch { position: relative; display: inline-block; width: 50px; height: 28px; flex-shrink: 0; }
     .switch input { opacity: 0; width: 0; height: 0; }
@@ -159,6 +168,7 @@
     }
     input:checked + .slider { background-color: var(--primary); border-color: var(--primary-dark); }
     input:checked + .slider:before { transform: translateX(22px); content: "🔥"; }
+
 
     .util-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 9px; width: 100%; }
     .stepper { display: flex; align-items: center; border: 2px solid var(--border); border-radius: 8px; background: #FFF; overflow: hidden; }
@@ -177,15 +187,18 @@
     .exp-date-input { width: 118px; color-scheme: light; }
     .note-input { flex: 1; min-width: 100px; }
 
+
     .exp-warning { border-color: var(--warning) !important; background-color: #FEF9EE !important; color: #C87A14 !important; }
     .exp-danger { border-color: var(--danger) !important; background-color: #FDF4F2 !important; color: var(--danger) !important; font-weight: bold; }
     .alert-tag { font-size: 0.74rem; margin-top: 3px; font-weight: bold; }
+
 
     .chip-container { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; width: 100%; }
     .chip { padding: 5px 10px; border-radius: 20px; font-size: 0.82rem; font-weight: bold; cursor: pointer; border: 2px solid transparent; }
     .chip.ready { background: var(--primary-light); color: var(--primary-dark); border-color: var(--primary); }
     .chip.missing { background: #F7E3DC; color: var(--accent); border-color: var(--accent); }
     .chip.na { background: transparent; color: #B3A08E; border: 2px dashed #D4C1AF; }
+
 
     /* 地圖面板與搜尋／路線 */
     #map { width: 100%; height: 310px; border-radius: 14px; border: 2px solid #D1BF9A; z-index: 1; background: #E5E0D5; }
@@ -221,6 +234,7 @@
       border-radius: 8px; padding: 4px 8px; font-size: 0.76rem; font-weight: 800; white-space: nowrap; text-align: right;
     }
 
+
     /* 情報區與可折疊模組卡片 */
     .section-card {
       background: var(--card-bg); border: 2px solid #EDE6D6; border-radius: 14px;
@@ -253,6 +267,7 @@
       padding: 4px 8px; font-size: 0.78rem; font-weight: bold; color: var(--text); outline: none;
     }
 
+
     /* 24h 與 7日預報樣式 */
     .hourly-strip { display: flex; overflow-x: auto; gap: 8px; padding: 6px 0; margin-top: 8px; border-top: 1px dashed #E6DEC9; }
     .hourly-item {
@@ -269,6 +284,7 @@
       padding: 5px 10px; border-radius: 8px; font-size: 0.78rem; font-weight: bold; display: inline-flex; align-items: center; gap: 4px;
     }
 
+
         .sos-coord-box {
       background: #FFF; border: 2px dashed var(--danger); border-radius: 12px;
       padding: 10px 12px; text-align: center; margin-bottom: 10px;
@@ -283,6 +299,7 @@
     .dial-btn.urgent { background: var(--danger); font-size: 1rem; }
     .dial-btn.warn { background: #C87A14; }
 
+
         .whistle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
     .whistle-btn {
       padding: 11px 8px; border-radius: 10px; border: 2px solid var(--danger);
@@ -290,6 +307,7 @@
     }
     .whistle-btn.active { background: var(--danger); color: #FFF; animation: pulseWarn 1s infinite; }
     @keyframes pulseWarn { 0%, 100% { opacity: 1; } 50% { opacity: 0.72; } }
+
 
         .tl-item {
       display: flex; align-items: flex-start; gap: 8px; padding: 8px 4px;
@@ -299,12 +317,14 @@
     .tl-item input { margin-top: 3px; width: 16px; height: 16px; accent-color: var(--primary); }
     .tl-item.done span { text-decoration: line-through; color: var(--text-muted); }
 
+
         .id-card-grid { display: flex; flex-direction: column; gap: 8px; }
     .id-card {
       background: #FFF; border: 2px solid #D1BF9A; border-radius: 12px;
       padding: 10px 12px; font-size: 0.82rem; line-height: 1.5;
     }
     .id-card-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #E6DEC9; padding-bottom: 6px; margin-bottom: 6px; }
+
 
         .fa-step-box {
       background: #FFF; border: 1px solid #D1BF9A; border-radius: 10px;
@@ -317,12 +337,14 @@
     }
     .cpr-metro-btn.beat { background: var(--danger); color: #FFF; transform: scale(0.98); }
 
+
         .aed-pin {
       background: var(--danger); color: #FFF; border: 2px solid #FFF;
       border-radius: 50%; width: 26px; height: 26px; display: flex;
       justify-content: center; align-items: center; font-size: 0.85rem;
       box-shadow: 0 2px 6px rgba(0,0,0,0.3);
     }
+
 
         .breath-wrap {
       display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -343,6 +365,7 @@
       padding: 9px 12px; font-size: 0.83rem; margin-top: 8px; line-height: 1.5;
     }
 
+
     /* Emoji 點選面板與照片上傳預覽 */
     .emoji-picker { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
     .emoji-opt {
@@ -353,6 +376,7 @@
     .photo-upload-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
     .preview-circle { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary); display: none; }
 
+
     /* 懸浮按鈕 & 底部導覽列 */
     .fab-container { position: fixed; bottom: 74px; right: 16px; display: flex; flex-direction: column; gap: 8px; z-index: 900; }
     .fab {
@@ -361,6 +385,7 @@
       box-shadow: 0 4px 10px rgba(82,121,111,0.35); cursor: pointer; border: 2px solid #FFF;
     }
     .fab.secondary { background: var(--accent); }
+
 
     .bottom-nav {
       position: fixed; bottom: 0; left: 0; right: 0; height: 62px;
@@ -374,6 +399,7 @@
     .nav-item.active { color: var(--primary-dark); background: #EFF6F3; }
     .nav-icon { font-size: 1.25rem; line-height: 1; }
 
+
     /* Toast & Modal */
     #toast-container {
       position: fixed; bottom: 74px; left: 50%; transform: translateX(-50%);
@@ -386,6 +412,7 @@
     .toast.success { background: rgba(61, 90, 82, 0.96); }
     .toast.warn { background: rgba(196, 106, 22, 0.96); }
     .toast.error { background: rgba(201, 68, 43, 0.96); }
+
 
     .modal-backdrop {
       display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5);
@@ -410,11 +437,13 @@
     .btn-danger { background: var(--danger); color: #FFF; }
     .btn-muted { background: #E6D5B3; color: var(--text); }
 
+
     .char-check-grid { display: flex; flex-wrap: wrap; gap: 6px; }
     .char-check-pill {
       display: flex; align-items: center; gap: 4px; background: #FFF;
       border: 2px solid var(--border); padding: 5px 10px; border-radius: 20px; font-size: 0.84rem; font-weight: bold;
     }
+
 
     /* 採買清單列印 */
     #print-modal {
@@ -430,11 +459,13 @@
     .print-actions { display: flex; gap: 10px; margin-bottom: 12px; }
     .print-actions button { padding: 9px 14px; font-size: 0.9rem; font-weight: bold; cursor: pointer; background: #000; color: #fff; border: none; border-radius: 8px; }
 
+
     @media print {
       body > *:not(#print-modal) { display: none !important; }
       #print-modal { position: static; padding: 0; display: block !important; }
       .print-actions, .filter-section { display: none !important; }
     }
+
 
     /* P0-2: OLED 純黑高對比緊急應變戰術模式 */
     body.emergency-mode { background: #000000 !important; color: #FFFFFF !important; }
@@ -458,6 +489,7 @@
     body.emergency-mode .tl-item { background: #1A1A1A !important; color: #FFFFFF !important; border: 1px solid #444; font-size: 0.94rem !important; }
     body.emergency-mode .id-card { background: #111111 !important; color: #FFFFFF !important; border: 1px solid #FFD60A !important; }
 
+
     /* P0-3: 止血帶計時與螢幕 SOS 閃爍 */
     .tourniquet-box { margin-top: 10px; padding: 10px; border-radius: 10px; background: #FFF1F0; border: 2px solid #C84B31; }
     body.emergency-mode .tourniquet-box { background: #2A0A08 !important; border-color: #FF453A !important; }
@@ -467,6 +499,7 @@
       display: none; position: fixed; inset: 0; z-index: 9999;
       background: #000; color: #FFF; align-items: center; justify-content: center; flex-direction: column;
     }
+
 
     /* P0-4: 聯絡人關係圖譜 & 集合點階層 & 資料來源頁腳 */
     .contact-group { margin-bottom: 12px; padding: 10px; border-radius: 12px; background: #FAF6EC; border: 1px solid #E2D9C2; }
@@ -482,6 +515,7 @@
     .badge-cpr { background: #FDE8E8; color: #C84B31; }
     .badge-mob { background: #E3F2FD; color: #1565C0; }
     .source-footer { margin-top: 10px; padding: 8px 10px; background: #F9F5EB; border-radius: 8px; font-size: 0.74rem; color: var(--text-muted); line-height: 1.5; }
+
 
     /* P1: 生存支撐時數儀表板、情境分層、判定樹與匯合時間軸 */
     .sustain-card { margin: 10px 12px 6px; padding: 10px 12px; background: #FFFDF7; border-radius: 14px; border: 2px solid #E2D9C2; box-shadow: 0 2px 6px rgba(0,0,0,0.04); }
@@ -500,6 +534,7 @@
     .decision-result.warn { background: #FFF1F0; border-left-color: #C84B31; }
     body.emergency-mode .sustain-card, body.emergency-mode .decision-result { background: #161616 !important; color: #fff !important; border-color: #FFD60A !important; }
 
+
     /* P2: 多點位關注、每日任務、夥伴心情氣泡、QR Code 與家庭計畫列印 */
     .watch-bar { margin-top: 8px; padding: 8px; background: #FAF6EC; border-radius: 10px; border: 1px solid #E2D9C2; font-size: 0.78rem; }
     .watch-pill { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 14px; background: #fff; border: 1px solid #D8CEB6; margin: 2px; cursor: pointer; font-weight: 700; }
@@ -512,6 +547,7 @@
       body > *:not(#print-modal):not(#plan-print-modal) { display: none !important; }
       #plan-print-modal { position: static; padding: 0; }
     }
+
 
     /* ================= Arter UI/UX v2.4 Design System (Editorial Warmth + Tactile Clarity) ================= */
     :root {
@@ -564,12 +600,14 @@
       border-radius: 10px; padding: 6px 11px; font-size: 0.8rem; font-weight: 800;
     }
 
+
     /* 2. 子視角切換與營火＋每日任務合一膠囊 */
     .sub-toggle {
       background: #EAE4D7; border: none; border-radius: 12px; padding: 4px; margin-bottom: 10px;
     }
     .sub-btn { border-radius: 9px; font-size: 0.84rem; padding: 7px 10px; transition: 0.15s; }
     .sub-btn.active { background: var(--card-bg); color: var(--primary-dark); box-shadow: 0 2px 6px rgba(0,0,0,0.06); }
+
 
     .daily-quest-box { display: none !important; } /* 已整併至營火狀態膠囊 */
     .sustain-card {
@@ -583,6 +621,7 @@
       border-radius: 10px; display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 0.8rem;
     }
 
+
     /* 3. 夥伴背包橫向卡片精緻化 */
     .party-container { gap: 8px; padding: 2px 0 10px 0; }
     .character-card {
@@ -595,6 +634,7 @@
     }
     .progress-track { height: 6px; background: #EAE4D7; margin-top: 5px; }
     .mood-bubble { font-size: 0.65rem; background: #F8F5EE; color: var(--text-muted); border: 1px solid var(--border); margin-top: 4px; }
+
 
     /* 4. 搜尋與工具列整合（取代遮擋視線的右下 FAB） */
     .fab-container { display: none !important; }
@@ -622,6 +662,7 @@
     }
     .city-chip.active { background: var(--primary); color: #FFF; border-color: var(--primary); }
 
+
     /* 5. 分類標題與兩段式物資卡片（Progressive Disclosure） */
     .category-title {
       background: #EAE4D7; border: none; border-radius: 11px; padding: 8px 12px;
@@ -647,6 +688,7 @@
     .expand-hint { font-size: 0.72rem; color: var(--text-muted); cursor: pointer; padding: 2px 5px; border-radius: 6px; }
     .expand-hint:hover { background: #F4F1E8; }
 
+
     /* 6. 區段卡片與底部 5 鍵拇指熱區導覽列（中央突顯 🆘 應變鈕） */
     .section-card {
       background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px;
@@ -670,6 +712,7 @@
       background: #FFD60A !important; color: #000000 !important; box-shadow: 0 0 14px rgba(255, 214, 10, 0.6);
     }
 
+
     /* 7. 災時 3 秒決策英雄區（Zero-Scroll Emergency Hero） */
     .sos-hero-grid {
       display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px;
@@ -681,6 +724,7 @@
       display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
     }
     .sos-hero-card .hero-ic { font-size: 1.35rem; }
+    body.emergency-mode #camp-gh-deploy-box { background: #1A1A1A !important; border-color: #555 !important; color: #FFF !important; }
     body.emergency-mode .sos-hero-card {
       background: #1A1A1A !important; border: 2px solid #FFD60A !important; color: #FFD60A !important;
     }
@@ -689,14 +733,19 @@
 
 
 
+
+
+
+
 </head>
 <body>
+
 
   <div class="top-bar">
     <div class="brand-col">
       <div class="brand-title-row">
         <h1>🏕️ 森林露營小隊</h1>
-        <span class="ver-pill">v2.4</span>
+        <span class="ver-pill">v2.5</span>
       </div>
       <div class="status-inline">
         <span id="net-status" class="status-badge online">🟢 連線檢查中...</span>
@@ -713,6 +762,9 @@
 
 
 
+
+
+
   <!-- 頂部連動：全站重大示警快訊條（預設臺北市最近 12 小時示警，顯示標題＋摘要） -->
   <div id="global-alert-ticker" class="global-alert-ticker" onclick="switchTab('guide')">
     <div style="flex:1; min-width:0;">
@@ -722,12 +774,16 @@
     <span style="white-space:nowrap; font-size:0.75rem; font-weight:800; color:var(--danger); align-self:center;">詳情 ▶</span>
   </div>
 
+
   <!-- 分頁 1：物資整備 -->
   <div id="tab-inventory">
     <div class="sub-toggle">
       <div id="btn-sub-char" class="sub-btn active" onclick="setInvSubMode('character')">🎒 夥伴背包</div>
       <div id="btn-sub-item" class="sub-btn" onclick="setInvSubMode('item')">⛺ 物資總覽</div>
     </div>
+
+
+
 
 
 
@@ -760,12 +816,15 @@
       </div>
     </div>
 
+
     <div class="party-container" id="party"></div>
+
 
     <div id="other-char-banner" class="other-char-banner" style="display:none;">
       <span id="other-char-text">👀 目前檢視其他夥伴的背包</span>
       <button class="btn btn-muted" style="padding:3px 8px; font-size:0.75rem;" onclick="switchToMyChar()">切回我的背包</button>
     </div>
+
 
     <div class="filter-toolbar">
       <input type="text" id="main-search" class="search-box" placeholder="🔍 搜尋物資名稱或備註..." oninput="renderInventory()">
@@ -781,8 +840,10 @@
       <span class="city-chip" data-layer="wash" onclick="setInvLayerFilter('wash')">🧼 WASH 衛生</span>
     </div>
 
+
     <div id="inventory"></div>
   </div>
+
 
   <!-- 分頁 2：離線地圖 -->
   <div id="tab-map" style="display:none;">
@@ -792,7 +853,9 @@
     </div>
     <div id="map-search-results" class="map-search-results"></div>
 
+
     <div id="map"></div>
+
 
     <div id="route-banner" class="route-banner">
       <span id="route-info-text"></span>
@@ -801,6 +864,7 @@
         <button class="btn btn-muted" style="padding:4px 9px; font-size:0.78rem;" onclick="clearRoute()">清除路線</button>
       </div>
     </div>
+
 
     <div class="map-controls">
       <button class="map-btn" onclick="locateMe()">📍 取得目前 GPS</button>
@@ -834,6 +898,7 @@
     <div id="aed-list"></div>
   </div>
 
+
   <!-- 分頁 3：情報（含「即時情報」與「應變指南」雙子分頁，支援折疊收納） -->
   <div id="tab-guide" style="display:none;">
     <div class="sub-toggle">
@@ -841,6 +906,7 @@
       <div id="btn-guide-sop" class="sub-btn" onclick="setGuideSubMode('sop')">🆘 緊急應變</div>
       <div id="btn-guide-plan" class="sub-btn" onclick="setGuideSubMode('plan')">🤝 應變計畫</div>
     </div>
+
 
     <!-- 子分頁 1：📡 即時情報 -->
     <div id="guide-live-pane">
@@ -871,6 +937,7 @@
           <div id="weather-box" style="font-size:0.86rem; color:var(--text-muted);">載入天氣預報中...</div>
         </div>
       </div>
+
 
       <div class="section-card">
         <div class="section-title" onclick="toggleInfoSection('ncdr-sec')">
@@ -912,6 +979,7 @@
         </div>
       </div>
 
+
       <div class="section-card">
         <div class="section-title" onclick="toggleInfoSection('pbs-sec')">
           <span>📻 警廣線上收聽與離線 FM 頻率表</span>
@@ -937,10 +1005,12 @@
         </div>
       </div>
 
+
       <div class="source-footer">
         <strong>📌 資料來源與免責聲明：</strong>天氣預報由 <a href="https://open-meteo.com/" target="_blank">Open-Meteo</a> 提供；災害示警串接 <a href="https://alerts.ncdr.nat.gov.tw/web/" target="_blank">國家災害防救科技中心（NCDR）民生示警公開資料</a>；廣播資訊引自 <a href="https://www.pbs.npa.gov.tw/ch/index" target="_blank">警察廣播電臺</a>。本系統僅供家庭整備輔助，危急時請優先依國家災防告警（CBS）與地方政府疏散指示行動。
       </div>
     </div>
+
 
     <!-- 子分頁 2：🆘 緊急應變（永遠免密碼秒開，含 OLED 黑底戰術模式＋3 秒零捲動快捷列） -->
     <div id="guide-sop-pane" style="display:none;">
@@ -992,6 +1062,7 @@
         </div>
       </div>
 
+
       <!-- 黃金救命急救處置（P0-3：創傷止血優先＋止血帶計時＋離線語音朗讀＋CPR節拍器） -->
       <div class="section-card">
         <div class="section-title" onclick="toggleInfoSection('sos-firstaid-sec')">
@@ -1007,6 +1078,7 @@
             </div>
             <button id="btn-fa-speech" class="btn btn-primary" style="padding:4px 10px; font-size:0.78rem;" onclick="toggleFirstAidSpeech()">🔊 語音朗讀步驟</button>
           </div>
+
 
           <div id="fa-pane-bleed" class="fa-step-box">
             <div><strong>1. 大出血控制（MARCH 首位）</strong>：戴上手套或隔著塑膠袋，立即找出噴濺或大量湧血部位。</div>
@@ -1027,6 +1099,7 @@
             </div>
           </div>
 
+
           <div id="fa-pane-cpr" class="fa-step-box" style="display:none;">
             <div><strong>1. 叫（確認意識與呼吸）</strong>：輕拍雙肩大聲呼喚，觀察胸腹有無正常起伏（無反應且無正常呼吸即開始）。</div>
             <div style="margin-top:4px;"><strong>2. 叫（求救打 119 拿 AED）</strong>：指定旁人撥打 119 並開啟擴音，同時請人去拿最近的 AED。</div>
@@ -1035,6 +1108,7 @@
             <button id="btn-cpr-metro" class="cpr-metro-btn" onclick="toggleCprMetronome()">💓 啟動 110 下/分 CPR 壓胸聲音節拍器</button>
           </div>
 
+
           <div id="fa-pane-choke" class="fa-step-box" style="display:none;">
             <div><strong>1. 判斷重度哽塞</strong>：患者雙手掐脖、無法說話、無法咳嗽或呼吸困難時立即施救。</div>
             <div style="margin-top:4px;"><strong>2. 成人／1歲以上兒童（哈姆立克法）</strong>：站在患者背後雙腳成弓箭步，一手握拳（虎口朝內）置於患者<strong>肚臍上方、胸骨下方</strong>，另一手包住拳頭，快速用力<strong>向內、向上</strong>連續推壓，直到異物吐出。</div>
@@ -1042,6 +1116,7 @@
           </div>
         </div>
       </div>
+
 
       <!-- 離線高頻求救哨音＋螢幕 SOS 閃光 -->
       <div class="section-card">
@@ -1062,6 +1137,7 @@
         </div>
       </div>
 
+
       <!-- 情境處置檢查表 (My Timeline) -->
       <div class="section-card">
         <div class="section-title" onclick="toggleInfoSection('sos-timeline-sec')">
@@ -1080,10 +1156,12 @@
         </div>
       </div>
 
+
       <div style="text-align:center; margin-top:8px;">
         <button class="btn btn-muted" style="font-size:0.8rem;" onclick="switchTab('camp'); setTimeout(()=>{const el=document.getElementById('camp-pfa-sec'); if(el&&el.style.display==='none') toggleInfoSection('camp-pfa-sec');}, 80);">🌿 需要深呼吸穩定情緒？前往營火靜心 ▶</button>
       </div>
     </div>
+
 
     <!-- 子分頁 3：🤝 應變計畫（個人防災卡瘦身去重 ＋ 家庭聯絡圖譜 ＋ 集合點階層 ＋ 隱私保護鎖） -->
     <div id="guide-plan-pane" style="display:none;">
@@ -1099,6 +1177,7 @@
         </div>
       </div>
 
+
       <div class="section-card">
         <div class="section-title" onclick="toggleInfoSection('plan-idcard-sec')">
           <span>🪪 個人防災醫療卡（已過濾備用背包）</span>
@@ -1112,6 +1191,7 @@
         </div>
       </div>
 
+
       <div class="section-card">
         <div class="section-title">
           <span>👨‍👩‍👧‍👦 家庭與親友緊急聯絡網（關係圖譜）</span>
@@ -1120,6 +1200,7 @@
         <div class="section-body" id="contacts-graph-box"></div>
       </div>
 
+
       <div class="section-card">
         <div class="section-title">
           <span>📍 共同約定集合點階層（Plan A / B / C）</span>
@@ -1127,6 +1208,7 @@
         </div>
         <div class="section-body" id="rally-hierarchy-box"></div>
       </div>
+
 
       <!-- P1-2: 互動式避難行動判定樹 -->
       <div class="section-card">
@@ -1163,6 +1245,7 @@
         </div>
       </div>
 
+
       <!-- P1-2: 歸宅困難與失聯匯合協議＋照顧分工 -->
       <div class="section-card">
         <div class="section-title" onclick="toggleInfoSection('plan-reunify-sec')">
@@ -1190,6 +1273,7 @@
         </div>
       </div>
 
+
       <!-- P2-2: 半年演練排程、離線 QR Code 平安卡與可列印 PDF 家庭應變計畫 -->
       <div class="section-card">
         <div class="section-title">
@@ -1206,6 +1290,7 @@
       </div>
     </div>
   </div>
+
 
   <!-- 分頁 4：營地（依重要性由上而下排序，全部預設折疊） -->
   <div id="tab-camp" style="display:none;">
@@ -1242,8 +1327,44 @@
           </label>
         </div>
         <button class="btn btn-primary" style="width:100%;" onclick="saveSettings()">儲存設定並同步資料</button>
+
+
+        <!-- v2.5 方案 A：Google Drive ➔ GAS ➔ GitHub Pages 自動化部署管道（Arter 兩段式內嵌折疊） -->
+        <div style="margin-top:12px; padding-top:10px; border-top:1px dashed var(--border);">
+          <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="toggleInfoSection('camp-gh-deploy-box')">
+            <span style="font-size:0.84rem; font-weight:800; color:var(--primary-dark);">🚀 雲端自動發布至 GitHub Pages（方案 A）</span>
+            <span id="camp-gh-deploy-box-arrow" style="font-size:0.75rem; color:var(--text-muted);">▶</span>
+          </div>
+          <div id="camp-gh-deploy-box" style="display:none; margin-top:8px; padding:10px 12px; background:#F8F5EE; border:1px solid var(--border); border-radius:12px; font-size:0.8rem;">
+            <div id="gh-config-status" style="margin-bottom:8px; color:var(--text-muted); font-variant-numeric:tabular-nums;">
+              連線後將自動讀取 GitHub 綁定狀態...
+            </div>
+            <div class="form-group" style="margin-bottom:8px;">
+              <label class="form-label">目標 GitHub 儲存庫（owner/repo）與分支</label>
+              <div style="display:flex; gap:6px;">
+                <input type="text" id="setting-gh-repo" class="form-input" value="simonyu26/family-disaster-kit" style="flex:2; font-size:0.82rem;">
+                <input type="text" id="setting-gh-branch" class="form-input" value="main" style="flex:1; font-size:0.82rem;">
+              </div>
+            </div>
+            <div class="form-group" style="margin-bottom:8px;">
+              <label class="form-label">🔑 GitHub Personal Access Token（僅存於 GAS 後端指令碼屬性）</label>
+              <div style="display:flex; gap:6px;">
+                <input type="password" id="setting-gh-token" class="form-input" placeholder="貼上 github_pat_...（已設定則可留空）" style="flex:1; font-size:0.82rem;">
+                <button class="btn btn-muted" style="white-space:nowrap; font-size:0.78rem;" onclick="saveGitHubDeployConfig()">儲存設定</button>
+              </div>
+              <div style="font-size:0.72rem; color:var(--text-muted); margin-top:4px; line-height:1.45;">
+                💡 首次設定：至 GitHub ➔ Settings ➔ Developer settings ➔ Personal access tokens ➔ Fine-grained tokens，Repository 選 <code>family-disaster-kit</code>，Permissions 展開 Repository permissions 將 <strong>Contents</strong> 設為 <strong>Read and write</strong>。
+              </div>
+            </div>
+            <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:8px;">
+              <button id="btn-gh-push-now" class="btn btn-primary" style="flex:1; font-size:0.8rem;" onclick="triggerDriveToGitHubDeploy()">🚀 立即從雲端備份發布至 GitHub</button>
+              <button id="btn-gh-daily-trig" class="btn btn-muted" style="font-size:0.78rem;" onclick="toggleDailyGitHubTrigger()">⏰ 啟用每日 06:00 自動發布</button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
+
 
     <!-- 2. 小隊成員與背包名單管理 -->
     <div class="section-card">
@@ -1258,6 +1379,7 @@
         <div id="members-manage-list"></div>
       </div>
     </div>
+
 
     <!-- 3. 營火靜心與減壓放鬆（心理急救 PFA） -->
     <div class="section-card">
@@ -1283,6 +1405,7 @@
           </label>
         </div>
 
+
         <div class="riddle-box">
           <div style="display:flex; justify-content:space-between; align-items:center;">
             <strong style="color:#9C5211;">🏕️ 營地親子安定小謎題／安心語錄</strong>
@@ -1295,6 +1418,7 @@
       </div>
     </div>
 
+
     <!-- 4. 營地版本更新摘要區 -->
     <div class="section-card">
       <div class="section-title" onclick="toggleInfoSection('camp-changelog-sec')">
@@ -1303,7 +1427,7 @@
       </div>
       <div class="section-body" id="camp-changelog-sec" style="display:none; font-size:0.82rem; line-height:1.55;">
         <div style="padding-bottom:8px; border-bottom:1px dashed #E6DEC9;">
-          <strong style="color:var(--primary-dark);">v2.4（Arter UI/UX 全面改版：日系手冊美學 × 頂部瘦身 × 兩段式清單 × 底部 🆘 拇指熱區）</strong><ul style="margin:4px 0 0 0; padding-left:18px;"><li>視覺升級：導入暖米白日系手冊配色、降噪 1px 細邊框、柔和陰影與等寬數據字體（tabular-nums）。</li><li>版面瘦身：頂部列與連線狀態二合一、營火支撐力與每日任務合併為單一膠囊、760px 寬螢幕置中容器、移除右下遮擋懸浮球並整合至工具列。</li><li>動線優化：物資列改為「點擊展開數量／效期」兩段式設計、底部導覽列正中央配置「🆘 緊急應變」拇指熱區主鈕、緊急應變頁頂部增設 3 秒零捲動快捷列。</li></ul></div><div style="padding:8px 0; border-bottom:1px dashed #E6DEC9;"><strong>v2.3（2026-11-14）</strong><ul style="margin:4px 0 0 0; padding-left:18px;"><li>即時情報新增「多點位外地親友縣市」同時關注（最多 3 縣市）。</li><li>應變計畫新增「半年家庭演練提醒」、純前端「離線平安卡 QR Code」與「可列印家庭應變計畫 PDF」。</li><li>地圖新增附近防空／避難設施（OSM）查詢與 NCDR 災害潛勢圖入口；夥伴卡片加入動物心情氣泡與每日 30 秒小任務連勝打卡。</li></ul></div><div style="padding:8px 0; border-bottom:1px dashed #E6DEC9;"><strong>v2.2（2026-11-14）</strong><ul style="margin:4px 0 0 0; padding-left:18px;"><li>地圖支援「點擊放圖釘＋拖曳微調」、集合點安全檢核與「一鍵下載全部避難點離線圖磚＋周邊 AED」；AED 支援依點位離線切換。</li><li>應變計畫新增「在宅／撤離互動式判定樹」與「歸宅困難失聯匯合協議＋照顧分工」。</li><li>物資新增隨身 EDC／72h／居家／WASH 分層篩選、營火可持續支撐時數計算（木桶短板）與一鍵換新滾動輪替任務。</li></ul></div><div style="padding:8px 0; border-bottom:1px dashed #E6DEC9;"><strong>v2.1（2026-11-14）</strong>
+          <strong style="color:var(--primary-dark);">v2.5（方案 A 自動化部署管道：Google Drive ➔ GAS ➔ GitHub Pages 一鍵／定時發布）</strong><ul style="margin:4px 0 0 0; padding-left:18px;"><li>新增 `syncDriveBackupToGitHub()` 自動抓取雲端備份最新子資料夾，將 `index.html`、`sw.js`、`.md` 文件直接 Commit & Push 至 GitHub。</li><li>營地系統設定區新增「🚀 雲端自動發布至 GitHub Pages」折疊面板，支援安全儲存 `GITHUB_TOKEN`、一鍵立即發布與每日 06:00 定時自動發布。</li></ul></div><div style="padding:8px 0; border-bottom:1px dashed #E6DEC9;"><strong>v2.4（2026-11-14）</strong><ul style="margin:4px 0 0 0; padding-left:18px;"><li>視覺升級：導入暖米白日系手冊配色、降噪 1px 細邊框、柔和陰影與等寬數據字體（tabular-nums）。</li><li>版面瘦身：頂部列與連線狀態二合一、營火支撐力與每日任務合併為單一膠囊、760px 寬螢幕置中容器、移除右下遮擋懸浮球並整合至工具列。</li><li>動線優化：物資列改為「點擊展開數量／效期」兩段式設計、底部導覽列正中央配置「🆘 緊急應變」拇指熱區主鈕、緊急應變頁頂部增設 3 秒零捲動快捷列。</li></ul></div><div style="padding:8px 0; border-bottom:1px dashed #E6DEC9;"><strong>v2.3（2026-11-14）</strong><ul style="margin:4px 0 0 0; padding-left:18px;"><li>即時情報新增「多點位外地親友縣市」同時關注（最多 3 縣市）。</li><li>應變計畫新增「半年家庭演練提醒」、純前端「離線平安卡 QR Code」與「可列印家庭應變計畫 PDF」。</li><li>地圖新增附近防空／避難設施（OSM）查詢與 NCDR 災害潛勢圖入口；夥伴卡片加入動物心情氣泡與每日 30 秒小任務連勝打卡。</li></ul></div><div style="padding:8px 0; border-bottom:1px dashed #E6DEC9;"><strong>v2.2（2026-11-14）</strong><ul style="margin:4px 0 0 0; padding-left:18px;"><li>地圖支援「點擊放圖釘＋拖曳微調」、集合點安全檢核與「一鍵下載全部避難點離線圖磚＋周邊 AED」；AED 支援依點位離線切換。</li><li>應變計畫新增「在宅／撤離互動式判定樹」與「歸宅困難失聯匯合協議＋照顧分工」。</li><li>物資新增隨身 EDC／72h／居家／WASH 分層篩選、營火可持續支撐時數計算（木桶短板）與一鍵換新滾動輪替任務。</li></ul></div><div style="padding:8px 0; border-bottom:1px dashed #E6DEC9;"><strong>v2.1（2026-11-14）</strong>
           <ul style="margin:4px 0 0 0; padding-left:18px;">
             <li>雙層個資防護：GAS 後端通行碼驗證＋健康個資本機優先加密＋應變計畫 PIN 碼遮罩（急救頁免鎖秒開）。</li>
             <li>統一「🆘 緊急應變」OLED 純黑高對比戰術介面，情報區劃分為即時情報／緊急應變／應變計畫三子分頁。</li>
@@ -1321,11 +1445,13 @@
     </div>
   </div>
 
+
   <!-- 懸浮按鈕 -->
   <div class="fab-container" id="fab-group">
     <div class="fab secondary" onclick="openPrintModal()" title="狸貓商店採買單">🛒</div>
     <div class="fab" onclick="openAddItemModal()" title="新增物資">+</div>
   </div>
+
 
   <!-- 底部導覽列（5 鍵拇指熱區：中央配置 🆘 應變快捷鈕） -->
   <div class="bottom-nav">
@@ -1346,7 +1472,9 @@
     </div>
   </div>
 
+
   <div id="toast-container"></div>
+
 
   <!-- 採買清單 Modal -->
   <div id="print-modal">
@@ -1362,6 +1490,7 @@
     </div>
     <div id="print-content"></div>
   </div>
+
 
   <!-- 新增/編輯物資 Modal -->
   <div id="item-modal" class="modal-backdrop">
@@ -1390,6 +1519,7 @@
     </div>
   </div>
 
+
   <!-- 新增/編輯成員 Modal -->
   <div id="member-modal" class="modal-backdrop">
     <div class="modal-card">
@@ -1399,6 +1529,7 @@
         <label class="form-label">成員名稱（編輯可改名，試算表將同步更新）</label>
         <input type="text" id="member-name-input" class="form-input" placeholder="例如：Grandma 或 小明">
       </div>
+
 
       <div class="form-group">
         <label class="form-label">主角頭像（點選 Emoji、輸入或上傳照片）</label>
@@ -1413,6 +1544,7 @@
         <div class="emoji-picker" id="avatar-emoji-picker"></div>
       </div>
 
+
       <div class="form-group">
         <label class="form-label">夥伴動物（點選 Emoji、輸入或上傳照片）</label>
         <div class="photo-upload-row">
@@ -1425,6 +1557,7 @@
         </div>
         <div class="emoji-picker" id="buddy-emoji-picker"></div>
       </div>
+
 
       <div style="display:flex; gap:8px;">
         <div class="form-group" style="flex:1;">
@@ -1476,6 +1609,7 @@
     </div>
   </div>
 
+
   <!-- 新增避難點位 Modal -->
   <div id="loc-modal" class="modal-backdrop">
     <div class="modal-card">
@@ -1521,6 +1655,8 @@
       </div>
     </div>
   </div>
+
+
 
 
   <!-- 新增/編輯家庭緊急聯絡人 Modal -->
@@ -1570,6 +1706,8 @@
   </div>
 
 
+
+
   <!-- QR Code 離線平安卡 Modal -->
   <div id="qr-modal" class="modal-backdrop">
     <div class="modal-card" style="text-align:center;">
@@ -1583,6 +1721,7 @@
     </div>
   </div>
 
+
   <!-- 家庭應變計畫列印／存為 PDF Modal -->
   <div id="plan-print-modal">
     <div class="print-actions">
@@ -1592,16 +1731,19 @@
     <div id="plan-print-content"></div>
   </div>
 
+
   <!-- 螢幕 SOS 閃光全螢幕覆蓋層 -->
   <div id="sos-flash-overlay" onclick="stopScreenSosFlash()">
     <div style="font-size:2rem; font-weight:900; text-align:center;">🆘 SOS 求救閃光中</div>
     <div style="margin-top:14px; font-size:1rem;">點擊螢幕任意位置即可停止</div>
   </div>
 
+
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script>
     const DEFAULT_GAS_URL = '';
+
 
     const STORAGE_KEYS = {
       GAS_URL: 'camp_gas_url',
@@ -1622,6 +1764,7 @@
       LAST_SYNC: 'camp_last_sync'
     };
 
+
     let contactsData = JSON.parse(localStorage.getItem(STORAGE_KEYS.CONTACTS) || '[]');
     let localHealthMap = JSON.parse(localStorage.getItem(STORAGE_KEYS.LOCAL_HEALTH) || '{}');
     let privacyRevealed = false;
@@ -1629,9 +1772,11 @@
     let tqStartMs = parseInt(localStorage.getItem('camp_tq_start_ms') || '0', 10) || 0;
     let sosFlashTimer = null;
 
+
     function getGasPin() { return localStorage.getItem(STORAGE_KEYS.GAS_PIN) || ''; }
     function getUiPin() { return localStorage.getItem(STORAGE_KEYS.UI_PIN) || ''; }
     function isHealthSyncEnabled() { return localStorage.getItem(STORAGE_KEYS.SYNC_HEALTH) === '1'; }
+
 
     // 前端欄位輕量 XOR + Base64 加密（以家庭通行碼為金鑰，避免試算表直接明文暴露）
     function encryptField(plain) {
@@ -1645,6 +1790,7 @@
       out.forEach(b => bin += String.fromCharCode(b));
       return 'ENC:' + btoa(bin);
     }
+
 
     function decryptField(val) {
       if (!val || !String(val).startsWith('ENC:')) return val || '';
@@ -1660,6 +1806,7 @@
       } catch (e) { return val; }
     }
 
+
     const CITY_COORDS = {
       '臺北市': { lat: 25.0330, lng: 121.5654 },
       '彰化市': { lat: 24.0818, lng: 120.5387 },
@@ -1674,8 +1821,10 @@
       '臺東縣': { lat: 22.7583, lng: 121.1444 }
     };
 
+
     const AVATAR_EMOJIS = ['👨', '👩', '👧', '👦', '👴', '👵', '🧑', '👶', '⛺', '🦸'];
     const BUDDY_EMOJIS = ['🐶', '🐱', '🐰', '🐹', '🐻', '🦊', '🐨', '🐼', '🦉', '🐾'];
+
 
     let globalData = null;
     let membersMap = {};
@@ -1691,12 +1840,15 @@
     let collapsedCats = JSON.parse(localStorage.getItem(STORAGE_KEYS.COLLAPSED) || '{}');
     let offlineQueue = JSON.parse(localStorage.getItem(STORAGE_KEYS.QUEUE) || '[]');
 
+
     let mapInstance = null, mapInitialized = false, markersLayer = null, aedLayer = null, routeLayer = null, userPos = null, userMarker = null;
     let aedsData = JSON.parse(localStorage.getItem('camp_aeds_cache_v20') || '[]');
+
 
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('./sw.js').catch(() => {});
     }
+
 
     window.addEventListener('online', () => {
       updateNetworkUI();
@@ -1708,7 +1860,9 @@
       showToast('🟠 目前處於離線模式，變更將暫存於本機', 'warn');
     });
 
+
         let isEmergencyMode = localStorage.getItem('camp_emergency_mode') === '1';
+
 
     function applyEmergencyModeUI( navigateNow = false ) {
       const btn = document.getElementById('btn-emergency-mode');
@@ -1723,6 +1877,7 @@
       }
     }
 
+
     function toggleEmergencyMode() {
       isEmergencyMode = !isEmergencyMode;
       localStorage.setItem('camp_emergency_mode', isEmergencyMode ? '1' : '0');
@@ -1735,6 +1890,7 @@
       }
     }
 
+
     window.onload = () => {
       applyEmergencyModeUI(false);
       initEmojiPickers();
@@ -1744,9 +1900,11 @@
         window.history.replaceState({}, document.title, window.location.pathname);
       }
 
+
       updateNetworkUI();
       updatePendingBadge();
       updateLastSyncText();
+
 
       const cachedInv = localStorage.getItem(STORAGE_KEYS.DATA) || localStorage.getItem('camp_inventory_cache_v18');
       const cachedMem = localStorage.getItem(STORAGE_KEYS.MEMBERS) || localStorage.getItem('camp_members_cache_v18');
@@ -1757,6 +1915,7 @@
         updateGlobalAlertTicker();
       }
 
+
       if (cachedInv) {
         globalData = JSON.parse(cachedInv);
         if (cachedMem) membersMap = JSON.parse(cachedMem);
@@ -1766,6 +1925,7 @@
         renderInventory();
         renderCampTab();
       }
+
 
       if (!getGasUrl()) {
         switchTab('camp');
@@ -1782,6 +1942,7 @@
       }
     };
 
+
     function toggleInfoSection(secId) {
       const body = document.getElementById(secId);
       const arrow = document.getElementById(secId + '-arrow');
@@ -1790,6 +1951,7 @@
       if (arrow) arrow.innerText = isHidden ? '▼' : '▶';
     }
 
+
     function initEmojiPickers() {
       const avBox = document.getElementById('avatar-emoji-picker');
       const bdBox = document.getElementById('buddy-emoji-picker');
@@ -1797,11 +1959,13 @@
       bdBox.innerHTML = BUDDY_EMOJIS.map(e => `<button type="button" class="emoji-opt" onclick="pickEmoji('buddy','${e}')">${e}</button>`).join('');
     }
 
+
     function pickEmoji(target, emoji) {
       const input = document.getElementById(target === 'avatar' ? 'member-avatar-input' : 'member-buddy-input');
       input.value = emoji;
       syncPhotoPreview(target);
     }
+
 
     function syncPhotoPreview(target) {
       const val = document.getElementById(target === 'avatar' ? 'member-avatar-input' : 'member-buddy-input').value.trim();
@@ -1809,6 +1973,7 @@
       if (val.startsWith('data:image/')) { img.src = val; img.style.display = 'inline-block'; }
       else { img.style.display = 'none'; }
     }
+
 
     function handlePhotoUpload(event, target) {
       const file = event.target.files[0];
@@ -1833,6 +1998,7 @@
       reader.readAsDataURL(file);
     }
 
+
     function renderAvatarHTML(val, isBuddy = false) {
       if (val && val.startsWith('data:image/')) {
         return `<img src="${val}" class="${isBuddy ? 'buddy-img' : 'avatar-img'}" alt="頭像">`;
@@ -1840,15 +2006,18 @@
       return val || (isBuddy ? '🐾' : '🧑');
     }
 
+
     function getGasUrl() {
       return localStorage.getItem(STORAGE_KEYS.GAS_URL) || DEFAULT_GAS_URL;
     }
+
 
     function updateNetworkUI() {
       const el = document.getElementById('net-status');
       if (navigator.onLine) { el.className = 'status-badge online'; el.innerText = '🟢 已連線'; }
       else { el.className = 'status-badge offline'; el.innerText = '🟠 離線模式'; }
     }
+
 
     function updatePendingBadge() {
       const badge = document.getElementById('pending-badge');
@@ -1858,6 +2027,7 @@
       } else { badge.style.display = 'none'; }
     }
 
+
     function updateLastSyncText() {
       const ts = localStorage.getItem(STORAGE_KEYS.LAST_SYNC);
       const el = document.getElementById('last-sync-text');
@@ -1865,6 +2035,7 @@
       const d = new Date(ts);
       el.innerText = `同步於 ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
     }
+
 
     function showToast(msg, type = 'info') {
       const container = document.getElementById('toast-container');
@@ -1875,11 +2046,13 @@
       setTimeout(() => { toast.remove(); }, 2800);
     }
 
+
     async function syncWithServer(manual = false) {
       const url = getGasUrl();
       if (!url) { switchTab('camp'); return; }
       if (!navigator.onLine) { if (manual) showToast('🟠 目前無網路，無法連線至試算表', 'warn'); return; }
       if (offlineQueue.length > 0) await flushOfflineQueue();
+
 
       try {
         if (manual) showToast('🔄 正在從營地同步最新進度...');
@@ -1896,16 +2069,20 @@
         }
         if (!json.ok) throw new Error(json.error || '回傳格式錯誤');
 
+
         globalData = json.inventory;
         membersMap = json.members || {};
         locationsData = json.locations || [];
         contactsData = json.contacts || [];
+        if (json.githubConfig) { githubConfigState = json.githubConfig; localStorage.setItem('camp_gh_cfg_v25', JSON.stringify(githubConfigState)); }
+
 
         localStorage.setItem(STORAGE_KEYS.DATA, JSON.stringify(globalData));
         localStorage.setItem(STORAGE_KEYS.MEMBERS, JSON.stringify(membersMap));
         localStorage.setItem(STORAGE_KEYS.LOCATIONS, JSON.stringify(locationsData));
         localStorage.setItem(STORAGE_KEYS.CONTACTS, JSON.stringify(contactsData));
         localStorage.setItem(STORAGE_KEYS.LAST_SYNC, json.serverTime || new Date().toISOString());
+
 
         selectInitialCharacter();
         updateLastSyncText();
@@ -1916,6 +2093,7 @@
         if (manual) showToast('❌ 同步失敗：' + err.message, 'error');
       }
     }
+
 
     async function postToGas(payload) {
       const url = getGasUrl();
@@ -1931,6 +2109,7 @@
       return json;
     }
 
+
     function enqueueAction(payload) {
       if (payload.action === 'updateItem') {
         offlineQueue = offlineQueue.filter(q => !(q.action === 'updateItem' && q.row === payload.row && q.charName === payload.charName));
@@ -1939,6 +2118,7 @@
       localStorage.setItem(STORAGE_KEYS.QUEUE, JSON.stringify(offlineQueue));
       updatePendingBadge();
     }
+
 
     async function flushOfflineQueue() {
       if (offlineQueue.length === 0 || !navigator.onLine || !getGasUrl()) return;
@@ -1962,6 +2142,7 @@
       }
     }
 
+
     function switchTab(tab) {
       currentTab = tab;
       ['inventory', 'map', 'guide', 'camp'].forEach(t => {
@@ -1974,6 +2155,7 @@
       if (tab === 'camp') renderCampTab();
     }
 
+
     function setInvSubMode(mode) {
       invSubMode = mode;
       document.getElementById('btn-sub-char').classList.toggle('active', mode === 'character');
@@ -1982,12 +2164,14 @@
       renderParty(); renderInventory();
     }
 
+
     
     
     // ================= 離線高頻求救哨音 (Web Audio API) =================
     let audioCtx = null;
     let whistleTimer = null;
     let activeWhistleMode = '';
+
 
     function playTone(durationMs) {
       if (!audioCtx) {
@@ -2006,6 +2190,7 @@
       osc.stop(audioCtx.currentTime + durationMs / 1000);
     }
 
+
     function stopWhistle() {
       if (whistleTimer) { clearTimeout(whistleTimer); whistleTimer = null; }
       activeWhistleMode = '';
@@ -2017,6 +2202,7 @@
       if (stEl) stEl.innerText = '目前狀態：待機中';
     }
 
+
     function toggleWhistle(mode) {
       if (activeWhistleMode === mode) { stopWhistle(); return; }
       stopWhistle();
@@ -2024,6 +2210,7 @@
       document.getElementById(mode === 'sos' ? 'btn-whistle-sos' : 'btn-whistle-pulse').classList.add('active');
       document.getElementById('whistle-status').innerText =
         mode === 'sos' ? '🔊 發聲中：SOS 摩斯密碼循環（・・・－－－・・・）' : '🔊 發聲中：高頻間歇長哨音循環';
+
 
       if (mode === 'pulse') {
         const loopPulse = () => {
@@ -2046,6 +2233,7 @@
         loopSos();
       }
     }
+
 
     
     // ================= 情境處置檢查表 (My Timeline) =================
@@ -2076,6 +2264,7 @@
     let currentTlKey = 'eq';
     let tlState = JSON.parse(localStorage.getItem('camp_timeline_checks') || '{}');
 
+
     function setTimelineScenario(key) {
       currentTlKey = key;
       document.querySelectorAll('#tl-scenario-chips .city-chip').forEach(el => {
@@ -2084,6 +2273,7 @@
       renderTimelineChecklist();
     }
 
+
     function toggleTimelineStep(idx) {
       if (!tlState[currentTlKey]) tlState[currentTlKey] = {};
       tlState[currentTlKey][idx] = !tlState[currentTlKey][idx];
@@ -2091,12 +2281,14 @@
       renderTimelineChecklist();
     }
 
+
     function resetTimelineScenario() {
       tlState[currentTlKey] = {};
       localStorage.setItem('camp_timeline_checks', JSON.stringify(tlState));
       renderTimelineChecklist();
       showToast('🔄 已重置此情境檢查表', 'info');
     }
+
 
     function renderTimelineChecklist() {
       const list = TIMELINE_DATA[currentTlKey] || [];
@@ -2113,9 +2305,11 @@
       if (progEl) progEl.innerText = `完成進度：${doneCount} / ${list.length}`;
     }
 
+
     
     // ================= 黃金 4 分鐘急救處置卡 + 110BPM CPR 節拍器 =================
     let cprMetroTimer = null;
+
 
     function setFirstAidTab(tab) {
       ['cpr', 'bleed', 'choke'].forEach(k => {
@@ -2126,6 +2320,7 @@
         el.classList.toggle('active', el.getAttribute('data-fa') === tab);
       });
     }
+
 
     function playCprClick() {
       if (!audioCtx) {
@@ -2144,12 +2339,14 @@
       osc.start();
       osc.stop(audioCtx.currentTime + 0.075);
 
+
       const btn = document.getElementById('btn-cpr-metro');
       if (btn) {
         btn.classList.add('beat');
         setTimeout(() => btn.classList.remove('beat'), 140);
       }
     }
+
 
     function toggleCprMetronome() {
       const btn = document.getElementById('btn-cpr-metro');
@@ -2169,6 +2366,7 @@
       cprMetroTimer = setInterval(playCprClick, 545);
     }
 
+
     
     // ================= 工序 4：營火 4-4-6 靜心呼吸＋離線自然雨聲＋親子安撫卡 =================
     let breathTimer = null;
@@ -2176,6 +2374,7 @@
     let noiseNode = null;
     let noiseGain = null;
     let isNoisePlaying = false;
+
 
     const CALM_CARDS = [
       { q: '🧩 【露營腦筋急轉彎】什麼東西越洗越髒，不洗反而很乾淨？', a: '💧 答案是「水」！喝一口溫水潤潤喉嚨，我們都很安全。' },
@@ -2186,6 +2385,7 @@
     ];
     let calmIdx = 0;
 
+
     function renderCalmCard() {
       const item = CALM_CARDS[calmIdx % CALM_CARDS.length];
       const qEl = document.getElementById('calm-card-question');
@@ -2194,15 +2394,19 @@
       if (aEl) { aEl.innerText = item.a; aEl.style.display = 'none'; }
     }
 
+
     function revealCalmAnswer() {
       const aEl = document.getElementById('calm-card-answer');
       if (aEl) aEl.style.display = 'block';
     }
 
+
     function nextCalmCard() {
       calmIdx = (calmIdx + 1) % CALM_CARDS.length;
       renderCalmCard();
+      renderGitHubDeployStatus();
     }
+
 
     function toggleBreathingGuide() {
       const circle = document.getElementById('breath-circle');
@@ -2218,6 +2422,7 @@
       }
       isBreathing = true;
       if (btn) btn.innerText = '⏹️ 停止呼吸引導';
+
 
       const runCycle = () => {
         if (!isBreathing) return;
@@ -2241,6 +2446,7 @@
       runCycle();
     }
 
+
     function toggleForestWhiteNoise() {
       const btn = document.getElementById('btn-noise-toggle');
       if (isNoisePlaying) {
@@ -2256,6 +2462,7 @@
       }
       if (audioCtx.state === 'suspended') audioCtx.resume();
 
+
       // 以 Brown/Pink Noise 濾波合成柔和森林細雨與營火環境白噪音
       const bufferSize = audioCtx.sampleRate * 3;
       const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
@@ -2268,16 +2475,20 @@
         output[i] *= 2.2;
       }
 
+
       noiseNode = audioCtx.createBufferSource();
       noiseNode.buffer = buffer;
       noiseNode.loop = true;
+
 
       const filter = audioCtx.createBiquadFilter();
       filter.type = 'lowpass';
       filter.frequency.setValueAtTime(650, audioCtx.currentTime);
 
+
       noiseGain = audioCtx.createGain();
       noiseGain.gain.setValueAtTime(0.18, audioCtx.currentTime);
+
 
       noiseNode.connect(filter);
       filter.connect(noiseGain);
@@ -2287,6 +2498,7 @@
       if (btn) btn.innerText = '⏹️ 停止森林細雨聲';
       showToast('🌧️ 已開啟離線森林細雨白噪音', 'success');
     }
+
 
     function refreshSosGps() {
       const disp = document.getElementById('sos-coord-display');
@@ -2317,6 +2529,7 @@
       );
     }
 
+
     function copySosCoord() {
       if (!userPos) {
         showToast('請先點擊「🛰️ 更新 GPS 座標」', 'warn');
@@ -2329,6 +2542,7 @@
         prompt('請複製以下報案座標文字：', text);
       }
     }
+
 
     function setGuideSubMode(mode) {
       if (mode === 'sop') {
@@ -2347,6 +2561,7 @@
       });
     }
 
+
     function selectInitialCharacter() {
       if (!globalData || !globalData.characters.length) return;
       if (myChar && globalData.characters.includes(myChar)) {
@@ -2357,12 +2572,14 @@
       updateOtherCharBanner();
     }
 
+
     function switchToMyChar() {
       if (myChar && globalData.characters.includes(myChar)) {
         currentChar = myChar;
         renderParty(); renderInventory(); updateOtherCharBanner();
       }
     }
+
 
     function updateOtherCharBanner() {
       const banner = document.getElementById('other-char-banner');
@@ -2372,17 +2589,20 @@
       } else { banner.style.display = 'none'; }
     }
 
+
     function toggleOnlyMissing() {
       onlyMissingFilter = !onlyMissingFilter;
       document.getElementById('btn-only-missing').classList.toggle('active', onlyMissingFilter);
       renderInventory();
     }
 
+
     function toggleCategory(cat) {
       collapsedCats[cat] = !collapsedCats[cat];
       localStorage.setItem(STORAGE_KEYS.COLLAPSED, JSON.stringify(collapsedCats));
       renderInventory();
     }
+
 
     function calcProgress(charName) {
       if (!globalData) return { total: 0, checked: 0, pct: 0 };
@@ -2393,6 +2613,7 @@
       });
       return { total, checked, pct: total === 0 ? 0 : Math.round((checked / total) * 100) };
     }
+
 
     function getCategoryIcon(cat) {
       if (/水|飲/.test(cat)) return '💧 ';
@@ -2405,6 +2626,7 @@
       return '🎒 ';
     }
 
+
     function getExpStatus(dateString) {
       if (!dateString) return { expired: false, warn: false };
       const expDate = new Date(dateString);
@@ -2412,6 +2634,7 @@
       const diffMonths = (expDate - new Date()) / (1000 * 60 * 60 * 24 * 30);
       return { expired: diffMonths < 0, warn: diffMonths >= 0 && diffMonths <= 6 };
     }
+
 
     function getMemberVisual(charName) {
       const m = membersMap[charName] || { avatar: '🧑', buddy: '🐾', blood: '', medical: '', iceContact: '', rallyNote: '', memberType: (charName.endsWith('+') || charName === '家庭儲備') ? 'pack' : 'main', mobility: 'self', firstAidSkill: '' };
@@ -2424,6 +2647,7 @@
       };
     }
 
+
     function maskText(str) {
       if (!str) return '';
       if (privacyRevealed || !getUiPin()) return str;
@@ -2431,11 +2655,13 @@
       return str.slice(0, 2) + '***' + str.slice(-1);
     }
 
+
     function maskPhone(phone) {
       if (!phone) return '';
       if (privacyRevealed || !getUiPin()) return phone;
       return phone.replace(/(\d{2,4})[-\s]?(\d{2,4})[-\s]?(\d{2,4})/, '$1-***-$3');
     }
+
 
     function togglePrivacyReveal() {
       if (privacyRevealed) {
@@ -2453,6 +2679,7 @@
       privacyRevealed = true;
       renderPlanTab();
     }
+
 
     function renderPlanTab() {
       const stEl = document.getElementById('privacy-status-text');
@@ -2474,6 +2701,7 @@
       loadDecisionAndReunify();
       renderDrillStatus();
     }
+
 
     function renderFamilyIdCards() {
       const box = document.getElementById('family-idcards-box');
@@ -2515,6 +2743,7 @@
       }).join('');
     }
 
+
     async function hideFromIdCard(name) {
       if (!confirm(`確定要將【${name}】移出家庭防災卡嗎？
 （會改標記為「備用背包」，物資紀錄仍完整保留）`)) return;
@@ -2529,6 +2758,7 @@
         } catch (e) { showToast('⚠️ 已於本機移出防災卡', 'warn'); }
       }
     }
+
 
     function renderContactsGraph() {
       const box = document.getElementById('contacts-graph-box');
@@ -2569,6 +2799,7 @@
       }).join('');
     }
 
+
     function openContactModal(id = '') {
       const c = id ? contactsData.find(x => x.id === id) : null;
       document.getElementById('contact-modal-title').innerText = c ? `✏️ 編輯聯絡人【${c.name}】` : '➕ 新增緊急聯絡人';
@@ -2581,6 +2812,7 @@
       document.getElementById('contact-note').value = c ? (c.note || '') : '';
       document.getElementById('contact-modal').classList.add('open');
     }
+
 
     async function saveContactModal() {
       const id = document.getElementById('contact-edit-id').value;
@@ -2613,6 +2845,7 @@
       } catch (e) { enqueueAction({ action, contact }); showToast('🟠 轉為離線暫存', 'warn'); }
     }
 
+
     async function deleteContact(id) {
       if (!confirm('確定要刪除此緊急聯絡人嗎？')) return;
       contactsData = contactsData.filter(x => x.id !== id);
@@ -2624,6 +2857,7 @@
         showToast('✅ 已刪除聯絡人', 'success');
       } catch (e) { enqueueAction({ action: 'deleteContact', id }); }
     }
+
 
     function renderRallyHierarchy() {
       const box = document.getElementById('rally-hierarchy-box');
@@ -2645,6 +2879,7 @@
       `).join('');
     }
 
+
     // P0-3: 止血帶計時器、螢幕 SOS 閃光、離線語音朗讀
     function updateTourniquetUI() {
       const disp = document.getElementById('tq-display');
@@ -2661,6 +2896,7 @@
       btn.innerText = '⏹️ 停止／鎖定顯示';
     }
 
+
     function toggleTourniquetTimer() {
       if (tqStartMs) {
         if (tqTimer) { clearInterval(tqTimer); tqTimer = null; }
@@ -2674,12 +2910,14 @@
       showToast('⏱️ 已開始記錄止血帶綁紮時間', 'error');
     }
 
+
     function resetTourniquetTimer() {
       if (tqTimer) { clearInterval(tqTimer); tqTimer = null; }
       tqStartMs = 0;
       localStorage.removeItem('camp_tq_start_ms');
       updateTourniquetUI();
     }
+
 
     function startScreenSosFlash() {
       const ov = document.getElementById('sos-flash-overlay');
@@ -2693,11 +2931,13 @@
       }, 350);
     }
 
+
     function stopScreenSosFlash() {
       if (sosFlashTimer) { clearInterval(sosFlashTimer); sosFlashTimer = null; }
       const ov = document.getElementById('sos-flash-overlay');
       if (ov) ov.style.display = 'none';
     }
+
 
     function toggleFirstAidSpeech() {
       if (!('speechSynthesis' in window)) { showToast('❌ 此瀏覽器不支援語音朗讀', 'warn'); return; }
@@ -2719,10 +2959,12 @@
       if (btn) btn.innerText = '⏹️ 停止語音朗讀';
     }
 
+
     function renderParty() {
       const container = document.getElementById('party');
       container.innerHTML = '';
       if (!globalData) return;
+
 
       globalData.characters.forEach(char => {
         const prog = calcProgress(char);
@@ -2732,9 +2974,11 @@
           card.onclick = () => { currentChar = char; updateOtherCharBanner(); renderParty(); renderInventory(); };
         }
 
+
         const vis = getMemberVisual(char);
         const barColor = prog.pct === 100 ? '#D99B26' : (prog.pct >= 50 ? '#52796F' : '#E07A5F');
         const myBadgeHTML = (char === myChar) ? '<span class="my-badge">我</span>' : '';
+
 
         card.innerHTML = `
           ${myBadgeHTML}
@@ -2750,6 +2994,7 @@
       });
     }
 
+
     function renderInventory() {
       const container = document.getElementById('inventory');
       container.innerHTML = '';
@@ -2758,8 +3003,10 @@
         return;
       }
 
+
       const searchKey = document.getElementById('main-search').value.toLowerCase().trim();
       const grouped = {};
+
 
       renderDailyQuest();
       renderSustainDashboard();
@@ -2786,10 +3033,12 @@
           if (searchKey && !item.name.toLowerCase().includes(searchKey)) return;
         }
 
+
         const cat = item.category || '未分類';
         if (!grouped[cat]) grouped[cat] = [];
         grouped[cat].push(item);
       });
+
 
       const cats = Object.keys(grouped);
       if (cats.length === 0) {
@@ -2797,10 +3046,12 @@
         return;
       }
 
+
       cats.forEach(cat => {
         const list = grouped[cat];
         const isCollapsed = !!collapsedCats[cat] && !searchKey;
         let readyCount = invSubMode === 'character' ? list.filter(i => i.status[currentChar].state === 'ready').length : 0;
+
 
         const catEl = document.createElement('div');
         catEl.className = 'category-title';
@@ -2811,11 +3062,14 @@
         `;
         container.appendChild(catEl);
 
+
         if (isCollapsed) return;
+
 
         list.forEach(item => {
           const row = document.createElement('div');
           row.className = 'item-row';
+
 
           if (invSubMode === 'character') {
             const charData = item.status[currentChar];
@@ -2826,6 +3080,7 @@
               ? '<div class="alert-tag" style="color:var(--danger)">⚠️ 這個物品已過期！</div>'
               : (expInfo.warn ? '<div class="alert-tag" style="color:var(--warning)">🍂 快過期了（剩不到 6 個月）</div>' : '');
 
+
             const isExpRow = !!expandedItems[item.row];
             if (isExpRow) row.classList.add('expanded');
             const qtyPill = charData.qty ? `<span class="meta-pill qty">×${charData.qty}</span>` : '';
@@ -2833,6 +3088,7 @@
               ? `<span class="meta-pill ${expInfo.expired ? 'danger' : (expInfo.warn ? 'warn' : '')}">${expInfo.expired ? '⚠️過期 ' : (expInfo.warn ? '🍂快到期 ' : '')}${charData.exp}</span>`
               : '';
             const notePill = charData.note ? `<span class="meta-pill">${charData.note.slice(0, 10)}${charData.note.length > 10 ? '…' : ''}</span>` : '';
+
 
             row.innerHTML = `
               <div class="item-header">
@@ -2872,6 +3128,7 @@
               return `<div class="chip ${st.state}" style="${borderStyle}" onclick="cycleChipState(${item.row}, '${char}')">${char} ${icon}${qtyText}</div>`;
             }).join('');
 
+
             row.innerHTML = `
               <div class="item-header">
                 <div class="item-name-line">
@@ -2887,6 +3144,7 @@
       });
     }
 
+
     async function commitItemUpdate(rowIdx, charName) {
       localStorage.setItem(STORAGE_KEYS.DATA, JSON.stringify(globalData));
       const charData = globalData.items.find(i => i.row === rowIdx).status[charName];
@@ -2894,6 +3152,7 @@
         action: 'updateItem', row: rowIdx, charName,
         state: charData.state, expDate: charData.exp, qty: charData.qty, textNote: charData.note
       };
+
 
       if (!navigator.onLine || !getGasUrl()) { enqueueAction(payload); showToast('🟠 已離線暫存', 'warn'); return; }
       try {
@@ -2906,10 +3165,12 @@
       }
     }
 
+
     function toggleItemReady(rowIdx, charName, isChecked) {
       globalData.items.find(i => i.row === rowIdx).status[charName].state = isChecked ? 'ready' : 'missing';
       renderParty(); renderInventory(); commitItemUpdate(rowIdx, charName);
     }
+
 
     function stepQty(rowIdx, charName, delta) {
       const charData = globalData.items.find(i => i.row === rowIdx).status[charName];
@@ -2920,6 +3181,7 @@
       renderParty(); renderInventory(); commitItemUpdate(rowIdx, charName);
     }
 
+
     function updateField(rowIdx, charName, field, value) {
       const charData = globalData.items.find(i => i.row === rowIdx).status[charName];
       charData[field] = value;
@@ -2927,11 +3189,13 @@
       renderParty(); renderInventory(); commitItemUpdate(rowIdx, charName);
     }
 
+
     function cycleChipState(rowIdx, charName) {
       const charData = globalData.items.find(i => i.row === rowIdx).status[charName];
       charData.state = charData.state === 'ready' ? 'missing' : (charData.state === 'missing' ? 'na' : 'ready');
       renderParty(); renderInventory(); commitItemUpdate(rowIdx, charName);
     }
+
 
     function populateCategoryDatalist() {
       const dl = document.getElementById('category-datalist');
@@ -2941,6 +3205,7 @@
         const opt = document.createElement('option'); opt.value = c; dl.appendChild(opt);
       });
     }
+
 
     function openAddItemModal() {
       if (!globalData) { showToast('請先連線載入小隊資料', 'warn'); return; }
@@ -2960,6 +3225,7 @@
       document.getElementById('item-modal').classList.add('open');
     }
 
+
     function openEditItemModal(rowIdx) {
       const item = globalData.items.find(i => i.row === rowIdx);
       if (!item) return;
@@ -2974,6 +3240,7 @@
       document.getElementById('item-modal').classList.add('open');
     }
 
+
     function removeFromCurrentChar() {
       const rowIdx = Number(document.getElementById('edit-item-row').value);
       const item = globalData.items.find(i => i.row === rowIdx);
@@ -2984,17 +3251,20 @@
       renderParty(); renderInventory(); commitItemUpdate(rowIdx, currentChar);
     }
 
+
     async function saveItemModal() {
       const rowStr = document.getElementById('edit-item-row').value;
       const name = document.getElementById('modal-item-name').value.trim();
       const cat = document.getElementById('modal-item-cat').value.trim() || '未分類';
       if (!name) { showToast('請輸入物資名稱', 'warn'); return; }
 
+
       if (!rowStr) {
         const targets = Array.from(document.querySelectorAll('#modal-chars-list input:checked')).map(el => el.value);
         if (targets.length === 0) { showToast('請至少選擇一位隊員', 'warn'); return; }
         closeModal('item-modal');
         const payload = { action: 'addItem', category: cat, itemName: name, requiredChars: targets };
+
 
         if (!navigator.onLine) {
           const statusObj = {};
@@ -3031,6 +3301,7 @@
       }
     }
 
+
     async function confirmDeleteItem() {
       const rowIdx = Number(document.getElementById('edit-item-row').value);
       const item = globalData.items.find(i => i.row === rowIdx);
@@ -3048,6 +3319,7 @@
       } catch (err) { showToast('❌ 刪除失敗：' + err.message, 'error'); }
     }
 
+
     // 營地分頁：成員管理與隱私設定
     function renderCampTab() {
       document.getElementById('setting-gas-url').value = getGasUrl();
@@ -3055,6 +3327,8 @@
       document.getElementById('setting-ui-pin').value = getUiPin();
       document.getElementById('setting-sync-health').checked = isHealthSyncEnabled();
       renderCalmCard();
+      renderGitHubDeployStatus();
+
 
       const select = document.getElementById('setting-my-char');
       select.innerHTML = '<option value="">-- 不鎖定（顯示全部）--</option>';
@@ -3064,12 +3338,14 @@
         });
       }
 
+
       const listEl = document.getElementById('members-manage-list');
       listEl.innerHTML = '';
       if (!globalData || !globalData.characters.length) {
         listEl.innerHTML = '<div style="font-size:0.85rem; color:var(--text-muted);">連線載入後即可管理小隊成員</div>';
         return;
       }
+
 
       globalData.characters.forEach(name => {
         const vis = getMemberVisual(name);
@@ -3093,6 +3369,7 @@
       });
     }
 
+
     async function saveGasServerPin() {
       const newPin = document.getElementById('setting-gas-pin').value.trim();
       const oldPin = getGasPin();
@@ -3106,6 +3383,7 @@
       } catch (e) { showToast('❌ 更新失敗：' + e.message, 'error'); }
     }
 
+
     function openMemberModal(editName = '') {
       if (!navigator.onLine) { showToast('🟠 成員管理需於連線狀態執行', 'warn'); return; }
       const isEdit = !!editName;
@@ -3113,6 +3391,7 @@
       document.getElementById('member-old-name').value = editName;
       document.getElementById('member-name-input').value = editName;
       document.getElementById('member-default-state-group').style.display = isEdit ? 'none' : 'block';
+
 
       if (isEdit) {
         const vis = getMemberVisual(editName);
@@ -3139,6 +3418,7 @@
       document.getElementById('member-modal').classList.add('open');
     }
 
+
     async function saveMemberModal() {
       const oldName = document.getElementById('member-old-name').value;
       const newName = document.getElementById('member-name-input').value.trim();
@@ -3152,19 +3432,23 @@
       const rallyNote = document.getElementById('member-rally-input').value.trim();
       const defaultState = document.getElementById('member-default-state').value;
 
+
       if (!newName) { showToast('請輸入成員名稱', 'warn'); return; }
       closeModal('member-modal');
+
 
       // 永遠先儲存於本機健康快取
       if (oldName && oldName !== newName) delete localHealthMap[oldName];
       localHealthMap[newName] = { blood, medical, rallyNote };
       localStorage.setItem(STORAGE_KEYS.LOCAL_HEALTH, JSON.stringify(localHealthMap));
 
+
       // 若使用者同意加密雲端同步，才加密送往試算表
       const syncHealth = isHealthSyncEnabled();
       const cloudBlood = syncHealth ? encryptField(blood) : '';
       const cloudMed = syncHealth ? encryptField(medical) : '';
       const cloudRally = syncHealth ? encryptField(rallyNote) : '';
+
 
       try {
         if (oldName) {
@@ -3191,6 +3475,7 @@
       } catch (err) { showToast('❌ 操作失敗：' + err.message, 'error'); }
     }
 
+
     async function deleteMember(name) {
       if (!navigator.onLine) { showToast('🟠 移除成員需於連線狀態執行', 'warn'); return; }
       if (!confirm(`確定要移除成員【${name}】嗎？\n試算表中該成員的整欄物資紀錄也會一併刪除。`)) return;
@@ -3208,6 +3493,7 @@
       } catch (err) { showToast('❌ 移除失敗：' + err.message, 'error'); }
     }
 
+
     function saveSettings() {
       const url = document.getElementById('setting-gas-url').value.trim();
       const gasPin = document.getElementById('setting-gas-pin').value.trim();
@@ -3224,6 +3510,7 @@
       updateOtherCharBanner(); renderParty(); renderInventory(); renderPlanTab(); syncWithServer(true);
     }
 
+
     function openPrintModal() {
       if (!globalData) return;
       const filterBox = document.getElementById('filter-partners');
@@ -3235,12 +3522,14 @@
       filterPrintItems();
     }
 
+
     function filterPrintItems() {
       const content = document.getElementById('print-content');
       content.innerHTML = '';
       const searchKey = document.getElementById('search-bar').value.toLowerCase().trim();
       const checkedPartners = Array.from(document.querySelectorAll('#filter-partners input:checked')).map(el => el.value);
       const missingItemsByCategory = {};
+
 
       renderDailyQuest();
       renderSustainDashboard();
@@ -3269,6 +3558,7 @@
         }
       });
 
+
       if (Object.keys(missingItemsByCategory).length === 0) {
         content.innerHTML = '<p style="font-weight:bold; color:var(--primary); padding:20px 0;">🎉 所有選取夥伴的裝備都已就緒！目前無須採買。</p>';
       } else {
@@ -3280,6 +3570,7 @@
     }
     function closePrintModal() { document.getElementById('print-modal').style.display = 'none'; }
     function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
 
     // ================= 離線地圖 + 搜尋 + 雙模路線規劃 =================
     function initMapIfNeeded() {
@@ -3305,10 +3596,12 @@
       updateTileCacheCount();
     }
 
+
     async function searchMap() {
       const q = document.getElementById('map-search-input').value.trim();
       const box = document.getElementById('map-search-results');
       if (!q) { box.style.display = 'none'; renderMapLocations(); return; }
+
 
       if (!navigator.onLine) {
         const matched = locationsData.filter(l => l.name.includes(q) || (l.note || '').includes(q));
@@ -3318,6 +3611,7 @@
           : matched.map(l => `<div class="map-search-item" onclick="focusLocation(${l.lat},${l.lng})"><span>📌 ${l.name}</span><span>前往</span></div>`).join('');
         return;
       }
+
 
       box.style.display = 'block';
       box.innerHTML = '<div class="map-search-item">🔍 搜尋中...</div>';
@@ -3348,6 +3642,7 @@
       }
     }
 
+
     function prefillLocation(name, lat, lng) {
       focusLocation(lat, lng);
       document.getElementById('loc-name').value = name;
@@ -3357,6 +3652,7 @@
       document.getElementById('loc-modal').classList.add('open');
     }
 
+
     
     function renderAedLocations() {
       if (aedLayer) aedLayer.clearLayers();
@@ -3365,10 +3661,12 @@
       if (!listEl) return;
       if (countEl) countEl.innerText = `本機已快取 ${aedsData.length} 台 AED`;
 
+
       if (!aedsData || aedsData.length === 0) {
         listEl.innerHTML = '<div style="text-align:center; padding:14px; color:var(--text-muted); font-size:0.82rem;">點擊上方「⚡❤️ 載入周邊 AED」即可抓取並快取目前畫面周邊之 AED 位置。</div>';
         return;
       }
+
 
       const aedIcon = L.divIcon({
         className: '',
@@ -3376,6 +3674,7 @@
         iconSize: [26, 26],
         iconAnchor: [13, 13]
       });
+
 
       const activeAeds = (currentAedSourceKey !== 'current' && aedsByLocCache[currentAedSourceKey]) ? aedsByLocCache[currentAedSourceKey] : aedsData;
       const srcLoc = currentAedSourceKey !== 'current' ? locationsData.find(l => l.id === currentAedSourceKey) : null;
@@ -3407,6 +3706,7 @@
       }).join('');
     }
 
+
     async function loadNearbyAeds(manual = false) {
       if (!navigator.onLine) {
         if (manual) showToast('🟠 離線模式：顯示已快取之周邊 AED', 'warn');
@@ -3415,6 +3715,7 @@
       }
       const center = userPos || (mapInstance ? mapInstance.getCenter() : { lat: 25.0330, lng: 121.5430 });
       if (manual) showToast('📡 正在查詢周邊最近 AED 位置...');
+
 
       // 優先透過 GAS 代理查詢衛福部全國 AED 開放資料
       const url = getGasUrl();
@@ -3431,6 +3732,7 @@
           }
         } catch (e) {}
       }
+
 
       // 備援：直接查詢 OpenStreetMap Overpass API 周邊 2.5km AED
       try {
@@ -3455,6 +3757,7 @@
         if (manual) showToast('⚠️ AED 資料查詢逾時，請稍後再試', 'warn');
       }
     }
+
 
     function renderMapLocations() {
       populateAedLocationSelect();
@@ -3489,6 +3792,7 @@
       });
     }
 
+
     async function planRouteTo(destLat, destLng, destName) {
       if (!userPos) {
         showToast('🛰️ 先取得目前 GPS 位置以規劃路線...', 'info');
@@ -3506,10 +3810,12 @@
         return;
       }
 
+
       if (routeLayer) routeLayer.clearLayers();
       const banner = document.getElementById('route-banner');
       const infoText = document.getElementById('route-info-text');
       document.getElementById('gmap-nav-link').href = `https://www.google.com/maps/dir/?api=1&destination=${destLat},${destLng}&travelmode=walking`;
+
 
       if (navigator.onLine) {
         try {
@@ -3530,6 +3836,7 @@
         } catch (e) {}
       }
 
+
       const straight = L.polyline([[userPos.lat, userPos.lng], [destLat, destLng]], {
         color: '#E07A5F', weight: 4, dashArray: '8, 8'
       }).addTo(routeLayer);
@@ -3541,16 +3848,19 @@
       banner.style.display = 'flex';
     }
 
+
     function clearRoute() {
       if (routeLayer) routeLayer.clearLayers();
       document.getElementById('route-banner').style.display = 'none';
     }
+
 
     function focusLocation(lat, lng) { if (mapInstance) mapInstance.setView([lat, lng], 16); }
     function centerOnFirstLocation() {
       if (locationsData.length > 0 && mapInstance) mapInstance.setView([locationsData[0].lat, locationsData[0].lng], 15);
       else showToast('目前沒有已儲存的點位', 'warn');
     }
+
 
     function updateUserMarker() {
       if (!mapInstance || !userPos) return;
@@ -3560,6 +3870,7 @@
         radius: 9, fillColor: '#E07A5F', color: '#FFF', weight: 3, fillOpacity: 1
       }).addTo(mapInstance).bindPopup('📍 我的目前位置').openPopup();
     }
+
 
     function locateMe() {
       if (!navigator.geolocation) { showToast('❌ 此裝置不支援 GPS', 'error'); return; }
@@ -3576,6 +3887,7 @@
       );
     }
 
+
     function openAddLocationModal() {
       const center = mapInstance ? mapInstance.getCenter() : { lat: 25.0330, lng: 121.5430 };
       const latInput = document.getElementById('loc-lat'), lngInput = document.getElementById('loc-lng');
@@ -3586,6 +3898,7 @@
       document.getElementById('loc-modal').classList.add('open');
     }
 
+
     async function saveLocationModal() {
       const name = document.getElementById('loc-name').value.trim();
       const type = document.getElementById('loc-type').value;
@@ -3594,17 +3907,20 @@
       const note = document.getElementById('loc-note').value.trim();
       if (!name || isNaN(lat) || isNaN(lng)) { showToast('請填寫完整名稱與經緯度', 'warn'); return; }
 
+
       const newLoc = { id: 'loc_' + Date.now(), name, type, lat, lng, note, creator: myChar || '家人' };
       locationsData.push(newLoc);
       localStorage.setItem(STORAGE_KEYS.LOCATIONS, JSON.stringify(locationsData));
       closeModal('loc-modal');
       renderMapLocations();
 
+
       const payload = { action: 'addLocation', location: newLoc };
       if (!navigator.onLine || !getGasUrl()) { enqueueAction(payload); showToast('🟠 已離線儲存點位', 'warn'); return; }
       try { await postToGas(payload); showToast('✅ 已同步避難點位', 'success'); }
       catch (err) { enqueueAction(payload); showToast('🟠 已轉入離線佇列', 'warn'); }
     }
+
 
     async function deleteLocation(id, name) {
       if (!confirm(`確定要刪除點位【${name}】嗎？`)) return;
@@ -3617,8 +3933,10 @@
       catch (err) { enqueueAction(payload); }
     }
 
+
     function lat2tile(lat, zoom) { return Math.floor((1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, zoom)); }
     function lng2tile(lon, zoom) { return Math.floor((lon + 180) / 360 * Math.pow(2, zoom)); }
+
 
     async function downloadAreaTiles() {
       if (!navigator.onLine) { showToast('🟠 下載離線地圖需要網路連線', 'warn'); return; }
@@ -3634,6 +3952,7 @@
         }
       });
       if (!confirm(`準備下載目前畫面周邊約 2 公里範圍的離線圖磚（共 ${urls.length} 張），是否繼續？`)) return;
+
 
       const btn = document.getElementById('btn-download-tiles'), progEl = document.getElementById('tile-progress');
       btn.disabled = true; progEl.style.display = 'block';
@@ -3652,6 +3971,7 @@
       showToast('✅ 離線地圖下載完成', 'success');
     }
 
+
     async function updateTileCacheCount() {
       if (!('caches' in window)) return;
       const cache = await caches.open('disaster-map-tiles-v1');
@@ -3659,11 +3979,13 @@
       document.getElementById('tile-cache-count').innerText = `本機已快取 ${keys.length} 張圖磚`;
     }
 
+
     function calcDistanceMeters(lat1, lon1, lat2, lon2) {
       const R = 6371000, dLat = (lat2 - lat1) * Math.PI / 180, dLon = (lon2 - lon1) * Math.PI / 180;
       const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
       return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     }
+
 
     function calcBearingText(lat1, lon1, lat2, lon2) {
       const y = Math.sin((lon2 - lon1) * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180);
@@ -3672,6 +3994,7 @@
       const brng = ((Math.atan2(y, x) * 180 / Math.PI) + 360) % 360;
       return `🧭 ${['北', '東北', '東', '東南', '南', '西南', '西', '西北'][Math.round(brng / 45) % 8]}方 (${Math.round(brng)}°)`;
     }
+
 
     // ================= 情報分頁：天氣（地區選擇＋24h＋7日）與 NCDR 近 12h 示警 =================
     function initGuideTab() {
@@ -3683,6 +4006,7 @@
         fetchNcdrAlerts(false);
       }
     }
+
 
     function selectWeatherCity(city) {
       if (city === 'GPS') {
@@ -3705,11 +4029,13 @@
       fetchWeather(true);
     }
 
+
     function updateWeatherCityChips(activeKey) {
       document.querySelectorAll('[data-wcity]').forEach(el => {
         el.classList.toggle('active', el.getAttribute('data-wcity') === activeKey);
       });
     }
+
 
     function getWmoDesc(code) {
       if (code === 0) return '☀️ 晴朗';
@@ -3720,11 +4046,13 @@
       return '🌩️ 雷雨';
     }
 
+
     function renderWeatherCache() {
       const box = document.getElementById('weather-box');
       const raw = localStorage.getItem(STORAGE_KEYS.WEATHER);
       if (!raw) return;
       const w = JSON.parse(raw);
+
 
       let hourlyHTML = '';
       if (w.hourlyList && w.hourlyList.length) {
@@ -3737,6 +4065,7 @@
           </div>
         `).join('') + `</div>`;
       }
+
 
       let weeklyHTML = '';
       if (w.dailyList && w.dailyList.length) {
@@ -3762,6 +4091,7 @@
         `;
       }
 
+
       box.innerHTML = `
         <div style="display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap;">
           <div style="font-size:1.05rem; font-weight:800; color:var(--primary-dark);">📍 ${w.cityName}：${w.temp}°C ・ ${getWmoDesc(w.code)}</div>
@@ -3773,16 +4103,19 @@
       `;
     }
 
+
     async function fetchWeather(manual = false) {
       if (!navigator.onLine) { if (manual) showToast('🟠 離線顯示最後快取天氣', 'warn'); return; }
       let coords = CITY_COORDS[selectedWeatherCity] || CITY_COORDS['臺北市'];
       if (selectedWeatherCity === 'GPS定位' && userPos) coords = userPos;
+
 
       try {
         const url = `https://api.open-meteo.com/v1/forecast?latitude=${coords.lat}&longitude=${coords.lng}&current=temperature_2m,relative_humidity_2m,precipitation,weather_code,wind_speed_10m&hourly=temperature_2m,precipitation_probability,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Asia%2FTaipei&forecast_days=7`;
         const res = await fetch(url);
         const data = await res.json();
         const cur = data.current;
+
 
         // 擷取未來 24 小時（每 3 小時一筆共 8 筆，方便手機橫向檢視）
         const nowHourIso = new Date().toISOString().slice(0, 13);
@@ -3798,6 +4131,7 @@
           });
         }
 
+
         const dailyList = (data.daily.time || []).map((d, idx) => ({
           date: d,
           code: data.daily.weather_code[idx] || 0,
@@ -3805,6 +4139,7 @@
           min: data.daily.temperature_2m_min[idx],
           pop: data.daily.precipitation_probability_max[idx] || 0
         }));
+
 
         const wObj = {
           cityName: selectedWeatherCity,
@@ -3821,12 +4156,14 @@
       }
     }
 
+
     function isWithin12Hours(isoStr) {
       if (!isoStr) return true;
       const t = new Date(isoStr).getTime();
       if (isNaN(t)) return true;
       return (Date.now() - t) <= 12 * 60 * 60 * 1000;
     }
+
 
     function matchAlertRegion(alertItem, cityLabel) {
       if (!cityLabel || cityLabel === '全國' || cityLabel === '全部') return true;
@@ -3835,11 +4172,13 @@
       return text.includes(key);
     }
 
+
     function updateGlobalAlertTicker() {
       const ticker = document.getElementById('global-alert-ticker');
       const titleEl = document.getElementById('global-alert-title');
       const sumEl = document.getElementById('global-alert-summary');
       const recent = (alertsCache || []).filter(a => isWithin12Hours(a.updated));
+
 
       // 預設鎖定臺北市最近 12 小時示警
       const taipeiMatches = recent.filter(a => matchAlertRegion(a, '臺北市'));
@@ -3853,6 +4192,7 @@
       }
     }
 
+
     function setAlertCity(city) {
       selectedAlertCity = city;
       document.querySelectorAll('#alert-city-chips .city-chip').forEach(el => {
@@ -3862,6 +4202,7 @@
       renderWatchCities();
     }
 
+
     function renderNcdrAlerts() {
       const box = document.getElementById('ncdr-alerts-box');
       if (!alertsCache || alertsCache.length === 0) {
@@ -3870,6 +4211,7 @@
       }
       const recent12h = alertsCache.filter(a => isWithin12Hours(a.updated));
       const filtered = recent12h.filter(a => matchAlertRegion(a, selectedAlertCity));
+
 
       if (filtered.length === 0) {
         box.innerHTML = `<div style="padding:6px 0; color:var(--primary-dark); font-weight:bold;">✅ 【${selectedAlertCity}】最近 12 小時內無災害示警。</div>`;
@@ -3885,6 +4227,7 @@
         </div>
       `).join('');
     }
+
 
     async function fetchNcdrAlerts(manual = false) {
       const url = getGasUrl();
@@ -3910,12 +4253,14 @@
       }
     }
 
+
     // ================= P1-1: 地圖點擊放圖釘、全點位離線包與 AED 依點位切換 =================
     let pinDropMode = false;
     let droppedPinMarker = null;
     let droppedPinCoords = null;
     let aedsByLocCache = JSON.parse(localStorage.getItem('camp_aeds_by_loc_v22') || '{}');
     let currentAedSourceKey = 'current';
+
 
     function togglePinDropMode() {
       pinDropMode = !pinDropMode;
@@ -3927,6 +4272,7 @@
         showToast('📌 請直接點擊地圖任意位置放置圖釘（可拖曳微調）', 'info');
       }
     }
+
 
     function placeOrMoveDroppedPin(lat, lng) {
       if (!mapInstance) return;
@@ -3947,6 +4293,7 @@
       if (txt) txt.innerText = `📌 已放置圖釘：(${lat.toFixed(5)}, ${lng.toFixed(5)})，可拖曳微調`;
     }
 
+
     function saveDroppedPinAsLocation() {
       if (!droppedPinCoords) { showToast('請先點擊地圖放置圖釘', 'warn'); return; }
       prefillLocation('自訂集合點', droppedPinCoords.lat, droppedPinCoords.lng);
@@ -3956,6 +4303,7 @@
       if (btn) btn.classList.remove('pin-active');
       if (banner) banner.style.display = 'none';
     }
+
 
     function populateAedLocationSelect() {
       const sel = document.getElementById('aed-loc-select');
@@ -3969,6 +4317,7 @@
       sel.value = [...sel.options].some(o => o.value === prev) ? prev : 'current';
     }
 
+
     function onSelectAedSource(val) {
       currentAedSourceKey = val;
       if (val !== 'current') {
@@ -3977,6 +4326,7 @@
       }
       renderAedLocations();
     }
+
 
     async function fetchAedsForCoord(lat, lng) {
       const url = getGasUrl();
@@ -4003,11 +4353,13 @@
       return [];
     }
 
+
     async function downloadAllLocationsOfflinePack() {
       if (!navigator.onLine) { showToast('🟠 預載離線包需要網路連線', 'warn'); return; }
       const targets = (locationsData && locationsData.length > 0)
         ? locationsData
         : [{ id: 'current', name: '目前地圖中心', lat: mapInstance ? mapInstance.getCenter().lat : 25.0330, lng: mapInstance ? mapInstance.getCenter().lng : 121.5430 }];
+
 
       const urlSet = new Set();
       targets.forEach(t => {
@@ -4021,8 +4373,10 @@
         });
       });
 
+
       const urls = [...urlSet];
       if (!confirm(`準備為 ${targets.length} 個避難點位統一下載周邊離線圖磚（共 ${urls.length} 張）並同步快取各點周邊 AED，是否繼續？`)) return;
+
 
       const btn = document.getElementById('btn-download-all-pack'), progEl = document.getElementById('tile-progress');
       btn.disabled = true; progEl.style.display = 'block';
@@ -4035,6 +4389,7 @@
         }));
         progEl.innerText = `📥 預載全點位圖磚中：${done} / ${urls.length} 張 (${Math.round((done / urls.length) * 100)}%)`;
       }
+
 
       for (let i = 0; i < targets.length; i++) {
         const t = targets[i];
@@ -4056,6 +4411,7 @@
       showToast('✅ 全點位離線地圖與周邊 AED 已安裝完成！', 'success');
     }
 
+
     // ================= P1-2: 避難行動判定樹與歸宅困難匯合協議 =================
     function loadDecisionAndReunify() {
       const dec = JSON.parse(localStorage.getItem('camp_decision_profile_v22') || '{"floor":"mid","struct":"good","hazard":"safe"}');
@@ -4064,11 +4420,13 @@
       if (document.getElementById('dec-hazard')) document.getElementById('dec-hazard').value = dec.hazard;
       renderDecisionResult(dec);
 
+
       const reu = JSON.parse(localStorage.getItem('camp_reunify_plan_v22') || '{}');
       if (document.getElementById('reunify-h1')) document.getElementById('reunify-h1').value = reu.h1 || '';
       if (document.getElementById('reunify-h6')) document.getElementById('reunify-h6').value = reu.h6 || '';
       if (document.getElementById('reunify-h24')) document.getElementById('reunify-h24').value = reu.h24 || '';
       if (document.getElementById('reunify-care')) document.getElementById('reunify-care').value = reu.care || '';
+
 
       const careBox = document.getElementById('care-division-box');
       if (careBox && globalData && globalData.characters) {
@@ -4082,6 +4440,7 @@
       }
     }
 
+
     function saveDecisionProfile() {
       const dec = {
         floor: document.getElementById('dec-floor').value,
@@ -4091,6 +4450,7 @@
       localStorage.setItem('camp_decision_profile_v22', JSON.stringify(dec));
       renderDecisionResult(dec);
     }
+
 
     function renderDecisionResult(dec) {
       const box = document.getElementById('decision-result-box');
@@ -4107,6 +4467,7 @@
       box.innerHTML = `<div>${eqAdvice}</div><div style="margin-top:4px;">${floodAdvice}</div>`;
     }
 
+
     function saveReunifyPlan() {
       const reu = {
         h1: document.getElementById('reunify-h1').value.trim(),
@@ -4117,8 +4478,10 @@
       localStorage.setItem('camp_reunify_plan_v22', JSON.stringify(reu));
     }
 
+
     // ================= P1-3: 物資情境分層、72h 支撐時數與滾動式輪替任務 =================
     let invLayerFilter = 'all';
+
 
     function setInvLayerFilter(layer) {
       invLayerFilter = layer;
@@ -4128,6 +4491,7 @@
       renderInventory();
     }
 
+
     function classifyItemLayer(item) {
       const text = (item.category + ' ' + item.name).toLowerCase();
       if (/衛生|馬桶|清潔|濕紙巾|垃圾袋|衛生棉|尿布|洗|消毒|洗手|口罩/.test(text)) return 'wash';
@@ -4136,10 +4500,12 @@
       return '72h';
     }
 
+
     function renderSustainDashboard() {
       if (!globalData || !globalData.items) return;
       const targetChar = (invSubMode === 'character' && currentChar) ? currentChar : (myChar || globalData.characters[0]);
       if (!targetChar) return;
+
 
       const pillars = {
         water: { label: '💧 飲水', ready: 0, total: 0 },
@@ -4148,6 +4514,7 @@
         power: { label: '🔦 電力／照明', ready: 0, total: 0 }
       };
       const rollingItems = [];
+
 
       globalData.items.forEach(item => {
         const st = item.status[targetChar];
@@ -4159,10 +4526,12 @@
         else if (/醫|藥|衛|急|罩|馬桶|紙巾/.test(cat)) key = 'med';
         else if (/電|燈|照明|電池|手電筒/.test(cat)) key = 'power';
 
+
         if (key) {
           pillars[key].total++;
           if (st.state === 'ready') pillars[key].ready++;
         }
+
 
         const expInfo = getExpStatus(st.exp);
         if (st.state === 'ready' && (expInfo.expired || expInfo.warn)) {
@@ -4170,14 +4539,17 @@
         }
       });
 
+
       const pcts = Object.values(pillars).filter(p => p.total > 0).map(p => p.ready / p.total);
       const minRatio = pcts.length > 0 ? Math.min(...pcts) : 0;
       const sustainHours = Math.round(minRatio * 72);
+
 
       const titleEl = document.getElementById('sustain-title-hours');
       const badgeEl = document.getElementById('sustain-hours-badge');
       if (titleEl) titleEl.innerText = `【${targetChar}】可支撐約 ${sustainHours} 小時（短板評估）`;
       if (badgeEl) badgeEl.innerText = `${sustainHours}h / 72h`;
+
 
       const pBox = document.getElementById('sustain-pillars');
       if (pBox) {
@@ -4186,6 +4558,7 @@
           return `<div class="sustain-pillar"><strong>${p.label}</strong>：${p.ready}/${p.total} (${pct}%)</div>`;
         }).join('');
       }
+
 
       const rBox = document.getElementById('rolling-stock-box');
       if (rBox) {
@@ -4204,6 +4577,7 @@
       }
     }
 
+
     function rollStockItem(rowIdx, charName, oldExp) {
       const item = globalData.items.find(i => i.row === rowIdx);
       if (!item || !item.status[charName]) return;
@@ -4217,6 +4591,7 @@
       renderParty(); renderInventory(); commitItemUpdate(rowIdx, charName);
       showToast(`🍂 已完成輪替換新！新效期：${nextExp}`, 'success');
     }
+
 
     async function quickAddWashTemplate() {
       if (!globalData || !globalData.characters.length) { showToast('請先連線載入資料', 'warn'); return; }
@@ -4241,9 +4616,12 @@
     }
 
 
+
+
     // ================= P2-1: 多點位外地親友縣市關注 =================
     const WATCH_CANDIDATES = ['新北市', '桃園市', '臺中市', '彰化市', '臺南市', '高雄市', '宜蘭縣', '花蓮縣'];
     let watchCities = JSON.parse(localStorage.getItem('camp_watch_cities_v23') || '["彰化市","高雄市"]');
+
 
     function toggleWatchCity(city) {
       if (watchCities.includes(city)) {
@@ -4255,6 +4633,7 @@
       localStorage.setItem('camp_watch_cities_v23', JSON.stringify(watchCities));
       renderWatchCities();
     }
+
 
     function renderWatchCities() {
       const pillsEl = document.getElementById('watch-city-pills');
@@ -4277,6 +4656,7 @@
       }).join('');
     }
 
+
     // ================= P2-2: 半年家庭演練排程、離線 QR Code 與 PDF 匯出 =================
     function renderDrillStatus() {
       const box = document.getElementById('drill-status-box');
@@ -4293,12 +4673,14 @@
       box.innerHTML = `${overdue ? '🔔 <strong>已屆半年演練時間！</strong>' : '✅ <strong>演練進度正常</strong>'}<br>上次演練：<strong>${lastDrill}</strong>（已過 ${daysSince} 天）・下次建議：<strong>${nextD.toISOString().slice(0, 10)}</strong>`;
     }
 
+
     function completeFamilyDrill() {
       const today = new Date().toISOString().slice(0, 10);
       localStorage.setItem('camp_last_drill_date', today);
       renderDrillStatus();
       showToast(`🎉 已記錄今日（${today}）家庭演練！下次提醒：6 個月後`, 'success');
     }
+
 
     function openFamilyQrModal() {
       const mainChars = (globalData && globalData.characters) ? globalData.characters.filter(n => getMemberVisual(n).memberType !== 'pack') : [];
@@ -4309,6 +4691,7 @@
       const contactLines = (contactsData || []).slice(0, 3).map(c => `${c.name}(${c.relation}):${c.phone}`).join('\n');
       const rallyLines = (locationsData || []).slice(0, 2).map(l => `${l.type}:${l.name}`).join('\n');
       const qrText = `[森林露營小隊・家庭平安卡]\n${memberLines}\n[聯絡人]\n${contactLines || '未設定'}\n[集合點]\n${rallyLines || '未設定'}`;
+
 
       const box = document.getElementById('qr-modal-box');
       const prev = document.getElementById('qr-text-preview');
@@ -4324,12 +4707,14 @@
       document.getElementById('qr-modal').classList.add('open');
     }
 
+
     function openPlanPrintModal() {
       const box = document.getElementById('plan-print-content');
       if (!box) return;
       const mainChars = (globalData && globalData.characters) ? globalData.characters.filter(n => getMemberVisual(n).memberType !== 'pack') : [];
       const dec = JSON.parse(localStorage.getItem('camp_decision_profile_v22') || '{"floor":"mid","struct":"good","hazard":"safe"}');
       const reu = JSON.parse(localStorage.getItem('camp_reunify_plan_v22') || '{}');
+
 
       box.innerHTML = `
         <h2>🏕️ 森林露營小隊・家庭防災應變計畫書</h2>
@@ -4354,6 +4739,7 @@
       `;
       document.getElementById('plan-print-modal').style.display = 'block';
     }
+
 
     // ================= P2-3: 附近防空／避難設施（OSM）＋ 動物夥伴心情與每日 30 秒小任務 =================
     async function loadNearbyShelters() {
@@ -4381,6 +4767,7 @@
       } catch (e) { showToast('⚠️ 防空避難查詢逾時', 'warn'); }
     }
 
+
     const DAILY_QUESTS = [
       '檢查客廳或床邊手電筒是否能正常點亮、電池有無漏液',
       '確認玄關 72h 緊急避難包的拉鍊順暢且無重物壓住',
@@ -4389,6 +4776,7 @@
       '確認手機「災防告警細胞廣播」與緊急聯絡人快捷設定正常',
       '看看家裡高櫃或電視後方有沒有防傾倒固定，順手檢查逃生走道是否淨空'
     ];
+
 
     function renderDailyQuest() {
       const today = new Date().toISOString().slice(0, 10);
@@ -4409,6 +4797,7 @@
       }
     }
 
+
     function completeDailyQuest() {
       const today = new Date().toISOString().slice(0, 10);
       const doneDate = localStorage.getItem('camp_quest_done_date') || '';
@@ -4419,6 +4808,7 @@
       renderDailyQuest();
       showToast(`🐾 動物夥伴好開心！完成今日小任務（連勝 ${streak} 天）`, 'success');
     }
+
 
     function getBuddyMoodText(charName, pct) {
       if (!globalData) return '🐾 準備中';
@@ -4434,18 +4824,113 @@
     }
 
 
+
+
     // ================= Arter v2.4: 兩段式物資展開與底部拇指熱區 🆘 應變快捷 =================
     let expandedItems = {};
+
 
     function toggleItemExpand(rowIdx) {
       expandedItems[rowIdx] = !expandedItems[rowIdx];
       renderInventory();
     }
 
+
     function openEmergencyQuick() {
       switchTab('guide');
       setGuideSubMode('sop');
     }
+
+
+
+
+    // ================= v2.5 方案 A：Google Drive ➔ GAS ➔ GitHub Pages 自動化發布前端控制 =================
+    let githubConfigState = JSON.parse(localStorage.getItem('camp_gh_cfg_v25') || 'null');
+
+
+    function renderGitHubDeployStatus() {
+      const stEl = document.getElementById('gh-config-status');
+      const repoEl = document.getElementById('setting-gh-repo');
+      const brEl = document.getElementById('setting-gh-branch');
+      const trigBtn = document.getElementById('btn-gh-daily-trig');
+      if (!stEl) return;
+      if (!githubConfigState) {
+        stEl.innerHTML = '⚪ 尚未同步 GitHub 設定狀態（請先完成一次雲端同步）';
+        return;
+      }
+      if (repoEl && githubConfigState.repo) repoEl.value = githubConfigState.repo;
+      if (brEl && githubConfigState.branch) brEl.value = githubConfigState.branch;
+      const tokenBadge = githubConfigState.hasToken
+        ? `<span style="color:var(--primary); font-weight:800;">🟢 已綁定 Token (${githubConfigState.maskedToken})</span>`
+        : `<span style="color:var(--danger); font-weight:800;">🔴 尚未設定 GITHUB_TOKEN</span>`;
+      const lastText = githubConfigState.lastDeploy ? `<br>最近自動發布：<strong>${githubConfigState.lastDeploy}</strong>` : '';
+      stEl.innerHTML = `${tokenBadge} ｜ 分支：<code>${githubConfigState.branch || 'main'}</code>${lastText}`;
+      if (trigBtn) {
+        trigBtn.innerText = githubConfigState.triggerEnabled ? '⏰ 已啟用每日 06:00 自動發布（點擊關閉）' : '⏰ 啟用每日 06:00 自動發布';
+      }
+    }
+
+
+    async function saveGitHubDeployConfig() {
+      if (!navigator.onLine || !getGasUrl()) { showToast('🟠 請於連線狀態設定 GitHub 參數', 'warn'); return; }
+      const token = document.getElementById('setting-gh-token').value.trim();
+      const repo = document.getElementById('setting-gh-repo').value.trim() || 'simonyu26/family-disaster-kit';
+      const branch = document.getElementById('setting-gh-branch').value.trim() || 'main';
+      try {
+        showToast('🔐 正在將 GitHub 設定安全寫入 GAS 後端...');
+        const res = await postToGas({ action: 'setGitHubConfig', token: token || undefined, repo, branch });
+        if (res.githubConfig) {
+          githubConfigState = res.githubConfig;
+          localStorage.setItem('camp_gh_cfg_v25', JSON.stringify(githubConfigState));
+        }
+        document.getElementById('setting-gh-token').value = '';
+        renderGitHubDeployStatus();
+        showToast('✅ 已儲存 GitHub 自動發布設定', 'success');
+      } catch (e) {
+        showToast('❌ 設定失敗：' + e.message, 'error');
+      }
+    }
+
+
+    async function triggerDriveToGitHubDeploy() {
+      if (!navigator.onLine || !getGasUrl()) { showToast('🟠 自動發布需要網路連線', 'warn'); return; }
+      const folderName = prompt('🚀 將自動從 Google Drive「防災生存整備系統_開發備份」抓取最新子資料夾並推送至 GitHub Pages。\n\n若要指定特定版本資料夾請輸入名稱（留空則自動抓取最新 vX.Y 資料夾）：', '');
+      if (folderName === null) return;
+      const btn = document.getElementById('btn-gh-push-now');
+      if (btn) { btn.disabled = true; btn.innerText = '⏳ 正在從雲端推送至 GitHub...'; }
+      try {
+        const res = await postToGas({ action: 'syncDriveToGitHub', folderName: folderName.trim() });
+        if (res.githubConfig) {
+          githubConfigState = res.githubConfig;
+          localStorage.setItem('camp_gh_cfg_v25', JSON.stringify(githubConfigState));
+          renderGitHubDeployStatus();
+        }
+        showToast(`🎉 已從【${res.folderName}】自動發布 ${res.pushed.length} 個檔案至 GitHub！`, 'success');
+      } catch (e) {
+        showToast('❌ 自動發布失敗：' + e.message, 'error');
+      } finally {
+        if (btn) { btn.disabled = false; btn.innerText = '🚀 立即從雲端備份發布至 GitHub'; }
+      }
+    }
+
+
+    async function toggleDailyGitHubTrigger() {
+      if (!navigator.onLine || !getGasUrl()) { showToast('🟠 變更定時觸發器需於連線狀態執行', 'warn'); return; }
+      const nextState = !(githubConfigState && githubConfigState.triggerEnabled);
+      try {
+        showToast('⏰ 正在更新 GAS 每日 06:00 觸發器...');
+        const res = await postToGas({ action: 'toggleGitHubDailyTrigger', enabled: nextState });
+        if (res.githubConfig) {
+          githubConfigState = res.githubConfig;
+          localStorage.setItem('camp_gh_cfg_v25', JSON.stringify(githubConfigState));
+          renderGitHubDeployStatus();
+        }
+        showToast(nextState ? '✅ 已開啟每日 06:00 自動發布觸發器' : '⏹️ 已關閉每日自動發布觸發器', 'success');
+      } catch (e) {
+        showToast('❌ 觸發器設定失敗：' + e.message, 'error');
+      }
+    }
+
 
   </script>
 </body>

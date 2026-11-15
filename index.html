@@ -155,19 +155,26 @@
     .btn-edit-item { background: transparent; border: none; font-size: 0.9rem; cursor: pointer; opacity: 0.7; padding: 2px 4px; }
 
 
-    .switch { position: relative; display: inline-block; width: 50px; height: 28px; flex-shrink: 0; }
-    .switch input { opacity: 0; width: 0; height: 0; }
+    .switch { position: relative; display: inline-flex; align-items: center; flex-shrink: 0; }
+    .switch input { position: absolute; opacity: 0; width: 0; height: 0; }
     .slider {
-      position: absolute; cursor: pointer; inset: 0;
-      background-color: var(--accent); border-radius: 34px; border: 2px solid #DCA191; transition: .25s;
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 78px; height: 34px; padding: 0 12px; cursor: pointer;
+      background-color: #f7f1e5; border-radius: 999px; border: 1.5px dashed #5f5a55;
+      color: #5f5a55; font-size: 0.78rem; font-weight: 800; white-space: nowrap;
+      transition: background-color .2s, border-color .2s, color .2s;
     }
-    .slider:before {
-      position: absolute; content: "⛺"; font-size: 0.88rem; display: flex; justify-content: center;
-      align-items: center; height: 20px; width: 20px; left: 2px; bottom: 2px;
-      background-color: white; border-radius: 50%; transition: .25s;
+    .slider:before { content: "待補充"; }
+    input:checked + .slider {
+      background-color: #2f5a3a; border: 1.5px solid #2f5a3a; color: #ffffff;
     }
-    input:checked + .slider { background-color: var(--primary); border-color: var(--primary-dark); }
-    input:checked + .slider:before { transform: translateX(22px); content: "🔥"; }
+    input:checked + .slider:before { content: "✓ 已備齊"; }
+    body.emergency-mode .slider {
+      background-color: #141414; border: 1.5px dashed #ffd60a; color: #ffd60a;
+    }
+    body.emergency-mode input:checked + .slider {
+      background-color: #2f5a3a; border: 1.5px solid #ffffff; color: #ffffff;
+    }
 
 
     .util-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 9px; width: 100%; }
@@ -724,7 +731,6 @@
       display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
     }
     .sos-hero-card .hero-ic { font-size: 1.35rem; }
-    body.emergency-mode #camp-gh-deploy-box { background: #1A1A1A !important; border-color: #555 !important; color: #FFF !important; }
     body.emergency-mode .combo-card, body.emergency-mode .wash-base-bar { background: #1A1A1A !important; border-color: #555 !important; color: #FFF !important; }
     body.emergency-mode .sos-hero-card {
       background: #1A1A1A !important; border: 2px solid #FFD60A !important; color: #FFD60A !important;
@@ -1828,59 +1834,36 @@
             <select id="setting-my-char" class="form-input"></select>
           </div>
           <div class="form-group">
-            <label class="form-label">Google Apps Script API 網址（選填，留空則以純本機模式運作）</label>
-            <input type="url" id="setting-gas-url" class="form-input" placeholder="https://script.google.com/macros/s/.../exec">
-          </div>
-          <div class="form-group">
-            <label class="form-label">🔒 雲端家庭通行碼（驗證 GAS API 存取，外人無碼無法讀取試算表）</label>
-            <div style="display:flex; gap:6px;">
-              <input type="password" id="setting-gas-pin" class="form-input" placeholder="輸入或設定家庭通行碼" style="flex:1;">
-              <button class="btn btn-muted" style="white-space:nowrap;" onclick="saveGasServerPin()">🔒 更新通行碼</button>
-            </div>
-          </div>
-          <div class="form-group">
             <label class="form-label">🔒 畫面防窺 PIN 碼（展開「應變計畫」遮罩個資用，留空則不鎖）</label>
             <input type="password" id="setting-ui-pin" class="form-input" placeholder="建議 4 位數字，例如 1234">
           </div>
-          <div class="form-group" style="background:#FAF6EC; padding:8px 10px; border-radius:8px; border:1px solid #E2D9C2;">
-            <label style="display:flex; align-items:flex-start; gap:8px; cursor:pointer; font-size:0.82rem; font-weight:bold;">
-              <input type="checkbox" id="setting-sync-health" style="margin-top:3px;">
-              <span>🔒 允許將健康個資（血型／過敏／用藥）加密後同步至試算表（預設僅存於本機；勾選代表了解並同意透過您自建的 GAS 進行家庭共享加密同步）</span>
-            </label>
-          </div>
-          <button class="btn btn-primary" style="width:100%;" onclick="saveSettings()">✅ 儲存設定並同步資料</button>
 
 
-          <!-- v2.5 方案 A：Google Drive ➔ GAS ➔ GitHub Pages 自動化部署管道 -->
-          <div style="margin-top:12px; padding-top:10px; border-top:1px dashed var(--border);">
-            <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="toggleInfoSection('camp-gh-deploy-box')">
-              <span style="font-size:0.84rem; font-weight:800; color:var(--primary-dark);">🚀 雲端自動發布至 GitHub Pages（方案 A）</span>
-              <span id="camp-gh-deploy-box-arrow" style="font-size:0.75rem; color:var(--text-muted);">▶</span>
+          <div style="margin:10px 0 12px 0; padding:10px 12px; background:#f7f1e5; border:1px solid #d8d4ce; border-radius:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="toggleInfoSection('camp-cloud-adv-box')">
+              <span style="font-size:0.84rem; font-weight:800; color:#2f5a3a;">☁️ 進階：連接自建 Google 試算表（選填）</span>
+              <span id="camp-cloud-adv-box-arrow" style="font-size:0.75rem; color:#5f5a55;">▶</span>
             </div>
-            <div id="camp-gh-deploy-box" style="display:none; margin-top:8px; padding:10px 12px; background:#F8F5EE; border:1px solid var(--border); border-radius:12px; font-size:0.8rem;">
-              <div id="gh-config-status" style="margin-bottom:8px; color:var(--text-muted); font-variant-numeric:tabular-nums;">
-                連線後將自動讀取 GitHub 綁定狀態...
+            <div id="camp-cloud-adv-box" style="display:none; margin-top:10px; padding-top:10px; border-top:1px dashed #d8d4ce;">
+              <div class="form-group">
+                <label class="form-label">Google Apps Script API 網址（留空則以純本機模式運作）</label>
+                <input type="url" id="setting-gas-url" class="form-input" placeholder="https://script.google.com/macros/s/.../exec">
               </div>
-              <div class="form-group" style="margin-bottom:8px;">
-                <label class="form-label">目標 GitHub 儲存庫（owner/repo）與分支</label>
+              <div class="form-group">
+                <label class="form-label">🔒 雲端家庭通行碼（驗證自建 GAS API 存取用）</label>
                 <div style="display:flex; gap:6px;">
-                  <input type="text" id="setting-gh-repo" class="form-input" value="simonyu26/family-disaster-kit" style="flex:2; font-size:0.82rem;">
-                  <input type="text" id="setting-gh-branch" class="form-input" value="main" style="flex:1; font-size:0.82rem;">
+                  <input type="password" id="setting-gas-pin" class="form-input" placeholder="輸入或設定家庭通行碼" style="flex:1;">
+                  <button class="btn btn-muted" style="white-space:nowrap;" onclick="saveGasServerPin()">🔒 更新通行碼</button>
                 </div>
               </div>
-              <div class="form-group" style="margin-bottom:8px;">
-                <label class="form-label">🔒 GitHub Personal Access Token（僅存於 GAS 後端指令碼屬性）</label>
-                <div style="display:flex; gap:6px;">
-                  <input type="password" id="setting-gh-token" class="form-input" placeholder="貼上 github_pat_...（已設定則可留空）" style="flex:1; font-size:0.82rem;">
-                  <button class="btn btn-muted" style="white-space:nowrap; font-size:0.78rem;" onclick="saveGitHubDeployConfig()">✅ 儲存設定</button>
-                </div>
+              <div class="form-group" style="background:#fffdf8; padding:8px 10px; border-radius:8px; border:1px solid #d8d4ce;">
+                <label style="display:flex; align-items:flex-start; gap:8px; cursor:pointer; font-size:0.82rem; font-weight:bold;">
+                  <input type="checkbox" id="setting-sync-health" style="margin-top:3px;">
+                  <span>🔒 允許將健康個資（血型／過敏／用藥）加密後同步至試算表（預設僅存於本機）</span>
+                </label>
               </div>
-              <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:8px;">
-                <button id="btn-gh-push-now" class="btn btn-primary" style="flex:1; font-size:0.8rem;" onclick="triggerDriveToGitHubDeploy()">🚀 立即從雲端備份發布至 GitHub</button>
-                <button id="btn-gh-daily-trig" class="btn btn-muted" style="font-size:0.78rem;" onclick="toggleDailyGitHubTrigger()">⏱️ 啟用每日 06:00 自動發布</button>
-              </div>
-              <div class="form-group" style="margin-top:10px; margin-bottom:0; padding-top:8px; border-top:1px dashed var(--border);">
-                <label class="form-label">📷 Gemini API Key（選填・供拍物資標籤 AI 自動辨識效期與容量，未填仍可用快選模式）</label>
+              <div class="form-group" style="margin-bottom:0; padding-top:8px; border-top:1px dashed #d8d4ce;">
+                <label class="form-label">📷 Gemini API Key（選填・供拍物資標籤 AI 辨識，須先連接 GAS）</label>
                 <div style="display:flex; gap:6px;">
                   <input type="password" id="setting-gemini-key" class="form-input" placeholder="貼上 AIzaSy...（安全存於 GAS 後端）" style="flex:1; font-size:0.82rem;">
                   <button class="btn btn-muted" style="white-space:nowrap; font-size:0.78rem;" onclick="saveGeminiApiKey()">✅ 儲存金鑰</button>
@@ -1888,6 +1871,9 @@
               </div>
             </div>
           </div>
+
+
+          <button class="btn btn-primary" style="width:100%;" onclick="saveSettings()">✅ 儲存設定並同步資料</button>
         </div>
       </div>
 
@@ -1899,6 +1885,13 @@
           <span id="camp-changelog-sec-arrow" style="font-size:0.8rem; color:var(--text-muted);">▶</span>
         </div>
         <div class="section-body" id="camp-changelog-sec" style="display:none; font-size:0.82rem; line-height:1.55;">
+          <div style="padding-bottom:8px; margin-bottom:8px; border-bottom:1px dashed #d8d4ce;">
+            <strong style="color:var(--primary-dark);">v2.9（物資開關文字化 × 系統設定進階雲端選項收納）</strong>
+            <ul style="margin:4px 0 0 0; padding-left:18px;">
+              <li>物資清單開關由純圖示滑塊改為「✓ 已備齊」（深綠實心）／「待補充」（生成り虛線框）文字膠囊，消除圖示撞號與語意不明。</li>
+              <li>系統設定將 GAS API 網址、雲端通行碼、健康同步勾選與 Gemini API Key 收進預設折疊的「☁️ 進階：連接自建 Google 試算表（選填）」，降低純本機家庭使用者門檻。</li>
+            </ul>
+          </div>
           <div style="padding-bottom:8px; border-bottom:1px dashed #d8d4ce;">
             <strong style="color:var(--primary-dark);">v2.8（四大頁籤雙次按鈕統一 × 極簡 4 大鈕緊急模式 × 動物夥伴三態陪伴 × 獨立本機沙盒）</strong>
             <ul style="margin:4px 0 0 0; padding-left:18px;">
@@ -2634,7 +2627,6 @@
         membersMap = json.members || {};
         locationsData = json.locations || [];
         contactsData = json.contacts || [];
-        if (json.githubConfig) { githubConfigState = json.githubConfig; localStorage.setItem('camp_gh_cfg_v25', JSON.stringify(githubConfigState)); }
 
 
         localStorage.setItem(STORAGE_KEYS.DATA, JSON.stringify(globalData));
@@ -2964,7 +2956,6 @@
     function nextCalmCard() {
       calmIdx = (calmIdx + 1) % CALM_CARDS.length;
       renderCalmCard();
-      renderGitHubDeployStatus();
     }
 
 
@@ -3967,7 +3958,6 @@
       document.getElementById('setting-ui-pin').value = getUiPin();
       document.getElementById('setting-sync-health').checked = isHealthSyncEnabled();
       renderCalmCard();
-      renderGitHubDeployStatus();
 
 
       const select = document.getElementById('setting-my-char');
@@ -5711,94 +5701,6 @@
     }
 
 
-
-
-    // ================= v2.5 方案 A：Google Drive ➔ GAS ➔ GitHub Pages 自動化發布前端控制 =================
-    let githubConfigState = JSON.parse(localStorage.getItem('camp_gh_cfg_v25') || 'null');
-
-
-    function renderGitHubDeployStatus() {
-      const stEl = document.getElementById('gh-config-status');
-      const repoEl = document.getElementById('setting-gh-repo');
-      const brEl = document.getElementById('setting-gh-branch');
-      const trigBtn = document.getElementById('btn-gh-daily-trig');
-      if (!stEl) return;
-      if (!githubConfigState) {
-        stEl.innerHTML = '⚪ 尚未同步 GitHub 設定狀態（請先完成一次雲端同步）';
-        return;
-      }
-      if (repoEl && githubConfigState.repo) repoEl.value = githubConfigState.repo;
-      if (brEl && githubConfigState.branch) brEl.value = githubConfigState.branch;
-      const tokenBadge = githubConfigState.hasToken
-        ? `<span style="color:var(--primary); font-weight:800;">🟢 已綁定 Token (${githubConfigState.maskedToken})</span>`
-        : `<span style="color:var(--danger); font-weight:800;">🔴 尚未設定 GITHUB_TOKEN</span>`;
-      const lastText = githubConfigState.lastDeploy ? `<br>最近自動發布：<strong>${githubConfigState.lastDeploy}</strong>` : '';
-      stEl.innerHTML = `${tokenBadge} ｜ 分支：<code>${githubConfigState.branch || 'main'}</code>${lastText}`;
-      if (trigBtn) {
-        trigBtn.innerText = githubConfigState.triggerEnabled ? '⏰ 已啟用每日 06:00 自動發布（點擊關閉）' : '⏰ 啟用每日 06:00 自動發布';
-      }
-    }
-
-
-    async function saveGitHubDeployConfig() {
-      if (!navigator.onLine || !getGasUrl()) { showToast('🟠 請於連線狀態設定 GitHub 參數', 'warn'); return; }
-      const token = document.getElementById('setting-gh-token').value.trim();
-      const repo = document.getElementById('setting-gh-repo').value.trim() || 'simonyu26/family-disaster-kit';
-      const branch = document.getElementById('setting-gh-branch').value.trim() || 'main';
-      try {
-        showToast('🔒 正在將 GitHub 設定安全寫入 GAS 後端...');
-        const res = await postToGas({ action: 'setGitHubConfig', token: token || undefined, repo, branch });
-        if (res.githubConfig) {
-          githubConfigState = res.githubConfig;
-          localStorage.setItem('camp_gh_cfg_v25', JSON.stringify(githubConfigState));
-        }
-        document.getElementById('setting-gh-token').value = '';
-        renderGitHubDeployStatus();
-        showToast('✅ 已儲存 GitHub 自動發布設定', 'success');
-      } catch (e) {
-        showToast('❌ 設定失敗：' + e.message, 'error');
-      }
-    }
-
-
-    async function triggerDriveToGitHubDeploy() {
-      if (!navigator.onLine || !getGasUrl()) { showToast('🟠 自動發布需要網路連線', 'warn'); return; }
-      const folderName = prompt('🚀 將自動從 Google Drive「防災生存整備系統_開發備份」抓取最新子資料夾並推送至 GitHub Pages。\n\n若要指定特定版本資料夾請輸入名稱（留空則自動抓取最新 vX.Y 資料夾）：', '');
-      if (folderName === null) return;
-      const btn = document.getElementById('btn-gh-push-now');
-      if (btn) { btn.disabled = true; btn.innerText = '⏳ 正在從雲端推送至 GitHub...'; }
-      try {
-        const res = await postToGas({ action: 'syncDriveToGitHub', folderName: folderName.trim() });
-        if (res.githubConfig) {
-          githubConfigState = res.githubConfig;
-          localStorage.setItem('camp_gh_cfg_v25', JSON.stringify(githubConfigState));
-          renderGitHubDeployStatus();
-        }
-        showToast(`🎉 已從【${res.folderName}】自動發布 ${res.pushed.length} 個檔案至 GitHub！`, 'success');
-      } catch (e) {
-        showToast('❌ 自動發布失敗：' + e.message, 'error');
-      } finally {
-        if (btn) { btn.disabled = false; btn.innerText = '🚀 立即從雲端備份發布至 GitHub'; }
-      }
-    }
-
-
-    async function toggleDailyGitHubTrigger() {
-      if (!navigator.onLine || !getGasUrl()) { showToast('🟠 變更定時觸發器需於連線狀態執行', 'warn'); return; }
-      const nextState = !(githubConfigState && githubConfigState.triggerEnabled);
-      try {
-        showToast('⏰ 正在更新 GAS 每日 06:00 觸發器...');
-        const res = await postToGas({ action: 'toggleGitHubDailyTrigger', enabled: nextState });
-        if (res.githubConfig) {
-          githubConfigState = res.githubConfig;
-          localStorage.setItem('camp_gh_cfg_v25', JSON.stringify(githubConfigState));
-          renderGitHubDeployStatus();
-        }
-        showToast(nextState ? '✅ 已開啟每日 06:00 自動發布觸發器' : '⏹️ 已關閉每日自動發布觸發器', 'success');
-      } catch (e) {
-        showToast('❌ 觸發器設定失敗：' + e.message, 'error');
-      }
-    }
 
 
 

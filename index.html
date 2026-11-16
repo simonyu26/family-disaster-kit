@@ -2472,10 +2472,11 @@
       applyEmergencyModeUI(false);
       initEmojiPickers();
       updateGuideNudgeBar();
+      // S-05：網址參數不得改變同步目的地。舊版 ?api= 連結一律忽略，只清掉網址列，不寫入設定。
       const params = new URLSearchParams(window.location.search);
-      if (params.get('api')) {
-        localStorage.setItem(STORAGE_KEYS.GAS_URL, params.get('api'));
+      if (params.has('api')) {
         window.history.replaceState({}, document.title, window.location.pathname);
+        showToast('🔒 為保護家庭資料，連結不會自動更改雲端網址。如需連接，請到「營地」系統設定手動貼上', 'warn');
       }
 
 
@@ -4158,8 +4159,15 @@
     }
 
 
+    // 只接受 Google Apps Script 網頁應用程式網址，避免同步到其他網站
+    const GAS_URL_PATTERN = /^https:\/\/script\.google\.com\/(a\/[^\/?#]+\/)?macros\/s\/[A-Za-z0-9_-]+\/(exec|dev)$/;
+
     function saveSettings() {
       const url = document.getElementById('setting-gas-url').value.trim();
+      if (url && !GAS_URL_PATTERN.test(url)) {
+        showToast('🟠 雲端網址格式不正確。請貼上 GAS「部署」後取得的網址，開頭是 https://script.google.com/macros/s/，結尾是 /exec', 'warn');
+        return;
+      }
       const gasPin = document.getElementById('setting-gas-pin').value.trim();
       const uiPin = document.getElementById('setting-ui-pin').value.trim();
       const syncHealth = document.getElementById('setting-sync-health').checked;

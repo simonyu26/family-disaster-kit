@@ -69,8 +69,34 @@ function authFailureOutput(auth, wrongPinMessage) {
   return createJsonOutput({ ok: false, authRequired: true, error: wrongPinMessage });
 }
 
+const READ_ACTIONS = ['getAll', 'getLocations', 'getContacts'];
+const READ_PIN_ERROR = '請輸入正確的家庭通行碼以同步雲端資料';
+
+/**
+ * 讀取家庭資料（GET 與 POST 共用；呼叫前須已通過通行碼驗證）
+ */
+function readFamilyData(action, auth) {
+  if (action === 'getLocations') {
+    return { ok: true, pinRequired: auth.pinRequired, locations: getLocationsData(), serverTime: new Date().toISOString() };
+  }
+  if (action === 'getContacts') {
+    return { ok: true, pinRequired: auth.pinRequired, contacts: getContactsData(), serverTime: new Date().toISOString() };
+  }
+  const inv = getInventoryData();
+  return {
+    ok: true,
+    pinRequired: auth.pinRequired,
+    inventory: inv,
+    members: getMembersData(inv.characters),
+    locations: getLocationsData(),
+    contacts: getContactsData(),
+    serverTime: new Date().toISOString()
+  };
+}
+
 /**
  * 處理外部 PWA 的 GET 請求
+ * 過渡期：仍接受以網址參數 pin 讀取家庭資料，等前端改用 POST 上線後即移除（S-04、E-12）。
  */
 function doGet(e) {
   try {
@@ -87,31 +113,12 @@ function doGet(e) {
       return createJsonOutput(getNearbyAeds(lat, lng));
     }
 
-    // 驗證家庭通行碼
+    // 驗證家庭通行碼（過渡期 GET 讀取）
     const auth = checkAuthPin(params.pin);
     if (!auth.ok) {
-      return authFailureOutput(auth, '請輸入正確的家庭通行碼以同步雲端資料');
+      return authFailureOutput(auth, READ_PIN_ERROR);
     }
-
-    let result = {};
-    if (action === 'getLocations') {
-      result = { ok: true, pinRequired: auth.pinRequired, locations: getLocationsData(), serverTime: new Date().toISOString() };
-    } else if (action === 'getContacts') {
-      result = { ok: true, pinRequired: auth.pinRequired, contacts: getContactsData(), serverTime: new Date().toISOString() };
-    } else {
-      const inv = getInventoryData();
-      const members = getMembersData(inv.characters);
-      result = {
-        ok: true,
-        pinRequired: auth.pinRequired,
-        inventory: inv,
-        members: members,
-        locations: getLocationsData(),
-        contacts: getContactsData(),
-        serverTime: new Date().toISOString()
-      };
-    }
-    return createJsonOutput(result);
+    return createJsonOutput(readFamilyData(action, auth));
   } catch (err) {
     return createJsonOutput({ ok: false, error: err.message });
   }
@@ -140,6 +147,15 @@ function doPost(e) {
       }
       PropertiesService.getScriptProperties().setProperty('FAMILY_PIN', newPin);
       return createJsonOutput({ ok: true, pinRequired: true, serverTime: new Date().toISOString() });
+    }
+
+    // 讀取家庭資料：通行碼放在 POST 本文，不放網址（S-04）
+    if (READ_ACTIONS.includes(action)) {
+      const readAuth = checkAuthPin(payload.pin);
+      if (!readAuth.ok) {
+        return authFailureOutput(readAuth, READ_PIN_ERROR);
+      }
+      return createJsonOutput(readFamilyData(action, readAuth));
     }
 
     // 驗證家庭通行碼

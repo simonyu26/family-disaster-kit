@@ -4,7 +4,7 @@
  * 部署前須在「專案設定 ＞ 指令碼屬性」設定：
  *   SPREADSHEET_ID      （必填）家庭試算表 ID，即試算表網址 /d/ 與 /edit 之間那一段
  *   CHAR_HEADER_NAMES   （選填）物資表「角色列」上的任兩個成員名稱，以半形逗號分隔，用來找出角色列
- *   FAMILY_PIN          （選填）家庭通行碼
+ *   FAMILY_PIN          （必填）家庭通行碼，至少 6 碼；未設定時除公開情資外一律拒絕存取
  *   GEMINI_API_KEY      （選填）拍標籤辨識用
  * 公開 repo 不放試算表 ID、真實人名與金鑰（S-08），一律由指令碼屬性讀取。
  */
@@ -20,18 +20,83 @@ function openFamilySpreadsheet() {
   return SpreadsheetApp.openById(id);
 }
 
+const PIN_MIN_LENGTH = 6;
+const PIN_MAX_FAILURES = 5;            // 10 分鐘內猜錯 5 次就鎖定
+const PIN_FAILURE_WINDOW_SEC = 600;
+const PIN_LOCK_SEC = 900;              // 鎖定 15 分鐘
+const PIN_FAIL_COUNT_KEY = 'pinFailCount';
+const PIN_LOCKED_KEY = 'pinLocked';
+
 /**
- * 檢查家庭通行碼（若 GAS 指令碼屬性已設定 FAMILY_PIN，則須通過驗證）
+ * 檢查家庭通行碼（fail-closed）
+ * - 未設定 FAMILY_PIN：一律拒絕（pinNotSet），由管理者在 GAS 指令碼屬性手動設定
+ * - 猜錯次數過多：暫時鎖定（locked），鎖定期間正確通行碼也不接受
+ * GAS 取不到來源 IP，因此失敗次數為全專案共用計數。
  */
 function checkAuthPin(providedPin) {
   const savedPin = PropertiesService.getScriptProperties().getProperty('FAMILY_PIN') || '';
-  if (!savedPin) return { ok: true, pinRequired: false };
-  if (String(providedPin || '').trim() === savedPin) return { ok: true, pinRequired: true };
+  if (!savedPin) return { ok: false, pinNotSet: true };
+
+  const cache = CacheService.getScriptCache();
+  if (cache.get(PIN_LOCKED_KEY)) return { ok: false, locked: true };
+
+  if (String(providedPin || '').trim() === savedPin) {
+    cache.remove(PIN_FAIL_COUNT_KEY);
+    return { ok: true, pinRequired: true };
+  }
+
+  const fails = parseInt(cache.get(PIN_FAIL_COUNT_KEY) || '0', 10) + 1;
+  if (fails >= PIN_MAX_FAILURES) {
+    cache.put(PIN_LOCKED_KEY, '1', PIN_LOCK_SEC);
+    cache.remove(PIN_FAIL_COUNT_KEY);
+    return { ok: false, locked: true };
+  }
+  cache.put(PIN_FAIL_COUNT_KEY, String(fails), PIN_FAILURE_WINDOW_SEC);
   return { ok: false, pinRequired: true };
 }
 
 /**
+ * 通行碼驗證失敗時回傳給前端的白話訊息（U-03）
+ * 未設定與鎖定時不帶 authRequired，避免前端反覆跳出輸入框。
+ */
+function authFailureOutput(auth, wrongPinMessage) {
+  if (auth.pinNotSet) {
+    return createJsonOutput({ ok: false, pinNotSet: true, error: '雲端尚未設定家庭通行碼，暫時無法同步。請管理者到 GAS「專案設定 ＞ 指令碼屬性」新增 FAMILY_PIN（至少 ' + PIN_MIN_LENGTH + ' 碼）' });
+  }
+  if (auth.locked) {
+    return createJsonOutput({ ok: false, locked: true, error: '通行碼錯誤次數過多，雲端同步已暫停 ' + Math.round(PIN_LOCK_SEC / 60) + ' 分鐘。本機資料仍可使用，請稍後再試' });
+  }
+  return createJsonOutput({ ok: false, authRequired: true, error: wrongPinMessage });
+}
+
+const READ_ACTIONS = ['getAll', 'getLocations', 'getContacts'];
+const READ_PIN_ERROR = '請輸入正確的家庭通行碼以同步雲端資料';
+
+/**
+ * 讀取家庭資料（GET 與 POST 共用；呼叫前須已通過通行碼驗證）
+ */
+function readFamilyData(action, auth) {
+  if (action === 'getLocations') {
+    return { ok: true, pinRequired: auth.pinRequired, locations: getLocationsData(), serverTime: new Date().toISOString() };
+  }
+  if (action === 'getContacts') {
+    return { ok: true, pinRequired: auth.pinRequired, contacts: getContactsData(), serverTime: new Date().toISOString() };
+  }
+  const inv = getInventoryData();
+  return {
+    ok: true,
+    pinRequired: auth.pinRequired,
+    inventory: inv,
+    members: getMembersData(inv.characters),
+    locations: getLocationsData(),
+    contacts: getContactsData(),
+    serverTime: new Date().toISOString()
+  };
+}
+
+/**
  * 處理外部 PWA 的 GET 請求
+ * 過渡期：仍接受以網址參數 pin 讀取家庭資料，等前端改用 POST 上線後即移除（S-04、E-12）。
  */
 function doGet(e) {
   try {
@@ -48,31 +113,12 @@ function doGet(e) {
       return createJsonOutput(getNearbyAeds(lat, lng));
     }
 
-    // 驗證家庭通行碼
+    // 驗證家庭通行碼（過渡期 GET 讀取）
     const auth = checkAuthPin(params.pin);
     if (!auth.ok) {
-      return createJsonOutput({ ok: false, authRequired: true, error: '請輸入正確的家庭通行碼以同步雲端資料' });
+      return authFailureOutput(auth, READ_PIN_ERROR);
     }
-
-    let result = {};
-    if (action === 'getLocations') {
-      result = { ok: true, pinRequired: auth.pinRequired, locations: getLocationsData(), serverTime: new Date().toISOString() };
-    } else if (action === 'getContacts') {
-      result = { ok: true, pinRequired: auth.pinRequired, contacts: getContactsData(), serverTime: new Date().toISOString() };
-    } else {
-      const inv = getInventoryData();
-      const members = getMembersData(inv.characters);
-      result = {
-        ok: true,
-        pinRequired: auth.pinRequired,
-        inventory: inv,
-        members: members,
-        locations: getLocationsData(),
-        contacts: getContactsData(),
-        serverTime: new Date().toISOString()
-      };
-    }
-    return createJsonOutput(result);
+    return createJsonOutput(readFamilyData(action, auth));
   } catch (err) {
     return createJsonOutput({ ok: false, error: err.message });
   }
@@ -88,25 +134,34 @@ function doPost(e) {
     const payload = JSON.parse(e.postData.contents);
     const action = payload.action;
 
-    // 設定或更新家庭通行碼
+    // 更新家庭通行碼：只接受「已知舊碼換新碼」；首次設定須由管理者在 GAS 指令碼屬性手動填入，
+    // 也不接受換成空值（不可經 API 解除保護）
     if (action === 'setFamilyPin') {
-      const currentSaved = PropertiesService.getScriptProperties().getProperty('FAMILY_PIN') || '';
-      if (currentSaved && String(payload.oldPin || '').trim() !== currentSaved) {
-        return createJsonOutput({ ok: false, authRequired: true, error: '原家庭通行碼不正確，無法變更' });
+      const pinAuth = checkAuthPin(payload.oldPin);
+      if (!pinAuth.ok) {
+        return authFailureOutput(pinAuth, '原家庭通行碼不正確，無法變更');
       }
       const newPin = String(payload.newPin || '').trim();
-      if (newPin) {
-        PropertiesService.getScriptProperties().setProperty('FAMILY_PIN', newPin);
-      } else {
-        PropertiesService.getScriptProperties().deleteProperty('FAMILY_PIN');
+      if (newPin.length < PIN_MIN_LENGTH) {
+        return createJsonOutput({ ok: false, error: '新的家庭通行碼至少要 ' + PIN_MIN_LENGTH + ' 碼，請重新輸入' });
       }
-      return createJsonOutput({ ok: true, pinRequired: !!newPin, serverTime: new Date().toISOString() });
+      PropertiesService.getScriptProperties().setProperty('FAMILY_PIN', newPin);
+      return createJsonOutput({ ok: true, pinRequired: true, serverTime: new Date().toISOString() });
+    }
+
+    // 讀取家庭資料：通行碼放在 POST 本文，不放網址（S-04）
+    if (READ_ACTIONS.includes(action)) {
+      const readAuth = checkAuthPin(payload.pin);
+      if (!readAuth.ok) {
+        return authFailureOutput(readAuth, READ_PIN_ERROR);
+      }
+      return createJsonOutput(readFamilyData(action, readAuth));
     }
 
     // 驗證家庭通行碼
     const auth = checkAuthPin(payload.pin);
     if (!auth.ok) {
-      return createJsonOutput({ ok: false, authRequired: true, error: '家庭通行碼驗證失敗，無法寫入雲端' });
+      return authFailureOutput(auth, '家庭通行碼驗證失敗，無法寫入雲端');
     }
 
     if (action === 'updateItem') {

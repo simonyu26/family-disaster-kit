@@ -4,6 +4,13 @@
 本文件記錄「防災生存整備系統（森林露營小隊版）」各版本之架構演進、功能新增、問題修復與部署軌跡。
 
 
+## [gas] - 2026-11-16（後端 `Code.gs` 納入 repo × 移除推送 GitHub 功能 — 待擁有者部署 GAS）
+
+* **後端納入版本控管（S-09）**：交接包 v2.9 的 `Code.gs` 放進 `gas/Code.gs`。
+* **移除推送 GitHub 功能**：刪除 `getGitHubConfigSummary`、`saveGitHubConfig`、`extractDriveFilePlainText`、`findLatestBackupSubfolder`、`syncDriveBackupToGitHub`、`scheduledDailyGitHubDeploy`、`setDailyGitHubDeployTrigger`，以及 `doPost` 的 `setGitHubConfig`、`syncDriveToGitHub`、`toggleGitHubDailyTrigger` 三個操作與 `doGet` 回傳的 `githubConfig` 欄位；程式不再讀寫任何 `GITHUB_*` 屬性，也不再存取 Google Drive。
+* **寫死的值改讀指令碼屬性（S-08）**：試算表 ID 改由 `SPREADSHEET_ID` 讀取（未設定時回傳白話錯誤）；辨識物資表角色列用的成員名稱改由選填的 `CHAR_HEADER_NAMES` 讀取；成員預設頭像對照表移除真實姓名，只保留「家庭儲備」。
+* 本次未改前端（`index.html`、`sw.js`）；PIN 改用 POST 等修改另案處理。
+
 ## [docs] - 2026-11-16（原則 v1.1 寫入 repo × CLAUDE.md 開發規則 × PR 範本）
 
 * **原則文件**：`DEV_PRINCIPLES.md` 以原則檔 v1.1 取代（89 條，含 P-07、A-16、E-11、E-12、W-18 至 W-25）；新增 `CLAUDE.md` 作為各串的精簡開發規則。

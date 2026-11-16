@@ -172,6 +172,8 @@ function doPost(e) {
 
     if (action === 'batchSync') {
       const actions = payload.actions || [];
+      // 先確認物資頁存在；找不到就整批不寫，避免地點、聯絡人先寫入後重送時重複新增
+      getTargetSheet(openFamilySpreadsheet());
       actions.forEach(act => {
         if (act.action === 'updateItem') {
           updateItemData(act.row, act.charName, act.state, act.expDate, act.qty, act.textNote, act.spec);
@@ -319,6 +321,9 @@ function createJsonOutput(obj) {
 function getTargetSheet(ss) {
   const sheetName = (PropertiesService.getScriptProperties().getProperty('INVENTORY_SHEET_NAME') || '').trim();
   if (sheetName) {
+    if (['Leadsheet', 'Locations', 'Members', 'Contacts'].includes(sheetName)) {
+      throw new Error('INVENTORY_SHEET_NAME 不可設為「' + sheetName + '」（這是成員、聯絡人或地點用的分頁）。請改成物資分頁的名稱，例如「目前物資」');
+    }
     const named = ss.getSheetByName(sheetName);
     if (!named) {
       throw new Error('找不到「' + sheetName + '」分頁，已暫停同步以免寫錯頁。請確認試算表的分頁名稱，或到 GAS 指令碼屬性修改 INVENTORY_SHEET_NAME');

@@ -259,6 +259,30 @@
     .member-row:last-child { border-bottom: none; }
     .alert-item { padding: 8px 0; border-bottom: 1px dashed #E6DEC9; font-size: 0.84rem; }
     .alert-item:last-child { border-bottom: none; }
+    /* 示警三態（D-01、D-02）：顏色只用規範變數，不加行內樣式（A-02、A-04） */
+    .alert-meta-line { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px; font-variant-numeric: tabular-nums; }
+    .alert-box { font-size: 0.85rem; color: var(--text); }
+    .alert-state { padding: 8px 12px; border-radius: 12px; line-height: 1.6; color: var(--text); }
+    .alert-state-clear { color: var(--primary); padding-left: 0; }
+    .alert-state-unknown { background: var(--bg); border-left: 4px solid var(--accent); }
+    .alert-state-title { font-weight: 800; }
+    .alert-state-time { font-size: 0.8rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+    .alert-stale-note { margin-bottom: 6px; }
+    .alert-pill {
+      display: inline-block; font-size: 0.75rem; font-weight: bold; line-height: 1.5;
+      padding: 0 8px; border-radius: 999px; border: 1px solid var(--border); margin-right: 6px;
+    }
+    .alert-pill-alerts { color: var(--danger); border-color: var(--danger); background: var(--card-bg); }
+    .alert-pill-clear { color: var(--primary); border-color: var(--done-bg); background: var(--done-bg); }
+    .alert-pill-unknown { color: var(--text); border-color: var(--accent); background: var(--bg); }
+    .alert-item-title { font-weight: 800; color: var(--danger); }
+    .alert-item-summary { font-size: 0.8rem; color: var(--text); margin-top: 2px; }
+    .alert-item-meta { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; font-variant-numeric: tabular-nums; }
+    .alert-source { font-size: 0.75rem; color: var(--text-muted); margin-top: 8px; line-height: 1.5; }
+    .alert-source a { color: var(--primary); }
+    .watch-line-clear { color: var(--primary); }
+    .watch-line-alerts { color: var(--danger); }
+    .watch-line-unknown { color: var(--text); }
     .cbs-badge {
       display: inline-block; background: var(--danger); color: #FFF;
       font-size: 0.7rem; font-weight: bold; padding: 1px 6px; border-radius: 6px; margin-right: 4px;
@@ -1272,8 +1296,8 @@
             </select>
             <button class="btn btn-muted" style="padding:3px 8px; font-size:0.75rem; margin-left:auto;" onclick="fetchNcdrAlerts(true)">🔁 更新</button>
           </div>
-          <div id="ncdr-alerts-meta" style="font-size:0.74rem; color:var(--text-muted); margin-bottom:4px;"></div>
-          <div id="ncdr-alerts-box" style="font-size:0.85rem; color:var(--text-muted);">點擊更新抓取最新民生示警</div>
+          <div id="ncdr-alerts-meta" class="alert-meta-line"></div>
+          <div id="ncdr-alerts-box" class="alert-box"></div>
           <div class="watch-bar">
             <div style="font-weight:800; color:var(--primary-dark); margin-bottom:4px;">👀 同時關注外地親友縣市（點擊切換釘選，最多 3 個）：</div>
             <div id="watch-city-pills"></div>
@@ -2308,6 +2332,7 @@
       CONTACTS: 'camp_contacts_cache_v21',
       QUEUE: 'camp_offline_queue_v19',
       ALERTS: 'camp_ncdr_alerts_cache',
+      ALERTS_META: 'camp_ncdr_alerts_meta',
       WEATHER: 'camp_weather_cache_v20',
       WEATHER_CITY: 'camp_weather_city',
       MY_CHAR: 'camp_my_char',
@@ -2465,8 +2490,15 @@
       const cachedAlerts = localStorage.getItem(STORAGE_KEYS.ALERTS);
       if (cachedAlerts) {
         alertsCache = JSON.parse(cachedAlerts);
-        updateGlobalAlertTicker();
       }
+      loadAlertsMeta();
+      renderAlertViews();
+      // 每分鐘重算一次示警狀態（只重算、不重抓），資料超過 15 分鐘就不再顯示 ✅（D-02）
+      setInterval(renderAlertViews, 60 * 1000);
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState !== 'visible') return;
+        if (navigator.onLine) fetchNcdrAlerts(false); else renderAlertViews();
+      });
 
 
       if (cachedInv) {
@@ -4821,7 +4853,7 @@
       if (taipeiMatches.length > 0) {
         const top = taipeiMatches[0];
         ticker.style.display = 'flex';
-        titleEl.innerText = `${top.isCbs ? '📲 [災防告警] ' : '⚠️ '}臺北市・${top.title}（近12h共 ${taipeiMatches.length} 則）`;
+        titleEl.innerText = `${top.isCbs ? '📲 [災防告警] ' : '🚨 '}臺北市・${top.title}（近12h共 ${taipeiMatches.length} 則）`;
         sumEl.innerText = top.summary.slice(0, 85) + (top.summary.length > 85 ? '...' : '');
       } else {
         ticker.style.display = 'none';
@@ -4839,53 +4871,178 @@
     }
 
 
-    function renderNcdrAlerts() {
-      const box = document.getElementById('ncdr-alerts-box');
-      if (!alertsCache || alertsCache.length === 0) {
-        box.innerHTML = '<div style="padding:6px 0;">目前尚無快取的示警資料（有網路時點擊「🔄」抓取）</div>';
-        return;
-      }
-      const recent12h = alertsCache.filter(a => isWithin12Hours(a.updated));
-      const filtered = recent12h.filter(a => matchAlertRegion(a, selectedAlertCity));
+    // ================= 示警三態：有示警／無示警／無法確認（D-01、D-02、D-06） =================
+    const ALERT_FRESH_MS = 15 * 60 * 1000;   // 資料超過 15 分鐘就不可顯示「無示警」（災防顧問 2026-11-16 定）
+    const ALERT_FEED_LIMIT = 30;             // 後端只回傳最新 30 則
+    const ALERT_FETCH_TIMEOUT_MS = 6000;     // D-06 外部查詢逾時
+    const ALERT_SOURCE_HTML = '資料來源：<a href="https://alerts.ncdr.nat.gov.tw/" target="_blank" rel="noopener">國家災害防救科技中心（NCDR）示警資料</a>。本頁不取代手機災防告警與政府廣播。';
+    let alertsMeta = { fetchedAt: '', lastAttemptOk: null, anomaly: false };
+    let alertsLoading = false;
 
-
-      if (filtered.length === 0) {
-        box.innerHTML = `<div style="padding:6px 0; color:var(--primary-dark); font-weight:bold;">✅ 【${selectedAlertCity}】最近 12 小時內無災害示警。</div>`;
-        return;
-      }
-      box.innerHTML = filtered.slice(0, 10).map(a => `
-        <div class="alert-item">
-          <div style="font-weight:800; color:var(--danger);">
-            ${a.isCbs ? '<span class="cbs-badge">📲 災防告警</span>' : '⚠️ '}${a.title}
-          </div>
-          <div style="font-size:0.78rem; color:var(--text); margin-top:2px;">${a.summary.slice(0, 120)}${a.summary.length > 120 ? '...' : ''}</div>
-          <div style="font-size:0.72rem; color:var(--text-muted); margin-top:2px;">${a.author}・${a.updated.slice(0, 16).replace('T', ' ')}</div>
-        </div>
-      `).join('');
+    function escapeHtml(value) {
+      return String(value == null ? '' : value).replace(/[&<>"']/g, ch => (
+        { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]
+      ));
     }
 
+    function loadAlertsMeta() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEYS.ALERTS_META) || '{}');
+        alertsMeta = Object.assign({ fetchedAt: '', lastAttemptOk: null, anomaly: false }, saved);
+      } catch (e) {
+        alertsMeta = { fetchedAt: '', lastAttemptOk: null, anomaly: false };
+      }
+    }
+
+    function saveAlertsMeta() {
+      localStorage.setItem(STORAGE_KEYS.ALERTS_META, JSON.stringify(alertsMeta));
+    }
+
+    // 今天只寫時分；不是今天要加日期，避免把昨天的資料看成今天的
+    function formatAlertTime(isoStr) {
+      const d = new Date(isoStr);
+      if (!isoStr || isNaN(d.getTime())) return '';
+      const pad = n => String(n).padStart(2, '0');
+      const hm = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      const now = new Date();
+      const sameDay = d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
+      return sameDay ? hm : `${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${hm}`;
+    }
+
+    function isAlertDataFresh() {
+      if (!alertsMeta.fetchedAt || alertsMeta.anomaly || alertsMeta.lastAttemptOk === false) return false;
+      const t = new Date(alertsMeta.fetchedAt).getTime();
+      if (isNaN(t)) return false;
+      return (Date.now() - t) <= ALERT_FRESH_MS;
+    }
+
+    // 收到 30 則而且最舊一則仍在 12 小時內，代表較舊的示警可能被截掉
+    function isAlertFeedTruncated() {
+      const list = alertsCache || [];
+      if (list.length < ALERT_FEED_LIMIT) return false;
+      const times = list.map(a => new Date(a.updated).getTime()).filter(t => !isNaN(t));
+      if (times.length === 0) return true;
+      return isWithin12Hours(new Date(Math.min(...times)).toISOString());
+    }
+
+    // 回傳某縣市的示警狀態；只有資料新鮮、來源正常、沒有被截斷時，才會回傳 clear
+    function getAlertStatus(city) {
+      const recent = (alertsCache || []).filter(a => isWithin12Hours(a.updated));
+      const matches = recent.filter(a => matchAlertRegion(a, city));
+      const fresh = isAlertDataFresh();
+      if (matches.length > 0) return { state: 'alerts', matches, fresh };
+      if (!getGasUrl()) return { state: 'unknown', reason: 'local', matches, fresh };
+      if (alertsLoading && !fresh) return { state: 'loading', matches, fresh };
+      if (alertsMeta.anomaly) return { state: 'unknown', reason: 'empty', matches, fresh };
+      if (!fresh) return { state: 'unknown', reason: 'stale', matches, fresh };
+      if (isAlertFeedTruncated()) return { state: 'unknown', reason: 'truncated', matches, fresh };
+      return { state: 'clear', matches, fresh };
+    }
+
+    function renderAlertViews() {
+      updateGlobalAlertTicker();
+      renderNcdrAlerts();
+      renderWatchCities();
+    }
+
+    function renderNcdrAlerts() {
+      const box = document.getElementById('ncdr-alerts-box');
+      const metaEl = document.getElementById('ncdr-alerts-meta');
+      if (!box) return;
+      const city = escapeHtml(selectedAlertCity);
+      const status = getAlertStatus(selectedAlertCity);
+      const lastTime = formatAlertTime(alertsMeta.fetchedAt);
+      const lastText = lastTime ? `最後成功更新：${lastTime}` : '還沒有成功更新過';
+      const freshText = status.fresh && lastTime ? `資料時間 ${lastTime}` : lastText;
+      // 資料時間只出現一次：有示警清單時放在上方 meta 行，其他狀態放在狀態框的第二行
+      if (metaEl) metaEl.textContent = status.state === 'alerts' ? freshText : '';
+
+      let html = '';
+      if (status.state === 'loading') {
+        html = '<div class="alert-state">🔁 正在更新示警…</div>';
+      } else if (status.state === 'alerts') {
+        if (!status.fresh) {
+          html += `<div class="alert-state alert-state-unknown alert-stale-note">⚠️ 這是 ${escapeHtml(lastTime || '更早')} 的資料，可能已有更新，請按「🔁 更新」</div>`;
+        }
+        html += `<div><span class="alert-pill alert-pill-alerts">有示警 ${status.matches.length} 則</span></div>`;
+        html += status.matches.slice(0, 10).map(a => {
+          const summary = String(a.summary || '');
+          return `
+        <div class="alert-item">
+          <div class="alert-item-title">${a.isCbs ? '<span class="cbs-badge">📲 災防告警</span>' : '🚨 '}${escapeHtml(a.title)}</div>
+          <div class="alert-item-summary">${escapeHtml(summary.slice(0, 120))}${summary.length > 120 ? '...' : ''}</div>
+          <div class="alert-item-meta">${escapeHtml(a.author)}・${escapeHtml(String(a.updated || '').slice(0, 16).replace('T', ' '))}</div>
+        </div>`;
+        }).join('');
+      } else if (status.state === 'clear') {
+        html = `<div class="alert-state alert-state-clear">
+          <div class="alert-state-title"><span class="alert-pill alert-pill-clear">無示警</span>✅ 近 12 小時沒有【${city}】的災害示警</div>
+          <div class="alert-state-time">資料時間 ${escapeHtml(lastTime)}</div>
+        </div>`;
+      } else {
+        const texts = {
+          local: ['⚠️ 尚未連接雲端，這裡無法顯示示警。', '', '請以手機的災防告警和廣播、電視為準，也可以到中央氣象署網站查看。'],
+          empty: [`⚠️ 示警資料這次沒有回傳內容，目前無法確認【${city}】有沒有示警。`, lastText, '請稍後按「🔁 更新」，並以手機的災防告警和廣播、電視為準。'],
+          truncated: [`⚠️ 目前示警很多，這裡只收到最新 ${ALERT_FEED_LIMIT} 則，無法確認【${city}】有沒有其他示警。`, freshText, '請到國家災害防救科技中心的示警網站查看完整內容。'],
+          stale: [`⚠️ 目前無法確認【${city}】有沒有示警。`, lastText, '請連上網路後按「🔁 更新」；在這之前，請以手機的災防告警和廣播、電視為準。']
+        };
+        const [title, time, action] = texts[status.reason] || texts.stale;
+        html = `<div class="alert-state alert-state-unknown">
+          <div class="alert-state-title"><span class="alert-pill alert-pill-unknown">無法確認</span>${title}</div>
+          ${time ? `<div class="alert-state-time">${escapeHtml(time)}</div>` : ''}
+          <div>${action}</div>
+        </div>`;
+      }
+      box.innerHTML = html + `<div class="alert-source">${ALERT_SOURCE_HTML}</div>`;
+    }
+
+    // 整包 0 筆，或每一筆都缺標題或時間，視為資料來源異常（災防顧問 Q2）
+    function isAlertPayloadValid(alerts) {
+      if (!Array.isArray(alerts) || alerts.length === 0) return false;
+      return alerts.some(a => a && String(a.title || '').trim() && String(a.updated || '').trim());
+    }
 
     async function fetchNcdrAlerts(manual = false) {
       const url = getGasUrl();
-      if (!navigator.onLine || !url) { if (manual) showToast('🟠 離線顯示最後快取示警', 'warn'); return; }
+      if (!url) { renderAlertViews(); return; }
+      if (!navigator.onLine) {
+        renderAlertViews();
+        if (manual) showToast('🟠 目前沒有網路，示警暫時無法更新', 'warn');
+        return;
+      }
+      if (alertsLoading) return;
+      alertsLoading = true;
+      renderAlertViews();
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), ALERT_FETCH_TIMEOUT_MS);
+      let okResult = false;
       try {
-        if (manual) showToast('📡 正在同步 NCDR 即時示警...');
-        const res = await fetch(`${url}?action=getAlerts&_t=${Date.now()}`);
+        const res = await fetch(`${url}?action=getAlerts&_t=${Date.now()}`, { signal: controller.signal });
         const json = await res.json();
-        if (json.ok && Array.isArray(json.alerts)) {
+        if (json.ok && isAlertPayloadValid(json.alerts)) {
           alertsCache = json.alerts;
           localStorage.setItem(STORAGE_KEYS.ALERTS, JSON.stringify(alertsCache));
-          const metaEl = document.getElementById('ncdr-alerts-meta');
-          if (metaEl) metaEl.innerText = '資料來源：NCDR 民生示警公開平台 ・ 更新於 ' + new Date().toLocaleTimeString('zh-TW', { hour:'2-digit', minute:'2-digit' });
-          updateGlobalAlertTicker();
-          renderNcdrAlerts();
-      renderWatchCities();
-          if (manual) showToast(`✅ 已同步 NCDR 示警並過濾近 12 小時資料`, 'success');
-        } else if (manual) {
-          showToast('⚠️ 無法取得 NCDR 示警：' + (json.error || ''), 'warn');
+          // 以後端抓取時間計時，日後後端加快取也不會把舊資料當成新的
+          alertsMeta = { fetchedAt: json.fetchedAt || new Date().toISOString(), lastAttemptOk: true, anomaly: false };
+          okResult = true;
+        } else if (json.ok) {
+          // 來源異常：保留舊快取與最後成功時間，只標記異常
+          alertsMeta.anomaly = true;
+          alertsMeta.lastAttemptOk = true;
+        } else {
+          alertsMeta.lastAttemptOk = false;
         }
       } catch (e) {
-        if (manual) showToast('⚠️ NCDR 連線逾時', 'warn');
+        alertsMeta.lastAttemptOk = false;
+      } finally {
+        clearTimeout(timer);
+        alertsLoading = false;
+        saveAlertsMeta();
+        renderAlertViews();
+      }
+      if (manual) {
+        if (okResult) showToast('✅ 已更新示警', 'success');
+        else showToast('⚠️ 示警暫時無法更新，請稍後再按「🔁 更新」', 'warn');
       }
     }
 
@@ -5505,13 +5662,20 @@
         sumEl.innerHTML = '<span style="color:var(--text-muted);">尚未釘選外地親友縣市</span>';
         return;
       }
-      const recent12h = (alertsCache || []).filter(a => isWithin12Hours(a.updated));
       sumEl.innerHTML = watchCities.map(c => {
-        const matches = recent12h.filter(a => matchAlertRegion(a, c));
-        if (matches.length === 0) {
-          return `<div style="color:var(--primary-dark);">✅ <strong>${c}</strong>：近 12h 無災害示警</div>`;
+        const status = getAlertStatus(c);
+        const name = escapeHtml(c);
+        if (status.state === 'alerts') {
+          const staleTag = status.fresh ? '' : '（舊資料，請按「🔁 更新」）';
+          return `<div class="watch-line-alerts">🚨 <strong>${name}</strong>（${status.matches.length} 則）：${escapeHtml(status.matches[0].title)}${staleTag}</div>`;
         }
-        return `<div style="color:var(--danger);">🚨 <strong>${c}</strong>（${matches.length} 則）：${matches[0].title}</div>`;
+        if (status.state === 'clear') {
+          return `<div class="watch-line-clear">✅ <strong>${name}</strong>：近 12 小時沒有災害示警</div>`;
+        }
+        if (status.state === 'loading') {
+          return `<div class="watch-line-unknown">🔁 <strong>${name}</strong>：正在更新示警…</div>`;
+        }
+        return `<div class="watch-line-unknown">⚠️ <strong>${name}</strong>：無法確認</div>`;
       }).join('');
     }
 

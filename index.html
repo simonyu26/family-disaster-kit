@@ -273,7 +273,7 @@
       padding: 0 8px; border-radius: 999px; border: 1px solid var(--border); margin-right: 6px;
     }
     .alert-pill-alerts { color: var(--danger); border-color: var(--danger); background: var(--card-bg); }
-    .alert-pill-clear { color: var(--primary); border-color: var(--done-bg); background: var(--done-bg); }
+    .alert-pill-clear { color: var(--primary); border-color: var(--primary-light); background: var(--primary-light); }
     .alert-pill-unknown { color: var(--text); border-color: var(--accent); background: var(--bg); }
     .alert-item-title { font-weight: 800; color: var(--danger); }
     .alert-item-summary { font-size: 0.8rem; color: var(--text); margin-top: 2px; }
@@ -285,7 +285,7 @@
     .watch-line-unknown { color: var(--text); }
     .cbs-badge {
       display: inline-block; background: var(--danger); color: #FFF;
-      font-size: 0.7rem; font-weight: bold; padding: 1px 6px; border-radius: 6px; margin-right: 4px;
+      font-size: 0.75rem; font-weight: bold; padding: 1px 6px; border-radius: 6px; margin-right: 4px;
     }
     .city-chips { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-bottom: 8px; }
     .city-chip {
@@ -4955,7 +4955,7 @@
       const lastText = lastTime ? `最後成功更新：${lastTime}` : '還沒有成功更新過';
       const freshText = status.fresh && lastTime ? `資料時間 ${lastTime}` : lastText;
       // 資料時間只出現一次：有示警清單時放在上方 meta 行，其他狀態放在狀態框的第二行
-      if (metaEl) metaEl.textContent = status.state === 'alerts' ? freshText : '';
+      if (metaEl) metaEl.textContent = status.state === 'alerts' && status.fresh ? freshText : '';
 
       let html = '';
       if (status.state === 'loading') {
@@ -4976,7 +4976,8 @@
         }).join('');
       } else if (status.state === 'clear') {
         html = `<div class="alert-state alert-state-clear">
-          <div class="alert-state-title"><span class="alert-pill alert-pill-clear">無示警</span>✅ 近 12 小時沒有【${city}】的災害示警</div>
+          <div><span class="alert-pill alert-pill-clear">沒有示警</span></div>
+          <div class="alert-state-title">✅ 近 12 小時沒有【${city}】的災害示警</div>
           <div class="alert-state-time">資料時間 ${escapeHtml(lastTime)}</div>
         </div>`;
       } else {
@@ -4988,7 +4989,8 @@
         };
         const [title, time, action] = texts[status.reason] || texts.stale;
         html = `<div class="alert-state alert-state-unknown">
-          <div class="alert-state-title"><span class="alert-pill alert-pill-unknown">無法確認</span>${title}</div>
+          <div><span class="alert-pill alert-pill-unknown">無法確認</span></div>
+          <div class="alert-state-title">${title}</div>
           ${time ? `<div class="alert-state-time">${escapeHtml(time)}</div>` : ''}
           <div>${action}</div>
         </div>`;
@@ -5023,7 +5025,10 @@
           alertsCache = json.alerts;
           localStorage.setItem(STORAGE_KEYS.ALERTS, JSON.stringify(alertsCache));
           // 以後端抓取時間計時，日後後端加快取也不會把舊資料當成新的
-          alertsMeta = { fetchedAt: json.fetchedAt || new Date().toISOString(), lastAttemptOk: true, anomaly: false };
+          // 時鐘偏差防護（D-01）：取伺服器抓取時間與手機時間中較早者，手機時鐘慢時不會把舊資料當新的
+          const serverT = Date.parse(json.fetchedAt);
+          const fetchedAt = new Date(isNaN(serverT) ? Date.now() : Math.min(serverT, Date.now())).toISOString();
+          alertsMeta = { fetchedAt, lastAttemptOk: true, anomaly: false };
           okResult = true;
         } else if (json.ok) {
           // 來源異常：保留舊快取與最後成功時間，只標記異常

@@ -951,7 +951,7 @@ function deleteLocationRecord(id) {
 }
 
 // 示警快取（進度表 #16）：只快取成功且有筆數的結果，存 3 分鐘。
-// 前端新鮮度門檻 15 分鐘，加上快取最舊約 18 分鐘（災防顧問可接受 20 分鐘內）。
+// 前端從 fetchedAt 起算 15 分鐘新鮮度，快取不延長這段時間；代價是最多 3 分鐘內抓不到新發的示警。
 const ALERTS_CACHE_KEY = 'ncdrAlerts_v1';
 const ALERTS_CACHE_SEC = 180;
 const ALERTS_CACHE_MAX_CHARS = 90000;  // CacheService 單筆上限 100KB，留餘裕

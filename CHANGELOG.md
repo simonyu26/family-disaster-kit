@@ -4,6 +4,13 @@
 本文件記錄「防災生存整備系統（森林露營小隊版）」各版本之架構演進、功能新增、問題修復與部署軌跡。
 
 
+## [docs] - 2026-11-16（原則 v1.1 寫入 repo × CLAUDE.md 開發規則 × PR 範本）
+
+* **原則文件**：`DEV_PRINCIPLES.md` 以原則檔 v1.1 取代（89 條，含 P-07、A-16、E-11、E-12、W-18 至 W-25）；新增 `CLAUDE.md` 作為各串的精簡開發規則。
+* **參照文件補進 repo**：`ART_DESIGN_SPEC.md`、`EMOJI_MAP.json`（取自交接包）、`docs/decision-log.md`、`docs/migration-checklist.md`。
+* **PR 範本**：新增 `.github/pull_request_template.md`，勾選項目依 WP-05 與 WP-02。
+* 本次只改文件，未改任何程式與網頁檔。
+
 ## [v2.9] - 2026-11-16（物資開關文字化 × 系統設定進階雲端選項收納 — 開發完成，排入 06:00 釋出）
 
 

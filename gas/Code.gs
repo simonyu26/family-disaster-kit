@@ -992,14 +992,14 @@ function getDisasterAlerts() {
   return fresh;
 }
 
-/**
- * 代理抓取 NCDR 民生示警公開資料平台 ATOM Feed（免金鑰），並自動標記屬於細胞廣播 (CBS) 等級之緊急告警
- * fetchedAt 為實際向 NCDR 抓取的時間，快取命中時不改寫。
- */
 // 示警筆數上限（進度表 #21）：原為 30 則，颱風豪雨時全國示警容易超過，會把仍在 12 小時內的示警切掉（D-01）。
 // 前端用回傳的 limit、truncated 判斷是否被截斷，不再寫死 30。
 const ALERTS_MAX_ENTRIES = 100;
 
+/**
+ * 代理抓取 NCDR 民生示警公開資料平台 ATOM Feed（免金鑰），並自動標記屬於細胞廣播 (CBS) 等級之緊急告警
+ * fetchedAt 為實際向 NCDR 抓取的時間，快取命中時不改寫。
+ */
 function fetchDisasterAlertsFromNcdr() {
   const feedUrl = 'https://alerts.ncdr.nat.gov.tw/RssAtomFeed.ashx';
   const cbsRegex = /(地震|海嘯|大雷雨|颱風|土石流|大規模崩塌|水庫放流|防空|疏散避難|淹水|堰塞湖|火山|火災)/;

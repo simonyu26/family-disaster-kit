@@ -28,7 +28,7 @@
   * 「📲 災防告警」標籤字級由 0.7rem 改為 0.75rem（A-05，12px 下限）。
 * **Service Worker 升版**：`sw.js` 快取版本升級為 `disaster-app-v2.9.2`。
 
-## [gas] - 2026-11-16（固定物資分頁：`INVENTORY_SHEET_NAME` — 開發完成，待審查）
+## [gas] - 2026-11-16（固定物資分頁：`INVENTORY_SHEET_NAME` — 已上線：GAS 2026-11-17 部署，19:16 合併）
 
 * **只讀寫指定的物資分頁**：新增選填的指令碼屬性 `INVENTORY_SHEET_NAME`（建議設為「目前物資」）。設定後，後端只讀寫這個名稱的分頁，拖動分頁順序或新增年度盤點頁都不會寫錯頁。
 * **找不到就停止同步**：設了屬性卻找不到該分頁（例如被改名）時，停止同步並回傳白話提示，不退回去寫第一個分頁（D-01）。
@@ -36,26 +36,26 @@
 * **未設屬性時沿用舊規則**：讓部署新版、分頁改名、設定屬性可以依序進行，不中斷同步。
 * 本次只改 `gas/Code.gs`，未改前端；一鍵年度快照另案處理。
 
-## [v2.9.1] - 2026-11-16（網址參數不再改變同步目的地 — 開發完成，待審查）
+## [v2.9.1] - 2026-11-16（網址參數不再改變同步目的地 — 已上線：2026-11-17 07:20 合併，GitHub Pages 07:21 部署）
 
 * **停用 `?api=` 自動設定（S-05）**：開啟帶 `?api=` 的連結時，不再把該網址寫入雲端同步設定；只清掉網址列參數，並提示到「營地」系統設定手動貼上。避免他人用一個連結把家庭資料與通行碼導到別的伺服器。
 * **雲端網址格式檢查**：系統設定儲存時，只接受 `https://script.google.com/macros/s/…/exec`（Google Workspace 帳號的網址格式將於下一版修正）的 GAS 網址，其他網址顯示白話提示且不儲存。
 * **Service Worker 升版**：`sw.js` 快取版本升級至 `disaster-app-v2.9.1`。
 
-## [gas] - 2026-11-16（通行碼改 POST 第一步：後端接受 POST 讀取 — 待擁有者部署 GAS）
+## [gas] - 2026-11-16（通行碼改 POST 第一步：後端接受 POST 讀取 — 已上線：GAS 2026-11-16 部署）
 
 * **POST 讀取家庭資料（S-04）**：`doPost` 新增 `getAll`、`getLocations`、`getContacts` 三個讀取操作，通行碼放在 POST 本文，不放網址；回傳內容與 GET 相同。
 * **過渡期保留 GET**：`doGet` 暫時仍接受 `pin` 網址參數，讓現行前端不中斷；前端改用 POST 上線後，再另開 PR 移除（E-12）。
 * 讀取邏輯抽成 `readFamilyData()`，GET 與 POST 共用。本次未改前端。
 
-## [gas] - 2026-11-16（家庭通行碼強制化：未設定即拒絕 × 禁止 API 首次設定與解除 × 猜錯鎖定 — 待擁有者部署 GAS）
+## [gas] - 2026-11-16（家庭通行碼強制化：未設定即拒絕 × 禁止 API 首次設定與解除 × 猜錯鎖定 — 已上線：GAS 2026-11-16 部署）
 
 * **未設定通行碼即拒絕（fail-closed）**：`FAMILY_PIN` 未設定時，除公開的 `getAlerts`、`getAeds` 外，所有讀寫一律拒絕，並回傳白話訊息請管理者設定。
 * **通行碼只能「舊碼換新碼」**：`setFamilyPin` 不再接受首次設定（須在 GAS 指令碼屬性手動填入），也不再接受換成空值；新碼至少 6 碼。
 * **防暴力猜碼**：10 分鐘內猜錯 5 次，雲端同步暫停 15 分鐘（`CacheService` 全域計數）；鎖定期間本機資料仍可使用。
 * 本次只改 `gas/Code.gs`，未改前端；`?api=` 參數與通行碼改 POST 另案處理。
 
-## [gas] - 2026-11-16（後端 `Code.gs` 納入 repo × 移除推送 GitHub 功能 — 待擁有者部署 GAS）
+## [gas] - 2026-11-16（後端 `Code.gs` 納入 repo × 移除推送 GitHub 功能 — 已上線：GAS 2026-11-16 部署）
 
 * **後端納入版本控管（S-09）**：交接包 v2.9 的 `Code.gs` 放進 `gas/Code.gs`。
 * **移除推送 GitHub 功能**：刪除 `getGitHubConfigSummary`、`saveGitHubConfig`、`extractDriveFilePlainText`、`findLatestBackupSubfolder`、`syncDriveBackupToGitHub`、`scheduledDailyGitHubDeploy`、`setDailyGitHubDeployTrigger`，以及 `doPost` 的 `setGitHubConfig`、`syncDriveToGitHub`、`toggleGitHubDailyTrigger` 三個操作與 `doGet` 回傳的 `githubConfig` 欄位；程式不再讀寫任何 `GITHUB_*` 屬性，也不再存取 Google Drive。
@@ -69,7 +69,7 @@
 * **PR 範本**：新增 `.github/pull_request_template.md`，勾選項目依 WP-05 與 WP-02。
 * 本次只改文件，未改任何程式與網頁檔。
 
-## [v2.9] - 2026-11-16（物資開關文字化 × 系統設定進階雲端選項收納 — 開發完成，排入 06:00 釋出）
+## [v2.9] - 2026-11-16（物資開關文字化 × 系統設定進階雲端選項收納 — 已上線：2026-11-16 06:39，舊 Drive 自動發布，commit 2a354c2）
 
 
 ### 1. 物資開關文字化膠囊（T-02）

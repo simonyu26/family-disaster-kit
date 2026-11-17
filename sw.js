@@ -1,4 +1,4 @@
-const APP_CACHE = 'disaster-app-v2.9.2';
+const APP_CACHE = 'disaster-app-v2.9.3';
 const TILE_CACHE = 'disaster-map-tiles-v1';
 
 

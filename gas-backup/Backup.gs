@@ -126,8 +126,12 @@ function getBackupFolder() {
  */
 function assertFolderNotShared(folder) {
   const access = folder.getSharingAccess();
-  const editors = folder.getEditors();
-  const viewers = folder.getViewers();
+  // 擁有者不算分享；以 email 排除，避免把自己誤判成「有分享」
+  const owner = folder.getOwner();
+  const ownerEmail = owner ? owner.getEmail() : '';
+  const notOwner = u => u.getEmail() !== ownerEmail;
+  const editors = folder.getEditors().filter(notOwner);
+  const viewers = folder.getViewers().filter(notOwner);
   if (access !== DriveApp.Access.PRIVATE || editors.length > 0 || viewers.length > 0) {
     throw new Error('備份資料夾「' + folder.getName() + '」有分享給別人或開放連結，為保護家人資料已停止備份。請把資料夾改回只有自己能看');
   }
@@ -137,14 +141,14 @@ function backupSpreadsheet(folder, today) {
   const id = PropertiesService.getScriptProperties().getProperty('SPREADSHEET_ID');
   if (!id) throw new Error('尚未設定 SPREADSHEET_ID');
   const name = BACKUP_FILE_PREFIX + '試算表_' + today;
-  if (folder.getFilesByName(name).hasNext()) return '今天已備份過，略過';
+  if (hasActiveFile(folder, name)) return '今天已備份過，略過';
   DriveApp.getFileById(id).makeCopy(name, folder);
   return '已複製';
 }
 
 function backupRepoZip(folder, today) {
   const name = BACKUP_FILE_PREFIX + '程式碼_' + today + '.zip';
-  if (folder.getFilesByName(name).hasNext()) return '今天已備份過，略過';
+  if (hasActiveFile(folder, name)) return '今天已備份過，略過';
   const res = UrlFetchApp.fetch(BACKUP_REPO_ZIP_URL, { muteHttpExceptions: true, followRedirects: true });
   if (res.getResponseCode() !== 200) throw new Error('下載程式碼失敗，GitHub 回應狀態 ' + res.getResponseCode());
   folder.createFile(res.getBlob().setName(name));
@@ -153,7 +157,7 @@ function backupRepoZip(folder, today) {
 
 function backupProperties(folder, today) {
   const name = BACKUP_FILE_PREFIX + '屬性_' + today + '.json';
-  if (folder.getFilesByName(name).hasNext()) return '今天已備份過，略過';
+  if (hasActiveFile(folder, name)) return '今天已備份過，略過';
   const props = PropertiesService.getScriptProperties();
   const saved = {};
   BACKUP_PROPERTY_WHITELIST.forEach(key => {
@@ -198,12 +202,26 @@ function dayNumber(y, mo, d) {
   return Math.floor(Date.UTC(parseInt(y, 10), parseInt(mo, 10) - 1, parseInt(d, 10)) / 86400000);
 }
 
+// 資料夾內有沒有同名、而且不在垃圾桶的檔（getFilesByName 也會找到垃圾桶裡的檔）
+function hasActiveFile(folder, name) {
+  const it = folder.getFilesByName(name);
+  while (it.hasNext()) {
+    if (!it.next().isTrashed()) return true;
+  }
+  return false;
+}
+
 function writeResultFile(folder, results) {
   const now = Utilities.formatDate(new Date(), BACKUP_TIMEZONE, 'yyyy-MM-dd HH:mm');
   const lines = ['上次備份：' + now].concat(results.map(r => (r.ok ? '✓ ' : '✗ ') + r.name + '：' + r.message));
   try {
     const existing = folder.getFilesByName(BACKUP_RESULT_FILE_NAME);
-    if (existing.hasNext()) existing.next().setContent(lines.join('\n'));
+    let target = null;
+    while (existing.hasNext()) {
+      const f = existing.next();
+      if (!f.isTrashed()) { target = f; break; }
+    }
+    if (target) target.setContent(lines.join('\n'));
     else folder.createFile(BACKUP_RESULT_FILE_NAME, lines.join('\n'), 'text/plain');
   } catch (err) {
     console.error('寫入結果檔失敗：' + err.message);

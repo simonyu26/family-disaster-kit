@@ -952,7 +952,7 @@ function deleteLocationRecord(id) {
 
 // 示警快取（進度表 #16）：只快取成功且有筆數的結果，存 3 分鐘。
 // 前端從 fetchedAt 起算 15 分鐘新鮮度，快取不延長這段時間；代價是最多 3 分鐘內抓不到新發的示警。
-const ALERTS_CACHE_KEY = 'ncdrAlerts_v1';
+const ALERTS_CACHE_KEY = 'ncdrAlerts_v2';  // v2：回傳多了 limit、feedCount、truncated
 const ALERTS_CACHE_SEC = 180;
 const ALERTS_CACHE_MAX_BYTES = 90000;  // CacheService 單筆上限 100KB（以 UTF-8 位元組計，中文一字 3 位元組），留餘裕
 
@@ -996,6 +996,10 @@ function getDisasterAlerts() {
  * 代理抓取 NCDR 民生示警公開資料平台 ATOM Feed（免金鑰），並自動標記屬於細胞廣播 (CBS) 等級之緊急告警
  * fetchedAt 為實際向 NCDR 抓取的時間，快取命中時不改寫。
  */
+// 示警筆數上限（進度表 #21）：原為 30 則，颱風豪雨時全國示警容易超過，會把仍在 12 小時內的示警切掉（D-01）。
+// 前端用回傳的 limit、truncated 判斷是否被截斷，不再寫死 30。
+const ALERTS_MAX_ENTRIES = 100;
+
 function fetchDisasterAlertsFromNcdr() {
   const feedUrl = 'https://alerts.ncdr.nat.gov.tw/RssAtomFeed.ashx';
   const cbsRegex = /(地震|海嘯|大雷雨|颱風|土石流|大規模崩塌|水庫放流|防空|疏散避難|淹水|堰塞湖|火山|火災)/;
@@ -1010,7 +1014,7 @@ function fetchDisasterAlertsFromNcdr() {
     const entries = root.getChildren('entry', ns);
     const alerts = [];
 
-    for (let i = 0; i < Math.min(entries.length, 30); i++) {
+    for (let i = 0; i < Math.min(entries.length, ALERTS_MAX_ENTRIES); i++) {
       const entry = entries[i];
       const title = (entry.getChildText('title', ns) || '').trim();
       const updated = (entry.getChildText('updated', ns) || '').trim();
@@ -1030,7 +1034,14 @@ function fetchDisasterAlertsFromNcdr() {
         isCbs: isCbs
       });
     }
-    return { ok: true, alerts: alerts, fetchedAt: new Date().toISOString() };
+    return {
+      ok: true,
+      alerts: alerts,
+      fetchedAt: new Date().toISOString(),
+      limit: ALERTS_MAX_ENTRIES,            // 本次最多回傳幾則
+      feedCount: entries.length,            // NCDR 來源實際有幾則
+      truncated: entries.length > ALERTS_MAX_ENTRIES  // 來源超過上限、有示警沒回傳
+    };
   } catch (err) {
     return { ok: false, alerts: [], error: err.message };
   }

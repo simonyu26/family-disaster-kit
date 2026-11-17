@@ -3,6 +3,7 @@
  *
  * 部署前須在「專案設定 ＞ 指令碼屬性」設定：
  *   SPREADSHEET_ID      （必填）家庭試算表 ID，即試算表網址 /d/ 與 /edit 之間那一段
+ *   INVENTORY_SHEET_NAME（建議）物資分頁名稱，例如「目前物資」；設定後只讀寫這一頁，找不到就停止同步
  *   CHAR_HEADER_NAMES   （選填）物資表「角色列」上的任兩個成員名稱，以半形逗號分隔，用來找出角色列
  *   FAMILY_PIN          （必填）家庭通行碼，至少 6 碼；未設定時除公開情資外一律拒絕存取
  *   GEMINI_API_KEY      （選填）拍標籤辨識用
@@ -171,6 +172,8 @@ function doPost(e) {
 
     if (action === 'batchSync') {
       const actions = payload.actions || [];
+      // 先確認物資頁存在；找不到就整批不寫，避免地點、聯絡人先寫入後重送時重複新增
+      getTargetSheet(openFamilySpreadsheet());
       actions.forEach(act => {
         if (act.action === 'updateItem') {
           updateItemData(act.row, act.charName, act.state, act.expDate, act.qty, act.textNote, act.spec);
@@ -310,7 +313,23 @@ function createJsonOutput(obj) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
+/**
+ * 取得物資分頁
+ * - 有設 INVENTORY_SHEET_NAME：只用這個名稱的分頁；找不到就停止同步（不退回第一頁，避免寫進封存的年度頁，D-01）
+ * - 沒設：沿用舊規則（排除固定分頁後的第一個分頁），讓部署與分頁改名不必同時進行
+ */
 function getTargetSheet(ss) {
+  const sheetName = (PropertiesService.getScriptProperties().getProperty('INVENTORY_SHEET_NAME') || '').trim();
+  if (sheetName) {
+    if (['Leadsheet', 'Locations', 'Members', 'Contacts'].includes(sheetName)) {
+      throw new Error('INVENTORY_SHEET_NAME 不可設為「' + sheetName + '」（這是成員、聯絡人或地點用的分頁）。請改成物資分頁的名稱，例如「目前物資」');
+    }
+    const named = ss.getSheetByName(sheetName);
+    if (!named) {
+      throw new Error('找不到「' + sheetName + '」分頁，已暫停同步以免寫錯頁。請確認試算表的分頁名稱，或到 GAS 指令碼屬性修改 INVENTORY_SHEET_NAME');
+    }
+    return named;
+  }
   const excluded = ['Leadsheet', 'Locations', 'Members', 'Contacts'];
   const sheets = ss.getSheets();
   for (let i = 0; i < sheets.length; i++) {

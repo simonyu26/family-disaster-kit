@@ -969,10 +969,57 @@ function deleteLocationRecord(id) {
   return false;
 }
 
+// 示警快取（進度表 #16）：只快取成功且有筆數的結果，存 3 分鐘。
+// 前端從 fetchedAt 起算 15 分鐘新鮮度，快取不延長這段時間；代價是最多 3 分鐘內抓不到新發的示警。
+const ALERTS_CACHE_KEY = 'ncdrAlerts_v2';  // v2：回傳多了 limit、feedCount、truncated
+const ALERTS_CACHE_SEC = 180;
+const ALERTS_CACHE_MAX_BYTES = 90000;  // CacheService 單筆上限 100KB（以 UTF-8 位元組計，中文一字 3 位元組），留餘裕
+
 /**
- * 代理抓取 NCDR 民生示警公開資料平台 ATOM Feed（免金鑰），並自動標記屬於細胞廣播 (CBS) 等級之緊急告警
+ * 取得 NCDR 示警，先看快取（D-01、D-02、D-06）
+ * - 命中快取：原樣回傳，fetchedAt 仍是當初實際抓 NCDR 的時間，另加 cached: true
+ * - 未命中：現抓；只有 ok 且至少 1 筆時才寫入快取
+ * - 抓取失敗或整包 0 筆：照實回傳，不寫快取，也不拿舊快取冒充成功
  */
 function getDisasterAlerts() {
+  let cache = null;
+  try {
+    cache = CacheService.getScriptCache();
+    const hit = cache.get(ALERTS_CACHE_KEY);
+    if (hit) {
+      const cached = JSON.parse(hit);
+      if (cached && cached.ok === true && Array.isArray(cached.alerts) && cached.alerts.length > 0 && cached.fetchedAt) {
+        cached.cached = true;
+        return cached;
+      }
+    }
+  } catch (err) {
+    // 快取讀取或解析失敗就當沒有快取，改為現抓
+  }
+
+  const fresh = fetchDisasterAlertsFromNcdr();
+  fresh.cached = false;
+  if (cache && fresh.ok === true && fresh.alerts.length > 0) {
+    try {
+      const text = JSON.stringify(fresh);
+      const bytes = Utilities.newBlob(text).getBytes().length;
+      if (bytes <= ALERTS_CACHE_MAX_BYTES) cache.put(ALERTS_CACHE_KEY, text, ALERTS_CACHE_SEC);
+    } catch (err) {
+      // 寫不進快取不影響本次回傳
+    }
+  }
+  return fresh;
+}
+
+// 示警筆數上限（進度表 #21）：原為 30 則，颱風豪雨時全國示警容易超過，會把仍在 12 小時內的示警切掉（D-01）。
+// 前端用回傳的 limit、truncated 判斷是否被截斷，不再寫死 30。
+const ALERTS_MAX_ENTRIES = 100;
+
+/**
+ * 代理抓取 NCDR 民生示警公開資料平台 ATOM Feed（免金鑰），並自動標記屬於細胞廣播 (CBS) 等級之緊急告警
+ * fetchedAt 為實際向 NCDR 抓取的時間，快取命中時不改寫。
+ */
+function fetchDisasterAlertsFromNcdr() {
   const feedUrl = 'https://alerts.ncdr.nat.gov.tw/RssAtomFeed.ashx';
   const cbsRegex = /(地震|海嘯|大雷雨|颱風|土石流|大規模崩塌|水庫放流|防空|疏散避難|淹水|堰塞湖|火山|火災)/;
   try {
@@ -986,7 +1033,7 @@ function getDisasterAlerts() {
     const entries = root.getChildren('entry', ns);
     const alerts = [];
 
-    for (let i = 0; i < Math.min(entries.length, 30); i++) {
+    for (let i = 0; i < Math.min(entries.length, ALERTS_MAX_ENTRIES); i++) {
       const entry = entries[i];
       const title = (entry.getChildText('title', ns) || '').trim();
       const updated = (entry.getChildText('updated', ns) || '').trim();
@@ -1006,7 +1053,14 @@ function getDisasterAlerts() {
         isCbs: isCbs
       });
     }
-    return { ok: true, alerts: alerts, fetchedAt: new Date().toISOString() };
+    return {
+      ok: true,
+      alerts: alerts,
+      fetchedAt: new Date().toISOString(),
+      limit: ALERTS_MAX_ENTRIES,            // 本次最多回傳幾則
+      feedCount: entries.length,            // NCDR 來源實際有幾則
+      truncated: entries.length > ALERTS_MAX_ENTRIES  // 來源超過上限、有示警沒回傳
+    };
   } catch (err) {
     return { ok: false, alerts: [], error: err.message };
   }

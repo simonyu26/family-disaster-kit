@@ -582,7 +582,8 @@ function editExistingItem(row, newName, newCategory) {
   const data = targetSheet.getDataRange().getValues();
   const charRowIndex = findCharRowIndex(data);
 
-  if (row <= charRowIndex + 1 || row > targetSheet.getLastRow()) {
+  row = Number(row);
+  if (!isInventoryItemRow(data, charRowIndex, row)) {
     throw new Error('無效的物資列號');
   }
 
@@ -675,7 +676,8 @@ function deleteExistingItem(row) {
   const data = targetSheet.getDataRange().getValues();
   const charRowIndex = findCharRowIndex(data);
 
-  if (row <= charRowIndex + 1 || row > targetSheet.getLastRow()) {
+  row = Number(row);
+  if (!isInventoryItemRow(data, charRowIndex, row)) {
     throw new Error('無效的物資列號，無法刪除');
   }
   targetSheet.deleteRow(row);

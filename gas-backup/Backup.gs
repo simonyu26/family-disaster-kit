@@ -129,7 +129,7 @@ function assertFolderNotShared(folder) {
   // 擁有者不算分享；以 email 排除，避免把自己誤判成「有分享」
   const owner = folder.getOwner();
   const ownerEmail = owner ? owner.getEmail() : '';
-  const notOwner = u => u.getEmail() !== ownerEmail;
+  const notOwner = u => !ownerEmail || u.getEmail() !== ownerEmail;  // 取不到擁有者時寧可誤報，不略過任何人
   const editors = folder.getEditors().filter(notOwner);
   const viewers = folder.getViewers().filter(notOwner);
   if (access !== DriveApp.Access.PRIVATE || editors.length > 0 || viewers.length > 0) {

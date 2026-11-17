@@ -954,7 +954,7 @@ function deleteLocationRecord(id) {
 // 前端從 fetchedAt 起算 15 分鐘新鮮度，快取不延長這段時間；代價是最多 3 分鐘內抓不到新發的示警。
 const ALERTS_CACHE_KEY = 'ncdrAlerts_v1';
 const ALERTS_CACHE_SEC = 180;
-const ALERTS_CACHE_MAX_CHARS = 90000;  // CacheService 單筆上限 100KB，留餘裕
+const ALERTS_CACHE_MAX_BYTES = 90000;  // CacheService 單筆上限 100KB（以 UTF-8 位元組計，中文一字 3 位元組），留餘裕
 
 /**
  * 取得 NCDR 示警，先看快取（D-01、D-02、D-06）
@@ -983,7 +983,8 @@ function getDisasterAlerts() {
   if (cache && fresh.ok === true && fresh.alerts.length > 0) {
     try {
       const text = JSON.stringify(fresh);
-      if (text.length <= ALERTS_CACHE_MAX_CHARS) cache.put(ALERTS_CACHE_KEY, text, ALERTS_CACHE_SEC);
+      const bytes = Utilities.newBlob(text).getBytes().length;
+      if (bytes <= ALERTS_CACHE_MAX_BYTES) cache.put(ALERTS_CACHE_KEY, text, ALERTS_CACHE_SEC);
     } catch (err) {
       // 寫不進快取不影響本次回傳
     }

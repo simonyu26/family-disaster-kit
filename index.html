@@ -821,9 +821,20 @@
       font-size: 18px; font-weight: 800;
     }
     .em-nav-btn {
-      min-height: 68px; padding: 8px 12px; font-size: 16px; font-weight: 800;
+      min-height: 68px; padding: 8px 12px; font-size: 16px; font-weight: 800; white-space: nowrap;
       background: var(--em-card); color: var(--em-text); border: 1px solid var(--em-line); border-radius: 12px;
     }
+    /* AED 清單兩行：第一行名稱地點，第二行大字方向距離＋導航鍵；沒網路時方向距離是唯一能用的資訊（使用者顧問 PR #19 必改） */
+    .em-aed-item { padding: 8px 0; border-bottom: 1px dashed var(--border); }
+    .em-aed-item:last-child { border-bottom: none; }
+    .em-aed-name { overflow-wrap: anywhere; }
+    .em-aed-place { font-size: 0.74rem; color: var(--text-muted); }
+    body.emergency-mode .em-aed-place { font-size: 16px; color: var(--em-text); }
+    .em-aed-row2 { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; }
+    .em-aed-dir { flex: 1; min-width: 0; font-size: 20px; font-weight: 800; line-height: 1.3; color: var(--danger); font-variant-numeric: tabular-nums; }
+    .em-aed-row2 .em-nav-btn { flex-shrink: 0; }
+    body.emergency-mode .em-aed-dir { color: var(--em-text); }
+    .em-nowrap { white-space: nowrap; }
 
 
     /* 4 種背包組合可持續天數光譜卡 */
@@ -1474,8 +1485,8 @@
       <!-- 常駐內嵌最近 3 台 AED -->
       <div class="section-card" style="padding:10px 12px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-          <span style="font-weight:800; font-size:0.88rem; color:#ffd60a;">❤️ 最近 3 台 AED（支援離線快取）</span>
-          <button class="btn btn-muted" style="padding:3px 8px; font-size:12px; min-height:28px !important;" onclick="loadNearbyAeds(true)">🔁 更新</button>
+          <span style="font-weight:800; font-size:0.88rem; color:#ffd60a;">❤️ 最近 3 台 AED（沒網路也看得到）</span>
+          <button class="btn btn-muted em-nowrap" style="padding:3px 8px; font-size:12px; min-height:28px !important;" onclick="loadNearbyAeds(true)">🔁 更新</button>
         </div>
         <div id="sos-inline-aed-box" style="font-size:0.82rem;">載入最近 AED 中...</div>
       </div>
@@ -2511,6 +2522,7 @@
 
 
     // 單一結束鍵：按住 2 秒才結束，手抖誤觸不會跳出緊急模式（U-06）
+    // 注意：#btn-em-end 不可加 onclick，否則點一下就會結束應變
     const EM_END_HOLD_MS = 2000;
     function setupEmEndButton() {
       const btn = document.getElementById('btn-em-end');
@@ -2831,8 +2843,7 @@
 
     function switchTab(tab) {
       currentTab = tab;
-      // 緊急模式中，使用者自己按去別頁（例如集合點的地圖）照常可以，但底部會出現「回到緊急頁」（災防顧問必改 2）
-      document.body.classList.toggle('em-away', isEmergencyMode && tab !== 'guide');
+      updateEmAway();
       ['inventory', 'map', 'guide', 'camp'].forEach(t => {
         document.getElementById('tab-' + t).style.display = (t === tab) ? 'block' : 'none';
         document.getElementById('nav-' + t).classList.toggle('active', t === tab);
@@ -3188,7 +3199,8 @@
 
 
     // 定位失敗改用白話並告訴下一步，不顯示英文系統錯誤（U-03）
-    // 出處（D-03）：內政部消防署〈緊急報案宣導〉要求報案時告知事故地點 https://www.nfa.gov.tw/kid/index.php?code=list&flag=detail&ids=659&article_id=1288 （2026-11-18 審閱）
+    // 出處（D-03）：內政部消防署〈緊急報案宣導〉（報案須告知事故地點）https://www.nfa.gov.tw/kid/index.php?code=list&flag=detail&ids=659&article_id=1288 。
+    // 「門牌、路口或明顯地標」是依此原則寫成的白話說明，經災防顧問審閱（2026-11-18）。
     function gpsErrorText(err) {
       const head = '報案時請說出門牌、路口或明顯地標。';
       if (err && err.code === 1) return head + '手機沒有允許這個 App 使用定位，可以到手機設定打開定位權限。';
@@ -3281,12 +3293,12 @@
 
 
       box.innerHTML = sorted.map((a, idx) => `
-        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:5px 0; border-bottom:${idx < sorted.length - 1 ? '1px dashed var(--border)' : 'none'};">
-          <div style="min-width:0; flex:1;">
-            <strong>${idx + 1}. ${escapeHtml(a.name)}</strong> <span style="font-size:0.74rem; color:var(--text-muted);">(${escapeHtml(a.place || '現場標示')})</span>
+        <div class="em-aed-item">
+          <div class="em-aed-name"><strong>${idx + 1}. ${escapeHtml(a.name)}</strong> <span class="em-aed-place">(${escapeHtml(a.place || '現場標示')})</span></div>
+          <div class="em-aed-row2">
+            <span class="em-aed-dir">${escapeHtml(a.brng)} ${Number(a.d)}m</span>
+            <button class="em-nav-btn" onclick="openAedNavigation(${Number(a.lat)}, ${Number(a.lng)})">導航（開地圖）</button>
           </div>
-          <span style="font-weight:800; color:var(--danger); white-space:nowrap; font-variant-numeric:tabular-nums;">${a.brng} ${a.d}m</span>
-          <button class="em-nav-btn" onclick="openAedNavigation(${Number(a.lat)}, ${Number(a.lng)})">導航（開地圖）</button>
         </div>
       `).join('');
     }
@@ -3301,7 +3313,16 @@
       else emNotify('沒有網路，地圖可能打不開。打不開時，請依清單上的方向和距離前往。', 'error');
     }
 
+    // 緊急模式中，使用者自己按去別頁（例如集合點的地圖、醫療卡）照常可以，
+    // 但只要不在緊急頁，底部就出現「回到緊急頁」（災防顧問必改 2；工程顧問 PR #19 必改：情報分頁的其他子頁也算離開）
+    let currentGuideSubMode = 'live';
+    function updateEmAway() {
+      const onSop = currentTab === 'guide' && currentGuideSubMode === 'sop';
+      document.body.classList.toggle('em-away', isEmergencyMode && !onSop);
+    }
+
     function setGuideSubMode(mode) {
+      currentGuideSubMode = mode;
       if (mode === 'sop') {
         renderTimelineChecklist();
         updateTourniquetUI();
@@ -3317,6 +3338,7 @@
         if (b) b.classList.toggle('active', k === mode);
         if (p) p.style.display = (k === mode) ? 'block' : 'none';
       });
+      updateEmAway();
     }
 
 
@@ -3441,7 +3463,7 @@
       if (uiPin) {
         const entered = prompt('🔒 請輸入畫面防窺 PIN 碼以展開完整醫療與聯絡資料：');
         if (entered === null) return;
-        if (entered.trim() !== uiPin) { showToast('❌ PIN 碼錯誤', 'error'); return; }
+        if (entered.trim() !== uiPin) { emNotify('❌ PIN 碼錯誤', 'error'); return; }
       }
       privacyRevealed = true;
       renderPlanTab();
@@ -3667,14 +3689,14 @@
     function toggleTourniquetTimer() {
       if (tqStartMs) {
         if (tqTimer) { clearInterval(tqTimer); tqTimer = null; }
-        showToast('⏱️ 已保留止血帶紀錄時間', 'info');
+        emNotify('⏱️ 已保留止血帶紀錄時間', 'info');
         return;
       }
       tqStartMs = Date.now();
       localStorage.setItem('camp_tq_start_ms', String(tqStartMs));
       updateTourniquetUI();
       tqTimer = setInterval(updateTourniquetUI, 15000);
-      showToast('⏱️ 已開始記錄止血帶綁紮時間', 'error');
+      emNotify('⏱️ 已開始記錄止血帶綁紮時間', 'error');
     }
 
 
@@ -3707,7 +3729,7 @@
 
 
     function toggleFirstAidSpeech() {
-      if (!('speechSynthesis' in window)) { showToast('❌ 此瀏覽器不支援語音朗讀', 'warn'); return; }
+      if (!('speechSynthesis' in window)) { emNotify('這支手機不支援朗讀，請直接看畫面上的步驟。', 'warn'); return; }
       const btn = document.getElementById('btn-fa-speech');
       if (window.speechSynthesis.speaking) {
         window.speechSynthesis.cancel();
@@ -4385,7 +4407,7 @@
       }
       setTimeout(() => { mapInstance.invalidateSize(); }, 150);
       renderMapLocations();
-      renderAedLocations(); renderSosInlineAeds();
+      renderSosInlineAeds(); renderAedLocations(); // 緊急頁清單先畫，地圖程式庫沒載入也看得到
       updateTileCacheCount();
     }
 
@@ -4502,12 +4524,12 @@
 
     async function loadNearbyAeds(manual = false) {
       if (!navigator.onLine) {
-        if (manual) emNotify('🟠 離線模式：顯示已快取之周邊 AED', 'warn');
-        renderAedLocations(); renderSosInlineAeds();
+        if (manual) emNotify('目前沒有網路，下面是之前存下的 AED 位置。', 'warn');
+        renderSosInlineAeds(); renderAedLocations(); // 緊急頁清單先畫，地圖程式庫沒載入也看得到
         return;
       }
       const center = userPos || (mapInstance ? mapInstance.getCenter() : { lat: 25.0330, lng: 121.5430 });
-      if (manual) emNotify('📡 正在查詢周邊最近 AED 位置...');
+      if (manual) emNotify('正在找附近的 AED…');
 
 
       // 優先透過 GAS 代理查詢衛福部全國 AED 開放資料
@@ -4519,8 +4541,8 @@
           if (json.ok && Array.isArray(json.aeds) && json.aeds.length > 0) {
             aedsData = json.aeds;
             localStorage.setItem('camp_aeds_cache_v20', JSON.stringify(aedsData));
-            renderAedLocations(); renderSosInlineAeds();
-            if (manual) emNotify(`✅ 已載入並快取周邊 ${aedsData.length} 台衛福部登錄 AED`, 'success');
+            renderSosInlineAeds(); renderAedLocations(); // 緊急頁清單先畫，地圖程式庫沒載入也看得到
+            if (manual) emNotify(`找到附近 ${aedsData.length} 台 AED。`, 'success');
             return;
           }
         } catch (e) {}
@@ -4541,13 +4563,13 @@
             lng: el.lon
           }));
           localStorage.setItem('camp_aeds_cache_v20', JSON.stringify(aedsData));
-          renderAedLocations(); renderSosInlineAeds();
-          if (manual) emNotify(`✅ 已載入並快取周邊 ${aedsData.length} 台 AED`, 'success');
+          renderSosInlineAeds(); renderAedLocations(); // 緊急頁清單先畫，地圖程式庫沒載入也看得到
+          if (manual) emNotify(`找到附近 ${aedsData.length} 台 AED。`, 'success');
           return;
         }
-        if (manual) emNotify('此區域周邊暫無登錄之公開 AED 資料', 'warn');
+        if (manual) emNotify('附近查不到公開的 AED 資料。', 'warn');
       } catch (err) {
-        if (manual) emNotify('⚠️ AED 資料查詢逾時，請稍後再試', 'warn');
+        if (manual) emNotify('AED 查詢太久沒有回應，請稍後再按「更新」。', 'warn');
       }
     }
 
@@ -5261,7 +5283,7 @@
         const loc = locationsData.find(l => l.id === val);
         if (loc && mapInstance) mapInstance.setView([loc.lat, loc.lng], 15);
       }
-      renderAedLocations(); renderSosInlineAeds();
+      renderSosInlineAeds(); renderAedLocations(); // 緊急頁清單先畫，地圖程式庫沒載入也看得到
     }
 
 
@@ -5343,7 +5365,7 @@
       btn.disabled = false;
       progEl.innerText = `✅ 已完成 ${targets.length} 個避難點之離線地圖與 AED 預載！`;
       populateAedLocationSelect();
-      renderAedLocations(); renderSosInlineAeds();
+      renderSosInlineAeds(); renderAedLocations(); // 緊急頁清單先畫，地圖程式庫沒載入也看得到
       updateTileCacheCount();
       showToast('✅ 全點位離線地圖與周邊 AED 已安裝完成！', 'success');
     }

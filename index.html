@@ -4996,7 +4996,7 @@
         const texts = {
           local: ['⚠️ 尚未連接雲端，這裡無法顯示示警。', '', '請以手機的災防告警和廣播、電視為準，也可以到中央氣象署網站查看。'],
           empty: [`⚠️ 示警資料這次沒有回傳內容，目前無法確認【${city}】有沒有示警。`, lastText, '請稍後按「🔁 更新」，並以手機的災防告警和廣播、電視為準。'],
-          truncated: [`⚠️ 目前示警很多，這裡只收到最新 ${getAlertFeedLimit()} 則，無法確認【${city}】有沒有其他示警。`, freshText, '請到國家災害防救科技中心的示警網站查看完整內容。'],
+          truncated: [`⚠️ 目前示警很多，這裡只收到其中 ${getAlertFeedLimit()} 則，無法確認【${city}】有沒有其他示警。`, freshText, '請到國家災害防救科技中心的示警網站查看完整內容。'],
           stale: [`⚠️ 目前無法確認【${city}】有沒有示警。`, lastText, '請連上網路後按「🔁 更新」；在這之前，請以手機的災防告警和廣播、電視為準。']
         };
         const [title, time, action] = texts[status.reason] || texts.stale;

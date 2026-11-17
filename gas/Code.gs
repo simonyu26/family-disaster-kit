@@ -1035,6 +1035,9 @@ function parseCapTime(text) {
   }
   const month = parseInt(m[2], 10), day = parseInt(m[3], 10), minute = parseInt(m[6], 10), second = parseInt(m[7] || '0', 10);
   if (month < 1 || month > 12 || day < 1 || day > 31 || hour > 23 || minute > 59 || second > 59) return null;
+  // 不存在的日期（例如 2/31）回 null，避免前端自動進位成下個月
+  const check = new Date(Date.UTC(parseInt(m[1], 10), month - 1, day));
+  if (check.getUTCMonth() !== month - 1 || check.getUTCDate() !== day) return null;
   const pad = n => (n < 10 ? '0' : '') + n;
   return m[1] + '-' + pad(month) + '-' + pad(day) + 'T' + pad(hour) + ':' + pad(minute) + ':' + pad(second) + '+08:00';
 }

@@ -443,7 +443,13 @@
     .toast.success { background: rgba(61, 90, 82, 0.96); }
     .toast.warn { background: rgba(196, 106, 22, 0.96); }
     .toast.error { background: rgba(201, 68, 43, 0.96); }
-    .toast.toast-sticky { pointer-events: auto; cursor: pointer; }
+    /* 「沒存到」提示要讀完幾行字：改用「無法確認」方框的配色（美術顧問 PR #27，對比 13.96:1） */
+    .toast.toast-sticky {
+      pointer-events: auto; cursor: pointer;
+      background: var(--card-bg); color: var(--text);
+      border: 1px solid var(--border); border-left: 4px solid var(--accent);
+      text-align: left; line-height: 1.55;
+    }
 
 
     .modal-backdrop {

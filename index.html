@@ -3208,6 +3208,67 @@
       return head + '現在收不到定位訊號，可以到空曠處再試一次。';
     }
 
+    // 所有定位都經過這裡，一併記下取得時間與誤差，求救簡訊才寫得出「幾點定位、誤差多少」（工程顧問開工諮詢必改）
+    function setUserPos(pos) {
+      const ts = Number(pos && pos.timestamp);
+      userPos = {
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude,
+        acc: isFinite(pos.coords.accuracy) ? Math.round(pos.coords.accuracy) : null,
+        ts: ts > 0 ? ts : null,
+        time: new Date(ts > 0 ? ts : Date.now()).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+      };
+      return userPos;
+    }
+
+    // 按複製時重新定位一次，最多等 6 秒（D-06）；失敗或逾時就沿用舊座標
+    function refreshUserPosQuick() {
+      return new Promise(resolve => {
+        if (!navigator.geolocation) return resolve(false);
+        let done = false;
+        const finish = ok => { if (!done) { done = true; resolve(ok); } };
+        setTimeout(() => finish(false), 6000);
+        navigator.geolocation.getCurrentPosition(pos => { setUserPos(pos); finish(true); }, () => finish(false),
+          { enableHighAccuracy: true, timeout: 6000, maximumAge: 0 });
+      });
+    }
+
+    const SOS_POS_STALE_MS = 5 * 60 * 1000;    // 超過 5 分鐘就寫「這是 N 分鐘前的位置」（災防顧問定）
+    const SOS_POS_REFRESH_MS = 2 * 60 * 1000;  // 超過 2 分鐘，按複製時先重新定位
+    const SOS_ACC_POOR_M = 100;                // 誤差超過 100 公尺寫「誤差較大」
+
+    // 求救簡訊文字（用語由災防、使用者顧問定稿：proposals/sos-sms-coord.md 第八、九節）
+    function buildSosText(nowMs) {
+      const mainChars = (globalData && globalData.characters)
+        ? globalData.characters.filter(n => !['pack', 'light', 'base'].includes(getMemberVisual(n).memberType))
+        : [];
+      const needCare = mainChars.filter(n => ['assist', 'carry'].includes(getMemberVisual(n).mobility));
+      // App 不知道求救當下誰在身邊，所以寫「至少」與「不一定都在我身邊」（災防、使用者顧問）
+      const people = `家庭成員至少 ${mainChars.length || 1} 人（不一定都在我身邊` + (needCare.length ? `；行動需要人幫忙：${needCare.join('、')}` : '') + '）';
+      const ending = '如果我沒接電話，請幫我打 119，並把這則簡訊告訴他們。';
+
+      if (userPos && isFinite(userPos.lat) && isFinite(userPos.lng)) {
+        const lat = userPos.lat.toFixed(6), lng = userPos.lng.toFixed(6);
+        const notes = [];
+        if (!userPos.ts) notes.push('定位時間不明，位置可能已經改變');
+        else if (nowMs - userPos.ts > SOS_POS_STALE_MS) notes.push(`這是 ${Math.floor((nowMs - userPos.ts) / 60000)} 分鐘前的位置`);
+        else notes.push(`${formatAlertTime(new Date(userPos.ts).toISOString())} 定位`);
+        if (userPos.acc != null) notes.push(userPos.acc > SOS_ACC_POOR_M ? `誤差較大，約 ${userPos.acc} 公尺` : `誤差約 ${userPos.acc} 公尺`);
+        return [
+          `https://maps.google.com/?q=${lat},${lng}`,
+          `【緊急求救】我的位置：北緯 ${lat}，東經 ${lng}（${notes.join('，')}）`,
+          people,
+          ending
+        ].join('\n');
+      }
+      // 沒有定位：集合點只寫名稱、不附座標，避免被當成目前位置（災防顧問 Q2）
+      const lines = ['【緊急求救】目前無法取得 GPS 座標，請打電話或傳訊息問我在哪裡。'];
+      const rally = (locationsData && locationsData.length > 0 && locationsData[0].name) ? String(locationsData[0].name) : '';
+      if (rally) lines.push(`家庭約定的集合點是：${rally}（我不一定在那裡）`);
+      lines.push(people, ending);
+      return lines.join('\n');
+    }
+
     function refreshSosGps() {
       const disp = document.getElementById('sos-coord-display');
       const meta = document.getElementById('sos-coord-meta');
@@ -3218,14 +3279,9 @@
       disp.innerText = '衛星定位讀取中...';
       navigator.geolocation.getCurrentPosition(
         (pos) => {
-          userPos = {
-            lat: pos.coords.latitude,
-            lng: pos.coords.longitude,
-            acc: Math.round(pos.coords.accuracy || 0),
-            time: new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-          };
+          setUserPos(pos);
           disp.innerText = `${userPos.lat.toFixed(6)}, ${userPos.lng.toFixed(6)}`; disp.classList.remove('pending');
-          meta.innerText = `精準度約 ±${userPos.acc} 公尺 ・ 更新於 ${userPos.time}`;
+          meta.innerText = (userPos.acc != null ? `精準度約 ±${userPos.acc} 公尺 ・ ` : '') + `更新於 ${userPos.time}`;
           emNotify('✅ 已更新目前報案座標', 'success');
         },
         (err) => {
@@ -3238,26 +3294,23 @@
     }
 
 
-    function copySosCoord() {
-      const mainChars = (globalData && globalData.characters)
-        ? globalData.characters.filter(n => !['pack', 'light', 'base'].includes(getMemberVisual(n).memberType))
-        : [];
-      const needCare = mainChars.filter(n => ['assist', 'carry'].includes(getMemberVisual(n).mobility));
-      const medSummary = `家庭共 ${mainChars.length || 1} 人` + (needCare.length ? `（含需協助/輪椅：${needCare.join('、')}）` : '');
-      const planALoc = (locationsData && locationsData.length > 0) ? `${locationsData[0].name} (${locationsData[0].lat.toFixed(5)}, ${locationsData[0].lng.toFixed(5)})` : '未設定';
-
-
-      let coordPart = '';
-      if (userPos && userPos.lat) {
-        coordPart = `目前衛星座標：北緯 ${userPos.lat.toFixed(6)}, 東經 ${userPos.lng.toFixed(6)} ( https://maps.google.com/?q=${userPos.lat},${userPos.lng} )`;
-      } else {
-        coordPart = `⚠️ 目前受困室內無法取得即時 GPS，最近約定點位為：${planALoc}`;
+    async function copySosCoord() {
+      if (!userPos || !userPos.ts || Date.now() - userPos.ts > SOS_POS_REFRESH_MS) {
+        emNotify('正在更新位置，最多 6 秒…');
+        await refreshUserPosQuick();
       }
-      const text = `【緊急求救報案】${coordPart}｜人員狀況：${medSummary}`;
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text).then(() => emNotify('📋 已複製求救簡訊，可以直接貼到簡訊或 LINE。', 'success'));
-      } else {
-        prompt('請複製以下報案簡訊文字：', text);
+      const text = buildSosText(Date.now());
+      const fallback = () => {
+        // 說明放進彈窗標題，彈窗會蓋住狀態列（使用者顧問）
+        prompt('沒辦法自動複製。請長按下面的文字，選「拷貝」或「複製」。', text);
+        emNotify('沒辦法自動複製，請長按文字自己複製。', 'warn');
+      };
+      try {
+        if (!navigator.clipboard || !navigator.clipboard.writeText) return fallback();
+        await navigator.clipboard.writeText(text);
+        emNotify('📋 已複製求救簡訊，可以直接貼到簡訊或 LINE。可以在後面補上受傷情形和在幾樓。', 'success');
+      } catch (e) {
+        fallback();
       }
     }
 
@@ -4614,7 +4667,7 @@
         if (!navigator.geolocation) { showToast('❌ 無法取得 GPS', 'error'); return; }
         navigator.geolocation.getCurrentPosition(
           (pos) => {
-            userPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+            setUserPos(pos);
             updateUserMarker();
             renderMapLocations();
             planRouteTo(destLat, destLng, destName);
@@ -4692,7 +4745,7 @@
       showToast('🛰️ 讀取 GPS 衛星座標中...');
       navigator.geolocation.getCurrentPosition(
         (pos) => {
-          userPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          setUserPos(pos);
           updateUserMarker();
           renderMapLocations();
           showToast('✅ 已更新目前位置與方位距離', 'success');
@@ -4833,7 +4886,7 @@
         showToast('🛰️ 取得目前位置天氣中...');
         navigator.geolocation.getCurrentPosition(
           (pos) => {
-            userPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+            setUserPos(pos);
             selectedWeatherCity = 'GPS定位';
             updateWeatherCityChips('GPS');
             fetchWeather(true);

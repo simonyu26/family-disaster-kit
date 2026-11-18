@@ -3210,7 +3210,8 @@
 
     // 所有定位都經過這裡，一併記下取得時間與誤差，求救簡訊才寫得出「幾點定位、誤差多少」（工程顧問開工諮詢必改）
     function setUserPos(pos) {
-      const ts = Number(pos && pos.timestamp);
+      let ts = Number(pos && pos.timestamp);
+      if (ts > Date.now() + 60000) ts = Date.now(); // 少數手機回傳的時間比現在晚很多，改用手機時間（工程顧問）
       userPos = {
         lat: pos.coords.latitude,
         lng: pos.coords.longitude,
@@ -3254,9 +3255,11 @@
         else if (nowMs - userPos.ts > SOS_POS_STALE_MS) notes.push(`${formatAlertTime(new Date(userPos.ts).toISOString())} 定位，這是 ${Math.floor((nowMs - userPos.ts) / 60000)} 分鐘前的位置`); // 保留絕對時間：收到的人可能晚點才看（災防顧問）
         else notes.push(`${formatAlertTime(new Date(userPos.ts).toISOString())} 定位`);
         if (userPos.acc != null) notes.push(userPos.acc > SOS_ACC_POOR_M ? `誤差較大，約 ${userPos.acc} 公尺` : `誤差約 ${userPos.acc} 公尺`);
+        // 第一行先讓人看出是求救，通知預覽才不會只看到網址（使用者顧問 PR #22 必改）
         return [
+          '【緊急求救】請點連結看我的位置：',
           `https://maps.google.com/?q=${lat},${lng}`,
-          `【緊急求救】我的位置：北緯 ${lat}，東經 ${lng}（${notes.join('，')}）`,
+          `北緯 ${lat}，東經 ${lng}（${notes.join('，')}）`,
           people,
           ending
         ].join('\n');
@@ -3294,24 +3297,49 @@
     }
 
 
-    async function copySosCoord() {
-      if (!userPos || !userPos.ts || Date.now() - userPos.ts > SOS_POS_REFRESH_MS) {
-        emNotify('正在更新位置，最多 6 秒…');
-        await refreshUserPosQuick();
-      }
-      const text = buildSosText(Date.now());
-      const fallback = () => {
+    // iPhone 的 Safari 只在「剛按下按鈕」時允許寫剪貼簿，所以一按就要呼叫剪貼簿（工程顧問 PR #22 必改）：
+    // 需要重新定位時，用 ClipboardItem 先佔住剪貼簿、內容等定位後再給；不支援就先用現有座標複製，背景更新後請人再按一次
+    let sosCopyBusy = false;
+    function copySosCoord() {
+      if (sosCopyBusy) return; // 等待定位中再按一次就略過
+      const needRefresh = !userPos || !userPos.ts || Date.now() - userPos.ts > SOS_POS_REFRESH_MS;
+      const okMsg = '📋 已複製求救簡訊，可以直接貼到簡訊或 LINE。可以在後面補上受傷情形和在幾樓。';
+      const fallback = (text) => {
         // 說明放進彈窗標題，彈窗會蓋住狀態列（使用者顧問）
         prompt('沒辦法自動複製。請長按下面的文字，選「拷貝」或「複製」。', text);
         emNotify('沒辦法自動複製，請長按文字自己複製。', 'warn');
       };
-      try {
-        if (!navigator.clipboard || !navigator.clipboard.writeText) return fallback();
-        await navigator.clipboard.writeText(text);
-        emNotify('📋 已複製求救簡訊，可以直接貼到簡訊或 LINE。可以在後面補上受傷情形和在幾樓。', 'success');
-      } catch (e) {
-        fallback();
+      const clip = navigator.clipboard;
+      if (!needRefresh) {
+        const text = buildSosText(Date.now());
+        if (!clip || !clip.writeText) return fallback(text);
+        clip.writeText(text).then(() => emNotify(okMsg, 'success'), () => fallback(text));
+        return;
       }
+      sosCopyBusy = true;
+      emNotify('正在更新位置，最多 6 秒…');
+      const textPromise = refreshUserPosQuick().then(() => buildSosText(Date.now()));
+      const done = () => { sosCopyBusy = false; };
+      if (clip && clip.write && typeof ClipboardItem !== 'undefined') {
+        let item;
+        try {
+          item = new ClipboardItem({ 'text/plain': textPromise.then(t => new Blob([t], { type: 'text/plain' })) });
+        } catch (e) { item = null; }
+        if (item) {
+          clip.write([item])
+            .then(() => emNotify(okMsg, 'success'), () => textPromise.then(fallback))
+            .finally(done);
+          return;
+        }
+      }
+      // 不支援 ClipboardItem：先用現有資料立刻複製（文字會寫幾分鐘前），位置更新後請人再按一次
+      const nowText = buildSosText(Date.now());
+      const beforeTs = userPos && userPos.ts;
+      const copyNow = (clip && clip.writeText) ? clip.writeText(nowText) : Promise.reject();
+      copyNow.then(() => emNotify(okMsg, 'success'), () => fallback(nowText));
+      textPromise.then(() => {
+        if (userPos && userPos.ts && userPos.ts !== beforeTs) emNotify('位置已更新，請再按一次「複製求救簡訊」，簡訊會用新的位置。');
+      }).finally(done);
     }
 
 

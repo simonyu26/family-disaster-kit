@@ -259,9 +259,33 @@
     .member-row:last-child { border-bottom: none; }
     .alert-item { padding: 8px 0; border-bottom: 1px dashed #E6DEC9; font-size: 0.84rem; }
     .alert-item:last-child { border-bottom: none; }
+    /* 示警三態（D-01、D-02）：顏色只用規範變數，不加行內樣式（A-02、A-04） */
+    .alert-meta-line { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px; font-variant-numeric: tabular-nums; }
+    .alert-box { font-size: 0.85rem; color: var(--text); }
+    .alert-state { padding: 8px 12px; border-radius: 12px; line-height: 1.6; color: var(--text); }
+    .alert-state-clear { color: var(--primary); padding-left: 0; }
+    .alert-state-unknown { background: var(--bg); border-left: 4px solid var(--accent); }
+    .alert-state-title { font-weight: 800; }
+    .alert-state-time { font-size: 0.8rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+    .alert-stale-note { margin-bottom: 6px; }
+    .alert-pill {
+      display: inline-block; font-size: 0.75rem; font-weight: bold; line-height: 1.5;
+      padding: 0 8px; border-radius: 999px; border: 1px solid var(--border); margin-right: 6px;
+    }
+    .alert-pill-alerts { color: var(--danger); border-color: var(--danger); background: var(--card-bg); }
+    .alert-pill-clear { color: var(--primary); border-color: var(--primary-light); background: var(--primary-light); }
+    .alert-pill-unknown { color: var(--text); border-color: var(--accent); background: var(--bg); }
+    .alert-item-title { font-weight: 800; color: var(--danger); }
+    .alert-item-summary { font-size: 0.8rem; color: var(--text); margin-top: 2px; }
+    .alert-item-meta { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; font-variant-numeric: tabular-nums; }
+    .alert-source { font-size: 0.75rem; color: var(--text-muted); margin-top: 8px; line-height: 1.5; }
+    .alert-source a { color: var(--primary); }
+    .watch-line-clear { color: var(--primary); }
+    .watch-line-alerts { color: var(--danger); }
+    .watch-line-unknown { color: var(--text); }
     .cbs-badge {
       display: inline-block; background: var(--danger); color: #FFF;
-      font-size: 0.7rem; font-weight: bold; padding: 1px 6px; border-radius: 6px; margin-right: 4px;
+      font-size: 0.75rem; font-weight: bold; padding: 1px 6px; border-radius: 6px; margin-right: 4px;
     }
     .city-chips { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-bottom: 8px; }
     .city-chip {
@@ -764,6 +788,53 @@
       padding: 8px 12px; margin-bottom: 10px; color: #FFD60A; font-size: 0.82rem; font-weight: 800;
     }
     body.emergency-mode .tactical-lock-bar { display: flex; }
+    /* 緊急模式修正（進度表 #6）：狀態列固定佔位、不浮動；單一長按結束鍵 */
+    .em-status { display: none; }
+    body.emergency-mode .em-status {
+      display: block; flex: 1; min-height: 44px;
+      color: var(--em-text); font-size: 16px; font-weight: 700; line-height: 1.4;
+    }
+    body.emergency-mode #toast-container { display: none !important; }
+    .sos-coord-meta { font-size: 16px; color: var(--em-text); }
+    .em-end-btn { display: none; }
+    body.emergency-mode .em-end-btn {
+      display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
+      position: relative; overflow: hidden; min-height: 68px; min-width: 112px; padding: 6px 12px;
+      background: var(--em-card); color: var(--em-text); border: 2px solid var(--em-text); border-radius: 12px;
+      font-size: 16px; font-weight: 800; line-height: 1.3; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+    }
+    .em-end-btn span { position: relative; z-index: 1; }
+    body.emergency-mode .em-status-hint { font-size: 16px; color: var(--em-text); padding: 8px 4px; }
+    .em-end-btn::before {
+      content: ''; position: absolute; left: 0; bottom: 0; height: 8px; width: 0;
+      background: var(--em-amber);
+    }
+    .em-end-btn.holding::before { width: 100%; transition: width 2s linear; }
+    body.emergency-mode .btn-emergency-toggle, body.emergency-mode #btn-sync,
+    body.emergency-mode .ver-pill, body.emergency-mode .status-inline { display: none !important; }
+    body.emergency-mode .sos-coord-num.pending { color: var(--em-text) !important; }
+    .em-back-btn { display: none; }
+    body.emergency-mode.em-away { padding-bottom: 96px; } /* 回到緊急頁鍵不蓋住頁面最後一段 */
+    body.emergency-mode.em-away .em-back-btn {
+      display: block; position: fixed; left: 16px; right: 16px; bottom: 12px; z-index: 950; min-height: 68px;
+      background: var(--em-card); color: var(--em-text); border: 2px solid var(--em-text); border-radius: 12px;
+      font-size: 18px; font-weight: 800;
+    }
+    .em-nav-btn {
+      min-height: 68px; padding: 8px 12px; font-size: 16px; font-weight: 800; white-space: nowrap;
+      background: var(--em-card); color: var(--em-text); border: 1px solid var(--em-line); border-radius: 12px;
+    }
+    /* AED 清單兩行：第一行名稱地點，第二行大字方向距離＋導航鍵；沒網路時方向距離是唯一能用的資訊（使用者顧問 PR #19 必改） */
+    .em-aed-item { padding: 8px 0; border-bottom: 1px dashed var(--border); }
+    .em-aed-item:last-child { border-bottom: none; }
+    .em-aed-name { overflow-wrap: anywhere; }
+    .em-aed-place { font-size: 0.74rem; color: var(--text-muted); }
+    body.emergency-mode .em-aed-place { font-size: 16px; color: var(--em-text); }
+    .em-aed-row2 { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; }
+    .em-aed-dir { flex: 1; min-width: 0; font-size: 20px; font-weight: 800; line-height: 1.3; color: var(--danger); font-variant-numeric: tabular-nums; }
+    .em-aed-row2 .em-nav-btn { flex-shrink: 0; }
+    body.emergency-mode .em-aed-dir { color: var(--em-text); }
+    .em-nowrap { white-space: nowrap; }
 
 
     /* 4 種背包組合可持續天數光譜卡 */
@@ -817,6 +888,7 @@
       --primary: #2f5a3a;     /* 深綠 fukamidori */
       --primary-dark: #21422a;
       --primary-light: #e5efe0; /* done-bg */
+      --em-bg: #000000; --em-card: #141414; --em-line: #383838; --em-text: #FFFFFF; --em-amber: #FFD60A; --em-red: #c8452d;
       --accent: #c9a273;      /* 檜木 hinoki（平時溫和強調，不再刺眼） */
       --warning: #b87a28;
       --danger: #c8452d;      /* 朱 shu（僅用於緊急按鈕與紅線警告） */
@@ -1034,8 +1106,9 @@
       </div>
     </div>
     <div style="display:flex; gap:6px; align-items:center;">
-      <button id="btn-emergency-mode" class="btn-emergency-toggle" onclick="toggleEmergencyMode()" title="啟動／結束緊急應變戰術模式">🆘 緊急應變</button>
-      <button class="icon-btn" onclick="syncWithServer(true)" title="同步雲端試算表">🔄 同步</button>
+      <button id="btn-emergency-mode" class="btn-emergency-toggle" onclick="toggleEmergencyMode()" title="啟動緊急應變模式">🆘 緊急應變</button>
+      <button id="btn-em-end" class="em-end-btn" type="button" aria-label="結束應變，請按住 2 秒"><span>結束應變</span><span>長按2秒</span></button>
+      <button id="btn-sync" class="icon-btn" onclick="syncWithServer(true)" title="同步雲端試算表">🔄 同步</button>
     </div>
   </div>
 
@@ -1272,8 +1345,8 @@
             </select>
             <button class="btn btn-muted" style="padding:3px 8px; font-size:0.75rem; margin-left:auto;" onclick="fetchNcdrAlerts(true)">🔁 更新</button>
           </div>
-          <div id="ncdr-alerts-meta" style="font-size:0.74rem; color:var(--text-muted); margin-bottom:4px;"></div>
-          <div id="ncdr-alerts-box" style="font-size:0.85rem; color:var(--text-muted);">點擊更新抓取最新民生示警</div>
+          <div id="ncdr-alerts-meta" class="alert-meta-line"></div>
+          <div id="ncdr-alerts-box" class="alert-box"></div>
           <div class="watch-bar">
             <div style="font-weight:800; color:var(--primary-dark); margin-bottom:4px;">👀 同時關注外地親友縣市（點擊切換釘選，最多 3 個）：</div>
             <div id="watch-city-pills"></div>
@@ -1352,8 +1425,7 @@
     <!-- 戰術鎖定專屬頁：🆘 緊急應變（v2.8 一頁式 4 大直覺情境按鈕，零長捲軸干擾） -->
     <div id="guide-sop-pane" style="display:none;">
       <div class="tactical-lock-bar">
-        <span>🆘 戰術模式（純黑省電・防誤觸鎖定）</span>
-        <button class="btn btn-danger" style="padding:4px 10px; font-size:12px; min-height:34px !important;" onclick="toggleEmergencyMode()">✕ 結束應變</button>
+        <div id="em-status" class="em-status" role="status" aria-live="polite"></div>
       </div>
 
 
@@ -1363,7 +1435,7 @@
           <div>
             <div style="font-size:12px; color:#ffd60a; font-weight:800;">🛰️ 衛星定位經緯度（無網路離線可用）</div>
             <div id="sos-coord-display" class="sos-coord-num" style="font-size:1.15rem; margin:2px 0;">尚未定位</div>
-            <div id="sos-coord-meta" style="font-size:12px; color:#cccccc;">點擊右側更新或直接複製求救簡訊</div>
+            <div id="sos-coord-meta" class="sos-coord-meta">點擊右側更新或直接複製求救簡訊</div>
           </div>
           <div style="display:flex; gap:6px; flex-wrap:wrap;">
             <button class="btn btn-primary" style="font-size:12px; padding:6px 10px;" onclick="refreshSosGps()">🛰️ 更新座標</button>
@@ -1400,7 +1472,7 @@
         <div class="dial-grid">
           <a href="tel:119" class="dial-btn urgent">🚒 119 消防救護</a>
           <a href="tel:110" class="dial-btn urgent">🚓 110 警察報案</a>
-          <a href="tel:112" class="dial-btn">📱 112 無訊號急難</a>
+          <a href="tel:112" class="dial-btn">📱 112 打不通時改撥</a>
           <a href="tel:1991" class="dial-btn">📞 1991 報平安專線</a>
         </div>
         <div class="stream-links" style="margin-top:8px;">
@@ -1413,8 +1485,8 @@
       <!-- 常駐內嵌最近 3 台 AED -->
       <div class="section-card" style="padding:10px 12px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-          <span style="font-weight:800; font-size:0.88rem; color:#ffd60a;">❤️ 最近 3 台 AED（支援離線快取）</span>
-          <button class="btn btn-muted" style="padding:3px 8px; font-size:12px; min-height:28px !important;" onclick="loadNearbyAeds(true)">🔁 更新</button>
+          <span style="font-weight:800; font-size:0.88rem; color:#ffd60a;">❤️ 最近 3 台 AED（沒網路也看得到）</span>
+          <button class="btn btn-muted em-nowrap" style="padding:3px 8px; font-size:12px; min-height:28px !important;" onclick="loadNearbyAeds(true)">🔁 更新</button>
         </div>
         <div id="sos-inline-aed-box" style="font-size:0.82rem;">載入最近 AED 中...</div>
       </div>
@@ -1493,7 +1565,7 @@
 
 
       <div style="text-align:center; margin-top:8px;">
-        <button class="btn btn-muted" style="font-size:12px;" onclick="toggleEmergencyMode(); switchTab('camp'); setCampSubMode('fire');">🌿 急性狀況已解除？前往營火靜心陪伴 ▶</button>
+        <div class="em-status-hint">急性狀況解除後，請長按右上角「結束應變」2 秒。</div>
       </div>
     </div>
 
@@ -1924,6 +1996,7 @@
 
 
   <!-- 底部導覽列（5 鍵拇指熱區：中央配置 🆘 應變快捷鈕） -->
+  <button id="btn-em-back" class="em-back-btn" type="button" onclick="switchTab('guide'); setGuideSubMode('sop');">🆘 回到緊急頁</button>
   <div class="bottom-nav">
     <div class="nav-item active" id="nav-inventory" onclick="switchTab('inventory')">
       <span class="nav-icon">🎒</span><span>物資</span>
@@ -2308,6 +2381,7 @@
       CONTACTS: 'camp_contacts_cache_v21',
       QUEUE: 'camp_offline_queue_v19',
       ALERTS: 'camp_ncdr_alerts_cache',
+      ALERTS_META: 'camp_ncdr_alerts_meta',
       WEATHER: 'camp_weather_cache_v20',
       WEATHER_CITY: 'camp_weather_city',
       MY_CHAR: 'camp_my_char',
@@ -2403,11 +2477,13 @@
 
     window.addEventListener('online', () => {
       updateNetworkUI();
+      if (isEmergencyMode && emStatusIdle) setEmStatus();
       showToast('🌐 網路已恢復，自動同步暫存資料...', 'success');
       flushOfflineQueue();
     });
     window.addEventListener('offline', () => {
       updateNetworkUI();
+      if (isEmergencyMode && emStatusIdle) setEmStatus();
       showToast('🟠 目前處於離線模式，變更將暫存於本機', 'warn');
     });
 
@@ -2422,6 +2498,7 @@
         btn.classList.toggle('active', isEmergencyMode);
         btn.innerText = isEmergencyMode ? '✖ 結束應變' : '🆘 緊急應變';
       }
+      if (!isEmergencyMode) document.body.classList.remove('em-away');
       if (isEmergencyMode && navigateNow) {
         switchTab('guide');
         setGuideSubMode('sop');
@@ -2434,14 +2511,48 @@
       localStorage.setItem('camp_emergency_mode', isEmergencyMode ? '1' : '0');
       applyEmergencyModeUI(true);
       if (isEmergencyMode) {
-        showToast('🆘 已開啟【緊急應變模式】：鎖定救命動線防誤觸', 'error');
+        setEmStatus();
       } else {
         setGuideSubMode('live'); // 退出緊急模式時重設情報子分頁回「即時情報」
         switchTab('inventory');
-        showToast('🏕️ 已切回【平時整備模式】', 'success');
+        showToast('已結束應變，回到平時模式。想緩一緩，可以到「營地」的營火靜心。', 'success');
+        if (navigator.onLine && getGasUrl()) syncWithServer(false);
       }
     }
 
+
+    // 單一結束鍵：按住 2 秒才結束，手抖誤觸不會跳出緊急模式（U-06）
+    // 注意：#btn-em-end 不可加 onclick，否則點一下就會結束應變
+    const EM_END_HOLD_MS = 2000;
+    function setupEmEndButton() {
+      const btn = document.getElementById('btn-em-end');
+      if (!btn) return;
+      let timer = null;
+      let countdown = null;
+      const start = (e) => {
+        if (e.type === 'keydown' && (e.repeat || (e.key !== 'Enter' && e.key !== ' '))) return;
+        e.preventDefault();
+        if (timer) return;
+        btn.classList.add('holding');
+        if (e.pointerId !== undefined && btn.setPointerCapture) btn.setPointerCapture(e.pointerId);
+        const t0 = Date.now();
+        const tick = () => setEmStatus(`繼續按住，還剩 ${Math.max(1, Math.ceil((EM_END_HOLD_MS - (Date.now() - t0)) / 1000))} 秒`);
+        tick(); countdown = setInterval(tick, 250);
+        timer = setTimeout(() => { timer = null; clearInterval(countdown); btn.classList.remove('holding'); if (isEmergencyMode) toggleEmergencyMode(); }, EM_END_HOLD_MS);
+      };
+      const cancel = () => {
+        if (!timer) return;
+        clearTimeout(timer); clearInterval(countdown); timer = null; btn.classList.remove('holding');
+        setEmStatus('請按住右上角「結束應變」不放，約 2 秒。');
+      };
+      btn.addEventListener('pointerdown', start);
+      // 手指稍微滑出不取消（已 setPointerCapture），只有放開或被系統中斷才取消（使用者顧問）
+      ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(t => btn.addEventListener(t, cancel));
+      btn.addEventListener('keydown', start);
+      btn.addEventListener('keyup', cancel);
+      btn.addEventListener('contextmenu', e => e.preventDefault());
+      document.addEventListener('visibilitychange', () => { if (document.hidden) cancel(); });
+    }
 
     window.onload = () => {
       applyEmergencyModeUI(false);
@@ -2466,8 +2577,15 @@
       const cachedAlerts = localStorage.getItem(STORAGE_KEYS.ALERTS);
       if (cachedAlerts) {
         alertsCache = JSON.parse(cachedAlerts);
-        updateGlobalAlertTicker();
       }
+      loadAlertsMeta();
+      renderAlertViews();
+      // 每分鐘重算一次示警狀態（只重算、不重抓），資料超過 15 分鐘就不再顯示 ✅（D-02）
+      setInterval(renderAlertViews, 60 * 1000);
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState !== 'visible') return;
+        if (navigator.onLine) fetchNcdrAlerts(false); else renderAlertViews();
+      });
 
 
       if (cachedInv) {
@@ -2481,9 +2599,12 @@
       }
 
 
+      setupEmEndButton();
+      if (isEmergencyMode) setEmStatus();
       if (!getGasUrl()) {
-        switchTab('camp');
-        showToast('請先設定 GAS API 網址', 'warn');
+        // 緊急模式優先：沒設雲端也要留在緊急頁（D-05），不跳到營地、不提示設定
+        if (isEmergencyMode) { switchTab('guide'); setGuideSubMode('sop'); }
+        else { switchTab('camp'); showToast('還沒連接雲端，資料只存在這支手機。想和家人同步，請在「營地」設定雲端網址。', 'warn'); }
       } else {
         if (isEmergencyMode) {
           switchTab('guide');
@@ -2591,7 +2712,30 @@
     }
 
 
+    // 緊急模式不用浮動提示：訊息寫進固定佔位的狀態列，永遠不疊在撥號鍵上（進度表 #6）
+    let emStatusTimer = null;
+    let emStatusIdle = true;
+
+    function setEmStatus(msg, type = 'info') {
+      const el = document.getElementById('em-status');
+      if (!el) return;
+      clearTimeout(emStatusTimer);
+      emStatusIdle = !msg;
+      el.textContent = msg || getEmIdleStatus();
+      // 一般訊息 10 秒後回到閒置狀態；錯誤訊息保留到下一則訊息出現
+      if (msg && type !== 'error') emStatusTimer = setTimeout(() => setEmStatus(), 10000);
+    }
+    // 緊急頁的功能用這個回報結果；平時模式照舊用浮動提示
+    function emNotify(msg, type = 'info') {
+      if (isEmergencyMode) setEmStatus(msg, type); else showToast(msg, type);
+    }
+    function getEmIdleStatus() {
+      // 用語由災防顧問定稿：App 只知道有沒有上網，不知道通話訊號，所以不保證撥號
+      return navigator.onLine ? '有網路，可以查最近的 AED 和導航。' : '目前沒有網路。定位、哨音仍能用；撥號要看手機訊號，打不通請改撥 112。';
+    }
+
     function showToast(msg, type = 'info') {
+      if (isEmergencyMode) return; // 緊急模式不顯示浮動提示（工程諮詢：背景訊息不可蓋掉緊急提示）
       const container = document.getElementById('toast-container');
       const toast = document.createElement('div');
       toast.className = `toast ${type}`;
@@ -2602,6 +2746,7 @@
 
 
     async function syncWithServer(manual = false) {
+      if (isEmergencyMode) return; // 緊急模式不同步，避免通行碼視窗蓋住緊急頁；結束應變後再同步
       const url = getGasUrl();
       if (!url) { switchTab('camp'); return; }
       if (!navigator.onLine) { if (manual) showToast('🟠 目前無網路，無法連線至試算表', 'warn'); return; }
@@ -2698,12 +2843,13 @@
 
     function switchTab(tab) {
       currentTab = tab;
+      updateEmAway();
       ['inventory', 'map', 'guide', 'camp'].forEach(t => {
         document.getElementById('tab-' + t).style.display = (t === tab) ? 'block' : 'none';
         document.getElementById('nav-' + t).classList.toggle('active', t === tab);
       });
       document.getElementById('fab-group').style.display = (tab === 'inventory') ? 'flex' : 'none';
-      if (tab === 'map') initMapIfNeeded();
+      if (tab === 'map') { try { initMapIfNeeded(); } catch (e) { emNotify('地圖暫時打不開，請依清單上的方向和距離前往。', 'error'); } } // 地圖程式庫沒載入時不困住人（工程顧問）
       if (tab === 'guide') initGuideTab();
       if (tab === 'camp') renderCampTab();
     }
@@ -3052,6 +3198,16 @@
     }
 
 
+    // 定位失敗改用白話並告訴下一步，不顯示英文系統錯誤（U-03）
+    // 出處（D-03）：內政部消防署〈緊急報案宣導〉（報案須告知事故地點）https://www.nfa.gov.tw/kid/index.php?code=list&flag=detail&ids=659&article_id=1288 。
+    // 「門牌、路口或明顯地標」是依此原則寫成的白話說明，經災防顧問審閱（2026-11-18）。
+    function gpsErrorText(err) {
+      const head = '報案時請說出門牌、路口或明顯地標。';
+      if (err && err.code === 1) return head + '手機沒有允許這個 App 使用定位，可以到手機設定打開定位權限。';
+      if (err && err.code === 3) return head + '定位太久沒有回應，可以到空曠處再按一次「更新座標」。';
+      return head + '現在收不到定位訊號，可以到空曠處再試一次。';
+    }
+
     function refreshSosGps() {
       const disp = document.getElementById('sos-coord-display');
       const meta = document.getElementById('sos-coord-meta');
@@ -3068,14 +3224,14 @@
             acc: Math.round(pos.coords.accuracy || 0),
             time: new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
           };
-          disp.innerText = `${userPos.lat.toFixed(6)}, ${userPos.lng.toFixed(6)}`;
+          disp.innerText = `${userPos.lat.toFixed(6)}, ${userPos.lng.toFixed(6)}`; disp.classList.remove('pending');
           meta.innerText = `精準度約 ±${userPos.acc} 公尺 ・ 更新於 ${userPos.time}`;
-          showToast('✅ 已更新目前報案座標', 'success');
+          emNotify('✅ 已更新目前報案座標', 'success');
         },
         (err) => {
-          disp.innerText = '定位失敗，請開啟定位權限';
-          meta.innerText = err.message;
-          showToast('❌ 無法讀取 GPS：' + err.message, 'error');
+          disp.innerText = '還沒取得位置'; disp.classList.add('pending');
+          meta.innerText = gpsErrorText(err);
+          if (!isEmergencyMode) showToast('⚠️ ' + gpsErrorText(err), 'warn'); // 緊急模式已在定位卡內顯示，不重複
         },
         { enableHighAccuracy: true, timeout: 10000 }
       );
@@ -3099,7 +3255,7 @@
       }
       const text = `【緊急求救報案】${coordPart}｜人員狀況：${medSummary}`;
       if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text).then(() => showToast('📋 已複製完整報案簡訊（含定位與人員摘要）！', 'success'));
+        navigator.clipboard.writeText(text).then(() => emNotify('📋 已複製求救簡訊，可以直接貼到簡訊或 LINE。', 'success'));
       } else {
         prompt('請複製以下報案簡訊文字：', text);
       }
@@ -3137,18 +3293,36 @@
 
 
       box.innerHTML = sorted.map((a, idx) => `
-        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:5px 0; border-bottom:${idx < sorted.length - 1 ? '1px dashed var(--border)' : 'none'};">
-          <div style="min-width:0; flex:1;">
-            <strong>${idx + 1}. ${a.name}</strong> <span style="font-size:0.74rem; color:var(--text-muted);">(${a.place || '現場標示'})</span>
+        <div class="em-aed-item">
+          <div class="em-aed-name"><strong>${idx + 1}. ${escapeHtml(a.name)}</strong> <span class="em-aed-place">(${escapeHtml(a.place || '現場標示')})</span></div>
+          <div class="em-aed-row2">
+            <span class="em-aed-dir">${escapeHtml(a.brng)} ${Number(a.d)}m</span>
+            <button class="em-nav-btn" onclick="openAedNavigation(${Number(a.lat)}, ${Number(a.lng)})">導航（開地圖）</button>
           </div>
-          <span style="font-weight:800; color:var(--danger); white-space:nowrap; font-variant-numeric:tabular-nums;">${a.brng} ${a.d}m</span>
-          <button class="btn btn-danger" style="padding:3px 7px; font-size:0.72rem; min-height:28px !important;" onclick="isEmergencyMode=false; applyEmergencyModeUI(false); switchTab('map'); setTimeout(()=>planRouteTo(${a.lat},${a.lng},'${a.name.replace(/'/g,'')}'), 200);">路線</button>
         </div>
       `).join('');
     }
 
 
+    // AED 導航：不結束緊急模式，交給手機的地圖 App；沒網路時，上面的方位與距離仍可用（工程諮詢必改 1，方案 a）
+    function openAedNavigation(lat, lng) {
+      if (!isFinite(lat) || !isFinite(lng)) return;
+      // 沒網路時照樣開啟：手機地圖 App 可能有離線地圖（災防顧問建議）
+      window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=walking`, '_blank', 'noopener');
+      if (navigator.onLine) emNotify('🧭 已開啟地圖導航。回到這個 App 仍是緊急模式。');
+      else emNotify('沒有網路，地圖可能打不開。打不開時，請依清單上的方向和距離前往。', 'error');
+    }
+
+    // 緊急模式中，使用者自己按去別頁（例如集合點的地圖、醫療卡）照常可以，
+    // 但只要不在緊急頁，底部就出現「回到緊急頁」（災防顧問必改 2；工程顧問 PR #19 必改：情報分頁的其他子頁也算離開）
+    let currentGuideSubMode = 'live';
+    function updateEmAway() {
+      const onSop = currentTab === 'guide' && currentGuideSubMode === 'sop';
+      document.body.classList.toggle('em-away', isEmergencyMode && !onSop);
+    }
+
     function setGuideSubMode(mode) {
+      currentGuideSubMode = mode;
       if (mode === 'sop') {
         renderTimelineChecklist();
         updateTourniquetUI();
@@ -3164,6 +3338,7 @@
         if (b) b.classList.toggle('active', k === mode);
         if (p) p.style.display = (k === mode) ? 'block' : 'none';
       });
+      updateEmAway();
     }
 
 
@@ -3288,7 +3463,7 @@
       if (uiPin) {
         const entered = prompt('🔒 請輸入畫面防窺 PIN 碼以展開完整醫療與聯絡資料：');
         if (entered === null) return;
-        if (entered.trim() !== uiPin) { showToast('❌ PIN 碼錯誤', 'error'); return; }
+        if (entered.trim() !== uiPin) { emNotify('❌ PIN 碼錯誤', 'error'); return; }
       }
       privacyRevealed = true;
       renderPlanTab();
@@ -3514,14 +3689,14 @@
     function toggleTourniquetTimer() {
       if (tqStartMs) {
         if (tqTimer) { clearInterval(tqTimer); tqTimer = null; }
-        showToast('⏱️ 已保留止血帶紀錄時間', 'info');
+        emNotify('⏱️ 已保留止血帶紀錄時間', 'info');
         return;
       }
       tqStartMs = Date.now();
       localStorage.setItem('camp_tq_start_ms', String(tqStartMs));
       updateTourniquetUI();
       tqTimer = setInterval(updateTourniquetUI, 15000);
-      showToast('⏱️ 已開始記錄止血帶綁紮時間', 'error');
+      emNotify('⏱️ 已開始記錄止血帶綁紮時間', 'error');
     }
 
 
@@ -3554,7 +3729,7 @@
 
 
     function toggleFirstAidSpeech() {
-      if (!('speechSynthesis' in window)) { showToast('❌ 此瀏覽器不支援語音朗讀', 'warn'); return; }
+      if (!('speechSynthesis' in window)) { emNotify('這支手機不支援朗讀，請直接看畫面上的步驟。', 'warn'); return; }
       const btn = document.getElementById('btn-fa-speech');
       if (window.speechSynthesis.speaking) {
         window.speechSynthesis.cancel();
@@ -4232,7 +4407,7 @@
       }
       setTimeout(() => { mapInstance.invalidateSize(); }, 150);
       renderMapLocations();
-      renderAedLocations(); renderSosInlineAeds();
+      renderSosInlineAeds(); renderAedLocations(); // 緊急頁清單先畫，地圖程式庫沒載入也看得到
       updateTileCacheCount();
     }
 
@@ -4349,12 +4524,12 @@
 
     async function loadNearbyAeds(manual = false) {
       if (!navigator.onLine) {
-        if (manual) showToast('🟠 離線模式：顯示已快取之周邊 AED', 'warn');
-        renderAedLocations(); renderSosInlineAeds();
+        if (manual) emNotify('目前沒有網路，下面是之前存下的 AED 位置。', 'warn');
+        renderSosInlineAeds(); renderAedLocations(); // 緊急頁清單先畫，地圖程式庫沒載入也看得到
         return;
       }
       const center = userPos || (mapInstance ? mapInstance.getCenter() : { lat: 25.0330, lng: 121.5430 });
-      if (manual) showToast('📡 正在查詢周邊最近 AED 位置...');
+      if (manual) emNotify('正在找附近的 AED…');
 
 
       // 優先透過 GAS 代理查詢衛福部全國 AED 開放資料
@@ -4366,8 +4541,8 @@
           if (json.ok && Array.isArray(json.aeds) && json.aeds.length > 0) {
             aedsData = json.aeds;
             localStorage.setItem('camp_aeds_cache_v20', JSON.stringify(aedsData));
-            renderAedLocations(); renderSosInlineAeds();
-            if (manual) showToast(`✅ 已載入並快取周邊 ${aedsData.length} 台衛福部登錄 AED`, 'success');
+            renderSosInlineAeds(); renderAedLocations(); // 緊急頁清單先畫，地圖程式庫沒載入也看得到
+            if (manual) emNotify(`找到附近 ${aedsData.length} 台 AED。`, 'success');
             return;
           }
         } catch (e) {}
@@ -4388,13 +4563,13 @@
             lng: el.lon
           }));
           localStorage.setItem('camp_aeds_cache_v20', JSON.stringify(aedsData));
-          renderAedLocations(); renderSosInlineAeds();
-          if (manual) showToast(`✅ 已載入並快取周邊 ${aedsData.length} 台 AED`, 'success');
+          renderSosInlineAeds(); renderAedLocations(); // 緊急頁清單先畫，地圖程式庫沒載入也看得到
+          if (manual) emNotify(`找到附近 ${aedsData.length} 台 AED。`, 'success');
           return;
         }
-        if (manual) showToast('此區域周邊暫無登錄之公開 AED 資料', 'warn');
+        if (manual) emNotify('附近查不到公開的 AED 資料。', 'warn');
       } catch (err) {
-        if (manual) showToast('⚠️ AED 資料查詢逾時，請稍後再試', 'warn');
+        if (manual) emNotify('AED 查詢太久沒有回應，請稍後再按「更新」。', 'warn');
       }
     }
 
@@ -4522,7 +4697,7 @@
           renderMapLocations();
           showToast('✅ 已更新目前位置與方位距離', 'success');
         },
-        (err) => showToast('❌ GPS 定位失敗：' + err.message, 'error'),
+        (err) => showToast('⚠️ ' + gpsErrorText(err), 'warn'),
         { enableHighAccuracy: true, timeout: 10000 }
       );
     }
@@ -4829,7 +5004,7 @@
       if (taipeiMatches.length > 0) {
         const top = taipeiMatches[0];
         ticker.style.display = 'flex';
-        titleEl.innerText = `${top.isCbs ? '📲 [災防告警] ' : '⚠️ '}臺北市・${top.title}（近12h共 ${taipeiMatches.length} 則）`;
+        titleEl.innerText = `${top.isCbs ? '📲 [災防告警] ' : '🚨 '}臺北市・${top.title}（近12h共 ${taipeiMatches.length} 則）`;
         sumEl.innerText = top.summary.slice(0, 85) + (top.summary.length > 85 ? '...' : '');
       } else {
         ticker.style.display = 'none';
@@ -4847,53 +5022,193 @@
     }
 
 
-    function renderNcdrAlerts() {
-      const box = document.getElementById('ncdr-alerts-box');
-      if (!alertsCache || alertsCache.length === 0) {
-        box.innerHTML = '<div style="padding:6px 0;">目前尚無快取的示警資料（有網路時點擊「🔄」抓取）</div>';
-        return;
-      }
-      const recent12h = alertsCache.filter(a => isWithin12Hours(a.updated));
-      const filtered = recent12h.filter(a => matchAlertRegion(a, selectedAlertCity));
+    // ================= 示警三態：有示警／無示警／無法確認（D-01、D-02、D-06） =================
+    const ALERT_FRESH_MS = 15 * 60 * 1000;   // 資料超過 15 分鐘就不可顯示「無示警」（災防顧問 2026-11-16 定）
+    const ALERT_FEED_LIMIT = 30;             // 舊後端只回傳 30 則；新後端會回傳 limit 與 truncated
+    const ALERT_FETCH_TIMEOUT_MS = 6000;     // D-06 外部查詢逾時
+    const ALERT_SOURCE_HTML = '資料來源：<a href="https://alerts.ncdr.nat.gov.tw/" target="_blank" rel="noopener">國家災害防救科技中心（NCDR）示警資料</a>。本頁不取代手機災防告警與政府廣播。';
+    let alertsMeta = { fetchedAt: '', lastAttemptOk: null, anomaly: false };
+    let alertsLoading = false;
 
-
-      if (filtered.length === 0) {
-        box.innerHTML = `<div style="padding:6px 0; color:var(--primary-dark); font-weight:bold;">✅ 【${selectedAlertCity}】最近 12 小時內無災害示警。</div>`;
-        return;
-      }
-      box.innerHTML = filtered.slice(0, 10).map(a => `
-        <div class="alert-item">
-          <div style="font-weight:800; color:var(--danger);">
-            ${a.isCbs ? '<span class="cbs-badge">📲 災防告警</span>' : '⚠️ '}${a.title}
-          </div>
-          <div style="font-size:0.78rem; color:var(--text); margin-top:2px;">${a.summary.slice(0, 120)}${a.summary.length > 120 ? '...' : ''}</div>
-          <div style="font-size:0.72rem; color:var(--text-muted); margin-top:2px;">${a.author}・${a.updated.slice(0, 16).replace('T', ' ')}</div>
-        </div>
-      `).join('');
+    function escapeHtml(value) {
+      return String(value == null ? '' : value).replace(/[&<>"']/g, ch => (
+        { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]
+      ));
     }
 
+    function loadAlertsMeta() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEYS.ALERTS_META) || '{}');
+        alertsMeta = Object.assign({ fetchedAt: '', lastAttemptOk: null, anomaly: false }, saved);
+      } catch (e) {
+        alertsMeta = { fetchedAt: '', lastAttemptOk: null, anomaly: false };
+      }
+    }
+
+    function saveAlertsMeta() {
+      localStorage.setItem(STORAGE_KEYS.ALERTS_META, JSON.stringify(alertsMeta));
+    }
+
+    // 今天只寫時分；不是今天要加日期，避免把昨天的資料看成今天的
+    function formatAlertTime(isoStr) {
+      const d = new Date(isoStr);
+      if (!isoStr || isNaN(d.getTime())) return '';
+      const pad = n => String(n).padStart(2, '0');
+      const hm = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      const now = new Date();
+      const sameDay = d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
+      return sameDay ? hm : `${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${hm}`;
+    }
+
+    function isAlertDataFresh() {
+      if (!alertsMeta.fetchedAt || alertsMeta.anomaly || alertsMeta.lastAttemptOk === false) return false;
+      const t = new Date(alertsMeta.fetchedAt).getTime();
+      if (isNaN(t)) return false;
+      return (Date.now() - t) <= ALERT_FRESH_MS;
+    }
+
+    // 後端回傳的上限；舊後端或舊快取沒有這個欄位時，用 30
+    function getAlertFeedLimit() {
+      const n = Number(alertsMeta.limit);
+      return Number.isInteger(n) && n > 0 ? n : ALERT_FEED_LIMIT;
+    }
+
+    // 示警是否被截斷（災防顧問定，D-01）：
+    // 後端有回傳 truncated 就照它判斷；沒有這個欄位時，收到筆數達上限就一律當成被截斷，不看最舊一則的時間
+    function isAlertFeedTruncated() {
+      if (typeof alertsMeta.truncated === 'boolean') return alertsMeta.truncated;
+      return (alertsCache || []).length >= getAlertFeedLimit();
+    }
+
+    // 回傳某縣市的示警狀態；只有資料新鮮、來源正常、沒有被截斷時，才會回傳 clear
+    function getAlertStatus(city) {
+      const recent = (alertsCache || []).filter(a => isWithin12Hours(a.updated));
+      const matches = recent.filter(a => matchAlertRegion(a, city));
+      const fresh = isAlertDataFresh();
+      if (matches.length > 0) return { state: 'alerts', matches, fresh };
+      if (!getGasUrl()) return { state: 'unknown', reason: 'local', matches, fresh };
+      if (alertsLoading && !fresh) return { state: 'loading', matches, fresh };
+      if (alertsMeta.anomaly) return { state: 'unknown', reason: 'empty', matches, fresh };
+      if (!fresh) return { state: 'unknown', reason: 'stale', matches, fresh };
+      if (isAlertFeedTruncated()) return { state: 'unknown', reason: 'truncated', matches, fresh };
+      return { state: 'clear', matches, fresh };
+    }
+
+    function renderAlertViews() {
+      updateGlobalAlertTicker();
+      renderNcdrAlerts();
+      renderWatchCities();
+    }
+
+    function renderNcdrAlerts() {
+      const box = document.getElementById('ncdr-alerts-box');
+      const metaEl = document.getElementById('ncdr-alerts-meta');
+      if (!box) return;
+      const city = escapeHtml(selectedAlertCity);
+      const status = getAlertStatus(selectedAlertCity);
+      const lastTime = formatAlertTime(alertsMeta.fetchedAt);
+      const lastText = lastTime ? `最後成功更新：${lastTime}` : '還沒有成功更新過';
+      const freshText = status.fresh && lastTime ? `資料時間 ${lastTime}` : lastText;
+      // 資料時間只出現一次：有示警清單時放在上方 meta 行，其他狀態放在狀態框的第二行
+      if (metaEl) metaEl.textContent = status.state === 'alerts' && status.fresh ? freshText : '';
+
+      let html = '';
+      if (status.state === 'loading') {
+        html = '<div class="alert-state">🔁 正在更新示警…</div>';
+      } else if (status.state === 'alerts') {
+        if (!status.fresh) {
+          html += `<div class="alert-state alert-state-unknown alert-stale-note">⚠️ 這是 ${escapeHtml(lastTime || '更早')} 的資料，可能已有更新，請按「🔁 更新」</div>`;
+        }
+        html += `<div><span class="alert-pill alert-pill-alerts">有示警 ${status.matches.length} 則</span></div>`;
+        html += status.matches.slice(0, 10).map(a => {
+          const summary = String(a.summary || '');
+          return `
+        <div class="alert-item">
+          <div class="alert-item-title">${a.isCbs ? '<span class="cbs-badge">📲 災防告警</span>' : '🚨 '}${escapeHtml(a.title)}</div>
+          <div class="alert-item-summary">${escapeHtml(summary.slice(0, 120))}${summary.length > 120 ? '...' : ''}</div>
+          <div class="alert-item-meta">${escapeHtml(a.author)}・${escapeHtml(String(a.updated || '').slice(0, 16).replace('T', ' '))}</div>
+        </div>`;
+        }).join('');
+      } else if (status.state === 'clear') {
+        html = `<div class="alert-state alert-state-clear">
+          <div><span class="alert-pill alert-pill-clear">沒有示警</span></div>
+          <div class="alert-state-title">✅ 近 12 小時沒有【${city}】的災害示警</div>
+          <div class="alert-state-time">資料時間 ${escapeHtml(lastTime)}</div>
+        </div>`;
+      } else {
+        const texts = {
+          local: ['⚠️ 尚未連接雲端，這裡無法顯示示警。', '', '請以手機的災防告警和廣播、電視為準，也可以到中央氣象署網站查看。'],
+          empty: [`⚠️ 示警資料這次沒有回傳內容，目前無法確認【${city}】有沒有示警。`, lastText, '請稍後按「🔁 更新」，並以手機的災防告警和廣播、電視為準。'],
+          truncated: [`⚠️ 目前示警很多，這裡只收到其中 ${getAlertFeedLimit()} 則，無法確認【${city}】有沒有其他示警。`, freshText, '請到國家災害防救科技中心的示警網站查看完整內容。'],
+          stale: [`⚠️ 目前無法確認【${city}】有沒有示警。`, lastText, '請連上網路後按「🔁 更新」；在這之前，請以手機的災防告警和廣播、電視為準。']
+        };
+        const [title, time, action] = texts[status.reason] || texts.stale;
+        html = `<div class="alert-state alert-state-unknown">
+          <div><span class="alert-pill alert-pill-unknown">無法確認</span></div>
+          <div class="alert-state-title">${title}</div>
+          ${time ? `<div class="alert-state-time">${escapeHtml(time)}</div>` : ''}
+          <div>${action}</div>
+        </div>`;
+      }
+      box.innerHTML = html + `<div class="alert-source">${ALERT_SOURCE_HTML}</div>`;
+    }
+
+    // 整包 0 筆，或每一筆都缺標題或時間，視為資料來源異常（災防顧問 Q2）
+    function isAlertPayloadValid(alerts) {
+      if (!Array.isArray(alerts) || alerts.length === 0) return false;
+      return alerts.some(a => a && String(a.title || '').trim() && String(a.updated || '').trim());
+    }
 
     async function fetchNcdrAlerts(manual = false) {
       const url = getGasUrl();
-      if (!navigator.onLine || !url) { if (manual) showToast('🟠 離線顯示最後快取示警', 'warn'); return; }
+      if (!url) { renderAlertViews(); return; }
+      if (!navigator.onLine) {
+        renderAlertViews();
+        if (manual) showToast('🟠 目前沒有網路，示警暫時無法更新', 'warn');
+        return;
+      }
+      if (alertsLoading) return;
+      alertsLoading = true;
+      renderAlertViews();
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), ALERT_FETCH_TIMEOUT_MS);
+      let okResult = false;
       try {
-        if (manual) showToast('📡 正在同步 NCDR 即時示警...');
-        const res = await fetch(`${url}?action=getAlerts&_t=${Date.now()}`);
+        const res = await fetch(`${url}?action=getAlerts&_t=${Date.now()}`, { signal: controller.signal });
         const json = await res.json();
-        if (json.ok && Array.isArray(json.alerts)) {
+        if (json.ok && isAlertPayloadValid(json.alerts)) {
           alertsCache = json.alerts;
           localStorage.setItem(STORAGE_KEYS.ALERTS, JSON.stringify(alertsCache));
-          const metaEl = document.getElementById('ncdr-alerts-meta');
-          if (metaEl) metaEl.innerText = '資料來源：NCDR 民生示警公開平台 ・ 更新於 ' + new Date().toLocaleTimeString('zh-TW', { hour:'2-digit', minute:'2-digit' });
-          updateGlobalAlertTicker();
-          renderNcdrAlerts();
-      renderWatchCities();
-          if (manual) showToast(`✅ 已同步 NCDR 示警並過濾近 12 小時資料`, 'success');
-        } else if (manual) {
-          showToast('⚠️ 無法取得 NCDR 示警：' + (json.error || ''), 'warn');
+          // 以後端抓取時間計時，日後後端加快取也不會把舊資料當成新的
+          // 時鐘偏差防護（D-01）：取伺服器抓取時間與手機時間中較早者，手機時鐘慢時不會把舊資料當新的
+          const serverT = Date.parse(json.fetchedAt);
+          const fetchedAt = new Date(isNaN(serverT) ? Date.now() : Math.min(serverT, Date.now())).toISOString();
+          // 截斷資訊跟著這批資料一起存；欄位不存在或格式不對時存 null，改用筆數判斷
+          const limitN = Number(json.limit);
+          alertsMeta = {
+            fetchedAt, lastAttemptOk: true, anomaly: false,
+            truncated: typeof json.truncated === 'boolean' ? json.truncated : null,
+            limit: Number.isInteger(limitN) && limitN > 0 ? limitN : null
+          };
+          okResult = true;
+        } else if (json.ok) {
+          // 來源異常：保留舊快取與最後成功時間，只標記異常
+          alertsMeta.anomaly = true;
+          alertsMeta.lastAttemptOk = true;
+        } else {
+          alertsMeta.lastAttemptOk = false;
         }
       } catch (e) {
-        if (manual) showToast('⚠️ NCDR 連線逾時', 'warn');
+        alertsMeta.lastAttemptOk = false;
+      } finally {
+        clearTimeout(timer);
+        alertsLoading = false;
+        saveAlertsMeta();
+        renderAlertViews();
+      }
+      if (manual) {
+        if (okResult) showToast('✅ 已更新示警', 'success');
+        else showToast('⚠️ 示警暫時無法更新，請稍後再按「🔁 更新」', 'warn');
       }
     }
 
@@ -4968,7 +5283,7 @@
         const loc = locationsData.find(l => l.id === val);
         if (loc && mapInstance) mapInstance.setView([loc.lat, loc.lng], 15);
       }
-      renderAedLocations(); renderSosInlineAeds();
+      renderSosInlineAeds(); renderAedLocations(); // 緊急頁清單先畫，地圖程式庫沒載入也看得到
     }
 
 
@@ -5050,7 +5365,7 @@
       btn.disabled = false;
       progEl.innerText = `✅ 已完成 ${targets.length} 個避難點之離線地圖與 AED 預載！`;
       populateAedLocationSelect();
-      renderAedLocations(); renderSosInlineAeds();
+      renderSosInlineAeds(); renderAedLocations(); // 緊急頁清單先畫，地圖程式庫沒載入也看得到
       updateTileCacheCount();
       showToast('✅ 全點位離線地圖與周邊 AED 已安裝完成！', 'success');
     }
@@ -5513,13 +5828,20 @@
         sumEl.innerHTML = '<span style="color:var(--text-muted);">尚未釘選外地親友縣市</span>';
         return;
       }
-      const recent12h = (alertsCache || []).filter(a => isWithin12Hours(a.updated));
       sumEl.innerHTML = watchCities.map(c => {
-        const matches = recent12h.filter(a => matchAlertRegion(a, c));
-        if (matches.length === 0) {
-          return `<div style="color:var(--primary-dark);">✅ <strong>${c}</strong>：近 12h 無災害示警</div>`;
+        const status = getAlertStatus(c);
+        const name = escapeHtml(c);
+        if (status.state === 'alerts') {
+          const staleTag = status.fresh ? '' : '（舊資料，請按「🔁 更新」）';
+          return `<div class="watch-line-alerts">🚨 <strong>${name}</strong>（${status.matches.length} 則）：${escapeHtml(status.matches[0].title)}${staleTag}</div>`;
         }
-        return `<div style="color:var(--danger);">🚨 <strong>${c}</strong>（${matches.length} 則）：${matches[0].title}</div>`;
+        if (status.state === 'clear') {
+          return `<div class="watch-line-clear">✅ <strong>${name}</strong>：近 12 小時沒有災害示警</div>`;
+        }
+        if (status.state === 'loading') {
+          return `<div class="watch-line-unknown">🔁 <strong>${name}</strong>：正在更新示警…</div>`;
+        }
+        return `<div class="watch-line-unknown">⚠️ <strong>${name}</strong>：無法確認</div>`;
       }).join('');
     }
 

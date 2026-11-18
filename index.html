@@ -4393,7 +4393,7 @@
         } else if (err.code === 'SHEET_NAME_NOT_SET') {
           showToast('還不能留下盤點紀錄：試算表還沒有設定哪一頁是「目前物資」。這需要管理試算表的家人處理，請他設定好之後，再按一次。你的物資資料沒有受到影響。', 'info', { sticky: true });
         } else if (err.code === 'SNAPSHOT_FAILED' && d.leftoverSheet) {
-          showToast(`⚠️ 這次沒有留下完整的盤點紀錄，試算表裡多了一頁沒做完的「${d.leftoverSheet}」。請到試算表找到這一頁，把它刪掉（或先改名放著），再按一次。「目前物資」那一頁沒有受影響，請不要動它。如果你不是管理試算表的人，請請管理的家人處理。`, 'warn', { sticky: true });
+          showToast(`⚠️ 這次沒有留下完整的盤點紀錄，試算表裡多了一頁沒做完的「${d.leftoverSheet}」。請到試算表找到這一頁，把它刪掉（或先改名放著），再按一次。「目前物資」那一頁沒有受影響，請不要動它。如果你不是管理試算表的人，請找管理試算表的家人處理。`, 'warn', { sticky: true });
         } else if (d.authRequired || d.locked || d.pinNotSet) {
           showToast('❌ ' + err.message, 'error'); // 通行碼類沿用後端的白話訊息
         } else {

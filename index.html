@@ -4162,8 +4162,9 @@
 
 
     function updateField(rowIdx, charName, field, value, gen) {
-      const ref = gen && invRenderSnap[gen] ? invRenderSnap[gen].get(rowIdx) : null;
-      const item = ref ? findItemByRef(rowIdx, ref.id, ref.name) : globalData.items.find(i => i.row === rowIdx);
+      // 有編號：只信那次重畫的快照，快照已清掉或查不到就當作找不到（不退回列號）；沒帶編號的舊呼叫才用列號
+      const ref = gen ? (invRenderSnap[gen] && invRenderSnap[gen].get(rowIdx)) || null : null;
+      const item = gen ? (ref ? findItemByRef(rowIdx, ref.id, ref.name) : null) : globalData.items.find(i => i.row === rowIdx);
       if (!item || !item.status[charName]) { notifyItemGone(syncSkipMessage('ITEM_NOT_FOUND', ref && ref.name, charName)); return; }
       rowIdx = item.row;
       const charData = item.status[charName];

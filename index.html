@@ -5116,6 +5116,9 @@
     const ALERT_LABEL_TO_COUNTIES = { '彰化市': ['彰化縣'], '新竹': ['新竹市', '新竹縣'], '嘉義': ['嘉義市', '嘉義縣'] };
 
     // 「各地」前一個字是地名結尾時（例如「高雄市各地區」「北部各地」），前面的地名已會對到，不算全國（災防顧問 2026-11-18）
+    // ✅ 下方的比對範圍說明（災防顧問定意思、使用者顧問定用字，2026-11-18）；分兩句各成一行
+    const ALERT_CLEAR_NOTE_HTML = '示警沒寫出縣市名稱時，這裡可能查不到。<br>請以手機的災防告警為準。';
+
     function hasNationwideGeDi(text) {
       let i = text.indexOf('各地');
       while (i !== -1) {
@@ -5279,7 +5282,7 @@
           <div><span class="alert-pill alert-pill-clear">沒有示警</span></div>
           <div class="alert-state-title">✅ 近 12 小時沒有【${city}】的災害示警</div>
           <div class="alert-state-time">資料時間 ${escapeHtml(lastTime)}</div>
-          <div class="alert-state-note">只比對縣市與地區名稱；請以手機的災防告警為準。</div>
+          <div class="alert-state-note">${ALERT_CLEAR_NOTE_HTML}</div>
         </div>`;
       } else {
         const texts = {
@@ -5974,6 +5977,7 @@
         sumEl.innerHTML = '<span style="color:var(--text-muted);">尚未釘選外地親友縣市</span>';
         return;
       }
+      let anyClear = false;
       sumEl.innerHTML = watchCities.map(c => {
         const status = getAlertStatus(c);
         const name = escapeHtml(c);
@@ -5982,13 +5986,14 @@
           return `<div class="watch-line-alerts">🚨 <strong>${name}</strong>（${status.matches.length} 則）：${escapeHtml(status.matches[0].title)}${staleTag}</div>`;
         }
         if (status.state === 'clear') {
+          anyClear = true;
           return `<div class="watch-line-clear">✅ <strong>${name}</strong>：近 12 小時沒有災害示警</div>`;
         }
         if (status.state === 'loading') {
           return `<div class="watch-line-unknown">🔁 <strong>${name}</strong>：正在更新示警…</div>`;
         }
         return `<div class="watch-line-unknown">⚠️ <strong>${name}</strong>：無法確認</div>`;
-      }).join('');
+      }).join('') + (anyClear ? `<div class="alert-state-note">${ALERT_CLEAR_NOTE_HTML}</div>` : '');
     }
 
 

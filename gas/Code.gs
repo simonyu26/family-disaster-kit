@@ -166,7 +166,13 @@ function doPost(e) {
     }
 
     if (action === 'updateItem') {
-      updateItemData(payload.row, payload.charName, payload.state, payload.expDate, payload.qty, payload.textNote, payload.spec);
+      const result = updateItemData(payload.row, payload.charName, payload.state, payload.expDate, payload.qty, payload.textNote, payload.spec);
+      if (!result.ok) {
+        const msg = result.code === 'UNKNOWN_MEMBER'
+          ? '雲端找不到這位成員，請重新同步後再改一次'
+          : '這項物資在雲端的位置已經變了，請重新同步後再改一次';
+        return createJsonOutput({ ok: false, code: result.code, error: msg });
+      }
       return createJsonOutput({ ok: true, serverTime: new Date().toISOString() });
     }
 
@@ -174,9 +180,12 @@ function doPost(e) {
       const actions = payload.actions || [];
       // 先確認物資頁存在；找不到就整批不寫，避免地點、聯絡人先寫入後重送時重複新增
       getTargetSheet(openFamilySpreadsheet());
+      // 列號無效的物資更新只略過該筆，不整批中止，避免離線補傳佇列一直卡住（D-05 精神）
+      const skipped = [];
       actions.forEach(act => {
         if (act.action === 'updateItem') {
-          updateItemData(act.row, act.charName, act.state, act.expDate, act.qty, act.textNote, act.spec);
+          const result = updateItemData(act.row, act.charName, act.state, act.expDate, act.qty, act.textNote, act.spec);
+          if (!result.ok) skipped.push({ action: 'updateItem', code: result.code, row: act.row, charName: act.charName });
         } else if (act.action === 'addItem') {
           addNewItem(act.category, act.itemName, act.requiredChars || []);
         } else if (act.action === 'addLocation') {
@@ -199,6 +208,7 @@ function doPost(e) {
         members: getMembersData(inv.characters),
         locations: getLocationsData(),
         contacts: getContactsData(),
+        skipped: skipped,
         serverTime: new Date().toISOString()
       });
     }
@@ -318,6 +328,21 @@ function createJsonOutput(obj) {
  * - 有設 INVENTORY_SHEET_NAME：只用這個名稱的分頁；找不到就停止同步（不退回第一頁，避免寫進封存的年度頁，D-01）
  * - 沒設：沿用舊規則（排除固定分頁後的第一個分頁），讓部署與分頁改名不必同時進行
  */
+/**
+ * 試算表公式注入防護（S-01 精神，進度表 #24、審查 V1）
+ * 使用者輸入的字串若以 = + - @ 或 Tab、換行開頭，Sheets 會當成公式執行（例如 =IMPORTXML 可把表內資料送到外部）。
+ * 寫入前前置單引號，強制存成純文字；讀回時 Sheets 不含這個單引號，顯示內容不變。
+ * 單一字元（如 na 狀態的 '-'）不是公式，不處理。數字、日期等非字串原樣保留。
+ */
+function sanitizeCell(value) {
+  if (typeof value !== 'string') return value;
+  return (value.length > 1 && /^[=+\-@\t\r]/.test(value)) ? "'" + value : value;
+}
+
+function sanitizeRow(values) {
+  return values.map(sanitizeCell);
+}
+
 function getTargetSheet(ss) {
   const sheetName = (PropertiesService.getScriptProperties().getProperty('INVENTORY_SHEET_NAME') || '').trim();
   if (sheetName) {
@@ -441,24 +466,51 @@ function updateItemData(row, charName, state, expDate, qty, textNote, spec) {
   const data = targetSheet.getDataRange().getValues();
   const charRowIndex = findCharRowIndex(data);
 
-  const colIndex = data[charRowIndex].map(v => String(v).trim()).indexOf(charName) + 1;
-  if (colIndex > 0) {
-    const cell = targetSheet.getRange(row, colIndex);
-
-    if (state === 'ready') cell.setValue((qty && String(qty).trim() !== '') ? String(qty).trim() : 'v');
-    else if (state === 'missing') cell.setValue('x');
-    else if (state === 'na') cell.setValue('-');
-
-    const nowStamp = Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyy-MM-dd HH:mm');
-    let noteParts = [];
-    if (expDate && String(expDate).trim() !== '') noteParts.push('Date: ' + String(expDate).trim());
-    if (spec && String(spec).trim() !== '') noteParts.push('Spec: ' + String(spec).trim());
-    if (textNote && String(textNote).trim() !== '') noteParts.push('Note: ' + String(textNote).trim());
-    noteParts.push('Updated: ' + nowStamp);
-
-    cell.setNote(noteParts.join('\n'));
+  // 列號驗證（審查 V2）：只能寫到物資列，不可寫到表頭、分類列或範圍外。
+  // doPost 全程持有 ScriptLock，檢查與寫入在同一段鎖內，中間不會被別的請求插列。
+  const rowNum = Number(row);
+  if (!isInventoryItemRow(data, charRowIndex, rowNum)) {
+    return { ok: false, code: 'INVALID_ROW' };
   }
-  return true;
+
+  // 找不到成員欄時回報失敗，不可什麼都沒寫卻回成功
+  const cleanChar = String(charName || '').trim();
+  const colIndex = cleanChar === '確認日期' ? 0 : data[charRowIndex].map(v => String(v).trim()).indexOf(cleanChar) + 1;
+  if (colIndex <= 2) {
+    return { ok: false, code: 'UNKNOWN_MEMBER' };
+  }
+  const cell = targetSheet.getRange(rowNum, colIndex);
+
+  if (state === 'ready') cell.setValue((qty && String(qty).trim() !== '') ? sanitizeCell(String(qty).trim()) : 'v');
+  else if (state === 'missing') cell.setValue('x');
+  else if (state === 'na') cell.setValue('-');
+
+  const nowStamp = Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyy-MM-dd HH:mm');
+  let noteParts = [];
+  if (expDate && String(expDate).trim() !== '') noteParts.push('Date: ' + String(expDate).trim());
+  if (spec && String(spec).trim() !== '') noteParts.push('Spec: ' + String(spec).trim());
+  if (textNote && String(textNote).trim() !== '') noteParts.push('Note: ' + String(textNote).trim());
+  noteParts.push('Updated: ' + nowStamp);
+
+  cell.setNote(noteParts.join('\n'));
+  return { ok: true };
+}
+
+/**
+ * 判斷 1 起算的列號是不是物資列（不是表頭、分類列、特殊列，也沒有超出範圍）
+ * 分類列的判定與 getInventoryData 相同：所有成員欄都空白。
+ */
+function isInventoryItemRow(data, charRowIndex, rowNum) {
+  if (!Number.isInteger(rowNum) || rowNum <= charRowIndex + 1 || rowNum > data.length) return false;
+  const rowData = data[rowNum - 1];
+  const itemName = String(rowData[1] || '').trim();
+  if (!itemName || itemName === '確認日期' || itemName === '背包狀態確認' || itemName === '背包減重') return false;
+  for (let i = 2; i < data[charRowIndex].length; i++) {
+    const h = String(data[charRowIndex][i] || '').trim();
+    if (!h || h === '確認日期') continue;
+    if (rowData[i] !== '' && rowData[i] !== undefined) return true;
+  }
+  return false;
 }
 
 function addNewItem(category, itemName, requiredChars) {
@@ -512,11 +564,11 @@ function addNewItem(category, itemName, requiredChars) {
     newItemRow = insertAfterRow + 1;
   } else {
     const lastRow = targetSheet.getLastRow();
-    targetSheet.getRange(lastRow + 1, 2).setValue(cleanCat);
+    targetSheet.getRange(lastRow + 1, 2).setValue(sanitizeCell(cleanCat));
     newItemRow = lastRow + 2;
   }
 
-  targetSheet.getRange(newItemRow, 2).setValue(cleanName);
+  targetSheet.getRange(newItemRow, 2).setValue(sanitizeCell(cleanName));
   allChars.forEach(c => {
     const stateVal = requiredChars.includes(c.name) ? 'x' : '-';
     targetSheet.getRange(newItemRow, c.col).setValue(stateVal);
@@ -530,7 +582,8 @@ function editExistingItem(row, newName, newCategory) {
   const data = targetSheet.getDataRange().getValues();
   const charRowIndex = findCharRowIndex(data);
 
-  if (row <= charRowIndex + 1 || row > targetSheet.getLastRow()) {
+  row = Number(row);
+  if (!isInventoryItemRow(data, charRowIndex, row)) {
     throw new Error('無效的物資列號');
   }
 
@@ -559,7 +612,7 @@ function editExistingItem(row, newName, newCategory) {
   }
 
   const cleanNewCat = (newCategory || currentCat).trim();
-  targetSheet.getRange(row, 2).setValue(cleanNewName);
+  targetSheet.getRange(row, 2).setValue(sanitizeCell(cleanNewName));
 
   if (cleanNewCat === currentCat) return true;
 
@@ -606,13 +659,13 @@ function editExistingItem(row, newName, newCategory) {
     targetRow = insertAfterRow + 1;
   } else {
     const lastRow = targetSheet.getLastRow();
-    targetSheet.getRange(lastRow + 1, 2).setValue(cleanNewCat);
+    targetSheet.getRange(lastRow + 1, 2).setValue(sanitizeCell(cleanNewCat));
     targetRow = lastRow + 2;
   }
 
   rowValues[1] = cleanNewName;
   const newRange = targetSheet.getRange(targetRow, 1, 1, maxCol);
-  newRange.setValues([rowValues]);
+  newRange.setValues([sanitizeRow(rowValues)]);
   newRange.setNotes([rowNotes]);
   return true;
 }
@@ -623,7 +676,8 @@ function deleteExistingItem(row) {
   const data = targetSheet.getDataRange().getValues();
   const charRowIndex = findCharRowIndex(data);
 
-  if (row <= charRowIndex + 1 || row > targetSheet.getLastRow()) {
+  row = Number(row);
+  if (!isInventoryItemRow(data, charRowIndex, row)) {
     throw new Error('無效的物資列號，無法刪除');
   }
   targetSheet.deleteRow(row);
@@ -651,7 +705,7 @@ function getMembersSheet(ss, initialCharacters) {
         const def = defaultMap[name] || { avatar: '🧑', buddy: '🐾', type: (name.endsWith('+') || name === '家庭儲備') ? 'pack' : 'main' };
         return [name, def.avatar, def.buddy, '', '', '', '', def.type, 'self', ''];
       });
-      sheet.getRange(2, 1, rows.length, 10).setValues(rows);
+      sheet.getRange(2, 1, rows.length, 10).setValues(rows.map(sanitizeRow));
     }
   } else if (sheet.getLastColumn() < 10) {
     sheet.getRange(1, 1, 1, 10).setValues([headers]);
@@ -689,7 +743,7 @@ function getMembersData(initialCharacters) {
           name: name, avatar: '🧑', buddy: '🐾', blood: '', medical: '', iceContact: '', rallyNote: '',
           memberType: defaultType, mobility: 'self', firstAidSkill: ''
         };
-        sheet.appendRow([name, '🧑', '🐾', '', '', '', '', defaultType, 'self', '']);
+        sheet.appendRow(sanitizeRow([name, '🧑', '🐾', '', '', '', '', defaultType, 'self', '']));
       }
     });
   }
@@ -717,7 +771,7 @@ function addMemberRecord(name, avatar, buddy, defaultState, blood, medical, iceC
   }
 
   targetSheet.insertColumnBefore(insertCol);
-  targetSheet.getRange(charRowIndex + 1, insertCol).setValue(cleanName);
+  targetSheet.getRange(charRowIndex + 1, insertCol).setValue(sanitizeCell(cleanName));
 
   const updatedData = targetSheet.getDataRange().getValues();
   const allCharCols = [];
@@ -738,17 +792,17 @@ function addMemberRecord(name, avatar, buddy, defaultState, blood, medical, iceC
       }
     }
     if (!isCategory) {
-      targetSheet.getRange(r + 1, insertCol).setValue(defaultState);
+      targetSheet.getRange(r + 1, insertCol).setValue(sanitizeCell(defaultState));
     }
   }
 
   const mType = memberType || ((cleanName.endsWith('+') || cleanName === '家庭儲備') ? 'pack' : 'main');
   const mSheet = getMembersSheet(ss, []);
-  mSheet.appendRow([
+  mSheet.appendRow(sanitizeRow([
     cleanName, avatar || '🧑', buddy || '🐾',
     blood || '', medical || '', iceContact || '', rallyNote || '',
     mType, mobility || 'self', firstAidSkill || ''
-  ]);
+  ]));
   return true;
 }
 
@@ -769,7 +823,7 @@ function updateMemberRecord(oldName, newName, avatar, buddy, blood, medical, ice
     }
     const oldCol = headers.indexOf(cleanOld) + 1;
     if (oldCol > 2) {
-      targetSheet.getRange(charRowIndex + 1, oldCol).setValue(cleanNew);
+      targetSheet.getRange(charRowIndex + 1, oldCol).setValue(sanitizeCell(cleanNew));
     }
   }
 
@@ -777,25 +831,25 @@ function updateMemberRecord(oldName, newName, avatar, buddy, blood, medical, ice
   const mData = sheet.getDataRange().getValues();
   for (let i = 1; i < mData.length; i++) {
     if (String(mData[i][0]).trim() === cleanOld) {
-      sheet.getRange(i + 1, 1).setValue(cleanNew);
-      if (avatar !== undefined) sheet.getRange(i + 1, 2).setValue(avatar || '🧑');
-      if (buddy !== undefined) sheet.getRange(i + 1, 3).setValue(buddy || '🐾');
-      if (blood !== undefined) sheet.getRange(i + 1, 4).setValue(blood);
-      if (medical !== undefined) sheet.getRange(i + 1, 5).setValue(medical);
-      if (iceContact !== undefined) sheet.getRange(i + 1, 6).setValue(iceContact);
-      if (rallyNote !== undefined) sheet.getRange(i + 1, 7).setValue(rallyNote);
-      if (memberType !== undefined) sheet.getRange(i + 1, 8).setValue(memberType);
-      if (mobility !== undefined) sheet.getRange(i + 1, 9).setValue(mobility);
-      if (firstAidSkill !== undefined) sheet.getRange(i + 1, 10).setValue(firstAidSkill);
+      sheet.getRange(i + 1, 1).setValue(sanitizeCell(cleanNew));
+      if (avatar !== undefined) sheet.getRange(i + 1, 2).setValue(sanitizeCell(avatar || '🧑'));
+      if (buddy !== undefined) sheet.getRange(i + 1, 3).setValue(sanitizeCell(buddy || '🐾'));
+      if (blood !== undefined) sheet.getRange(i + 1, 4).setValue(sanitizeCell(blood));
+      if (medical !== undefined) sheet.getRange(i + 1, 5).setValue(sanitizeCell(medical));
+      if (iceContact !== undefined) sheet.getRange(i + 1, 6).setValue(sanitizeCell(iceContact));
+      if (rallyNote !== undefined) sheet.getRange(i + 1, 7).setValue(sanitizeCell(rallyNote));
+      if (memberType !== undefined) sheet.getRange(i + 1, 8).setValue(sanitizeCell(memberType));
+      if (mobility !== undefined) sheet.getRange(i + 1, 9).setValue(sanitizeCell(mobility));
+      if (firstAidSkill !== undefined) sheet.getRange(i + 1, 10).setValue(sanitizeCell(firstAidSkill));
       return true;
     }
   }
   const mType = memberType || ((cleanNew.endsWith('+') || cleanNew === '家庭儲備') ? 'pack' : 'main');
-  sheet.appendRow([
+  sheet.appendRow(sanitizeRow([
     cleanNew, avatar || '🧑', buddy || '🐾',
     blood || '', medical || '', iceContact || '', rallyNote || '',
     mType, mobility || 'self', firstAidSkill || ''
-  ]);
+  ]));
   return true;
 }
 
@@ -861,7 +915,7 @@ function addContactRecord(contact) {
   const ss = openFamilySpreadsheet();
   const sheet = getContactsSheet(ss);
   const id = contact.id || ('cnt_' + new Date().getTime());
-  sheet.appendRow([
+  sheet.appendRow(sanitizeRow([
     id,
     String(contact.name).trim(),
     contact.group || 'core',
@@ -869,7 +923,7 @@ function addContactRecord(contact) {
     contact.phone || '',
     contact.region || '',
     contact.note || ''
-  ]);
+  ]));
   return true;
 }
 
@@ -880,14 +934,14 @@ function updateContactRecord(contact) {
   const data = sheet.getDataRange().getValues();
   for (let i = 1; i < data.length; i++) {
     if (String(data[i][0]) === String(contact.id)) {
-      sheet.getRange(i + 1, 2, 1, 6).setValues([[
+      sheet.getRange(i + 1, 2, 1, 6).setValues([sanitizeRow([
         String(contact.name || '').trim(),
         contact.group || 'core',
         contact.relation || '',
         contact.phone || '',
         contact.region || '',
         contact.note || ''
-      ]]);
+      ])]);
       return true;
     }
   }
@@ -944,7 +998,7 @@ function addLocationRecord(loc) {
   const ss = openFamilySpreadsheet();
   const sheet = getLocationsSheet(ss);
   const id = loc.id || ('loc_' + new Date().getTime());
-  sheet.appendRow([
+  sheet.appendRow(sanitizeRow([
     id,
     loc.name,
     loc.type || '避難處所',
@@ -952,7 +1006,7 @@ function addLocationRecord(loc) {
     Number(loc.lng),
     loc.note || '',
     loc.creator || ''
-  ]);
+  ]));
   return true;
 }
 
@@ -971,7 +1025,7 @@ function deleteLocationRecord(id) {
 
 // 示警快取（進度表 #16）：只快取成功且有筆數的結果，存 3 分鐘。
 // 前端從 fetchedAt 起算 15 分鐘新鮮度，快取不延長這段時間；代價是最多 3 分鐘內抓不到新發的示警。
-const ALERTS_CACHE_KEY = 'ncdrAlerts_v2';  // v2：回傳多了 limit、feedCount、truncated
+const ALERTS_CACHE_KEY = 'ncdrAlerts_v3';  // v2：多了 limit、feedCount、truncated；v3：每則多了 effective、expires、msgType、status
 const ALERTS_CACHE_SEC = 180;
 const ALERTS_CACHE_MAX_BYTES = 90000;  // CacheService 單筆上限 100KB（以 UTF-8 位元組計，中文一字 3 位元組），留餘裕
 
@@ -1016,6 +1070,33 @@ function getDisasterAlerts() {
 const ALERTS_MAX_ENTRIES = 100;
 
 /**
+ * 把 NCDR feed 的 CAP 時間（例如「2026/11/17 下午 08:08:40」，台灣本地時間）轉成 ISO 8601 字串
+ * 「2026-11-17T20:08:40+08:00」。已是 ISO 格式就原樣回傳；看不懂就回 null（前端遇 null 改用舊規則，不可把示警藏起來）。
+ */
+function parseCapTime(text) {
+  const t = String(text || '').trim();
+  if (!t) return null;
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?([+-]\d{2}:\d{2}|Z)$/.test(t)) return t;
+  const m = t.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})\s*(上午|下午|AM|PM)?\s*(\d{1,2}):(\d{2})(?::(\d{2}))?$/i);
+  if (!m) return null;
+  let hour = parseInt(m[5], 10);
+  const marker = (m[4] || '').toUpperCase();
+  if (marker) {
+    if (hour < 1 || hour > 12) return null;
+    const pm = marker === '下午' || marker === 'PM';
+    if (pm && hour < 12) hour += 12;
+    if (!pm && hour === 12) hour = 0;
+  }
+  const month = parseInt(m[2], 10), day = parseInt(m[3], 10), minute = parseInt(m[6], 10), second = parseInt(m[7] || '0', 10);
+  if (month < 1 || month > 12 || day < 1 || day > 31 || hour > 23 || minute > 59 || second > 59) return null;
+  // 不存在的日期（例如 2/31）回 null，避免前端自動進位成下個月
+  const check = new Date(Date.UTC(parseInt(m[1], 10), month - 1, day));
+  if (check.getUTCMonth() !== month - 1 || check.getUTCDate() !== day) return null;
+  const pad = n => (n < 10 ? '0' : '') + n;
+  return m[1] + '-' + pad(month) + '-' + pad(day) + 'T' + pad(hour) + ':' + pad(minute) + ':' + pad(second) + '+08:00';
+}
+
+/**
  * 代理抓取 NCDR 民生示警公開資料平台 ATOM Feed（免金鑰），並自動標記屬於細胞廣播 (CBS) 等級之緊急告警
  * fetchedAt 為實際向 NCDR 抓取的時間，快取命中時不改寫。
  */
@@ -1030,6 +1111,8 @@ function fetchDisasterAlertsFromNcdr() {
     const xml = XmlService.parse(res.getContentText());
     const root = xml.getRootElement();
     const ns = root.getNamespace();
+    // CAP 欄位的命名空間宣告在 feed 根元素；找不到就用 CAP 1.1 的網址
+    const capNs = root.getNamespace('cap') || XmlService.getNamespace('cap', 'urn:oasis:names:tc:emergency:cap:1.1');
     const entries = root.getChildren('entry', ns);
     const alerts = [];
 
@@ -1043,6 +1126,11 @@ function fetchDisasterAlertsFromNcdr() {
       const linkEl = entry.getChild('link', ns);
       const link = linkEl ? (linkEl.getAttribute('href') ? linkEl.getAttribute('href').getValue() : '') : '';
       const isCbs = cbsRegex.test(title) || cbsRegex.test(summary);
+      // 示警本身的有效時間（進度表 #18）：讓前端改看「還在有效期內」而不只看最後更新時間
+      const effective = parseCapTime(entry.getChildText('effective', capNs));
+      const expires = parseCapTime(entry.getChildText('expires', capNs));
+      const msgType = (entry.getChildText('msgType', capNs) || '').trim();
+      const status = (entry.getChildText('status', capNs) || '').trim();
 
       alerts.push({
         title: title,
@@ -1050,7 +1138,11 @@ function fetchDisasterAlertsFromNcdr() {
         summary: summary,
         author: author,
         link: link,
-        isCbs: isCbs
+        isCbs: isCbs,
+        effective: effective,   // 生效時間，ISO 8601（+08:00）；解析失敗為 null
+        expires: expires,       // 失效時間，同上
+        msgType: msgType,       // CAP 訊息類型：Alert／Update／Cancel，原樣
+        status: status          // CAP 狀態：Actual／Exercise／Test 等，原樣
       });
     }
     return {

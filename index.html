@@ -3251,7 +3251,7 @@
         const lat = userPos.lat.toFixed(6), lng = userPos.lng.toFixed(6);
         const notes = [];
         if (!userPos.ts) notes.push('定位時間不明，位置可能已經改變');
-        else if (nowMs - userPos.ts > SOS_POS_STALE_MS) notes.push(`這是 ${Math.floor((nowMs - userPos.ts) / 60000)} 分鐘前的位置`);
+        else if (nowMs - userPos.ts > SOS_POS_STALE_MS) notes.push(`${formatAlertTime(new Date(userPos.ts).toISOString())} 定位，這是 ${Math.floor((nowMs - userPos.ts) / 60000)} 分鐘前的位置`); // 保留絕對時間：收到的人可能晚點才看（災防顧問）
         else notes.push(`${formatAlertTime(new Date(userPos.ts).toISOString())} 定位`);
         if (userPos.acc != null) notes.push(userPos.acc > SOS_ACC_POOR_M ? `誤差較大，約 ${userPos.acc} 公尺` : `誤差約 ${userPos.acc} 公尺`);
         return [

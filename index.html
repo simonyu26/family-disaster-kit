@@ -2840,7 +2840,7 @@
       const n = skipped.length;
       const list = skipped.slice(0, 3).map(sk => `${sk.itemName || nameOfRow(sk.row)}（${sk.charName || ''}）`).join('、') + (n > 3 ? `…等 ${n} 筆` : '');
       const saved = total - n;
-      return `⚠️ 離線時改的有 ${n} 筆沒有存到雲端：${list}。這些物資或成員名單已經變動（可能被家人改過或刪除），請找到後再改一次。` + (saved > 0 ? `其他 ${saved} 筆已經存好。` : '');
+      return `⚠️ 離線時改的有 ${n} 筆沒有存到雲端：${list}。這些物資或成員名單已經變動（可能被家人改過或刪除），請確認這些物資還在，再改一次。` + (saved > 0 ? `其他 ${saved} 筆已經存好。` : '');
     }
 
 

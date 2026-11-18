@@ -2834,7 +2834,7 @@
       if (code === 'UNKNOWN_MEMBER') {
         return `⚠️「${name}」這次的修改沒有存到雲端：營地的成員名單裡找不到「${charName || ''}」。已重新同步，請到營地確認成員後再改一次。`;
       }
-      return `⚠️「${name}」這次的修改沒有存到雲端：這項物資的資料已經變動（可能被家人改過或刪除）。已重新同步，請找到這項物資再改一次。`;
+      return `⚠️「${name}」這次的修改沒有存到雲端：這項物資的資料已經變動（可能被家人改過或刪除）。已重新同步，請確認這項物資還在，再改一次。`;
     }
     function syncSkippedBatchMessage(skipped, total, nameOfRow) {
       const n = skipped.length;

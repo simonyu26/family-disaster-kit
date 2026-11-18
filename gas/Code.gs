@@ -744,7 +744,7 @@ function itemRefFrom(p) {
 
 function itemErrorMessage(code) {
   if (code === 'UNKNOWN_MEMBER') return '雲端找不到這位成員，請重新同步後再改一次';
-  if (code === 'ITEM_NOT_FOUND') return '這項物資已經被其他人刪除，已改為不寫入，請重新同步後再確認';
+  if (code === 'ITEM_NOT_FOUND') return '這項物資可能已被其他人修改或刪除，已改為不寫入，請重新同步後再確認';
   if (code === 'ITEM_MOVED') return '這項物資已經被其他人修改，已改為不寫入，請重新同步後再確認';
   return '這項物資在雲端的位置已經變了，請重新同步後再改一次';
 }

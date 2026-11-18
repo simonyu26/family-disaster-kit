@@ -2742,6 +2742,7 @@
       const toast = document.createElement('div');
       toast.className = `toast ${type}`;
       if (opts.sticky) {
+        container.querySelectorAll('.toast-sticky').forEach(t => t.remove()); // 只留最新一張，避免疊滿畫面（使用者顧問複審）
         toast.classList.add('toast-sticky');
         toast.innerText = msg + '（點一下關閉）';
         toast.addEventListener('click', () => toast.remove());

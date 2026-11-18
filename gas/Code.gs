@@ -1025,7 +1025,7 @@ function deleteLocationRecord(id) {
 
 // 示警快取（進度表 #16）：只快取成功且有筆數的結果，存 3 分鐘。
 // 前端從 fetchedAt 起算 15 分鐘新鮮度，快取不延長這段時間；代價是最多 3 分鐘內抓不到新發的示警。
-const ALERTS_CACHE_KEY = 'ncdrAlerts_v2';  // v2：回傳多了 limit、feedCount、truncated
+const ALERTS_CACHE_KEY = 'ncdrAlerts_v3';  // v2：多了 limit、feedCount、truncated；v3：每則多了 effective、expires、msgType、status
 const ALERTS_CACHE_SEC = 180;
 const ALERTS_CACHE_MAX_BYTES = 90000;  // CacheService 單筆上限 100KB（以 UTF-8 位元組計，中文一字 3 位元組），留餘裕
 
@@ -1070,6 +1070,33 @@ function getDisasterAlerts() {
 const ALERTS_MAX_ENTRIES = 100;
 
 /**
+ * 把 NCDR feed 的 CAP 時間（例如「2026/11/17 下午 08:08:40」，台灣本地時間）轉成 ISO 8601 字串
+ * 「2026-11-17T20:08:40+08:00」。已是 ISO 格式就原樣回傳；看不懂就回 null（前端遇 null 改用舊規則，不可把示警藏起來）。
+ */
+function parseCapTime(text) {
+  const t = String(text || '').trim();
+  if (!t) return null;
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?([+-]\d{2}:\d{2}|Z)$/.test(t)) return t;
+  const m = t.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})\s*(上午|下午|AM|PM)?\s*(\d{1,2}):(\d{2})(?::(\d{2}))?$/i);
+  if (!m) return null;
+  let hour = parseInt(m[5], 10);
+  const marker = (m[4] || '').toUpperCase();
+  if (marker) {
+    if (hour < 1 || hour > 12) return null;
+    const pm = marker === '下午' || marker === 'PM';
+    if (pm && hour < 12) hour += 12;
+    if (!pm && hour === 12) hour = 0;
+  }
+  const month = parseInt(m[2], 10), day = parseInt(m[3], 10), minute = parseInt(m[6], 10), second = parseInt(m[7] || '0', 10);
+  if (month < 1 || month > 12 || day < 1 || day > 31 || hour > 23 || minute > 59 || second > 59) return null;
+  // 不存在的日期（例如 2/31）回 null，避免前端自動進位成下個月
+  const check = new Date(Date.UTC(parseInt(m[1], 10), month - 1, day));
+  if (check.getUTCMonth() !== month - 1 || check.getUTCDate() !== day) return null;
+  const pad = n => (n < 10 ? '0' : '') + n;
+  return m[1] + '-' + pad(month) + '-' + pad(day) + 'T' + pad(hour) + ':' + pad(minute) + ':' + pad(second) + '+08:00';
+}
+
+/**
  * 代理抓取 NCDR 民生示警公開資料平台 ATOM Feed（免金鑰），並自動標記屬於細胞廣播 (CBS) 等級之緊急告警
  * fetchedAt 為實際向 NCDR 抓取的時間，快取命中時不改寫。
  */
@@ -1084,6 +1111,8 @@ function fetchDisasterAlertsFromNcdr() {
     const xml = XmlService.parse(res.getContentText());
     const root = xml.getRootElement();
     const ns = root.getNamespace();
+    // CAP 欄位的命名空間宣告在 feed 根元素；找不到就用 CAP 1.1 的網址
+    const capNs = root.getNamespace('cap') || XmlService.getNamespace('cap', 'urn:oasis:names:tc:emergency:cap:1.1');
     const entries = root.getChildren('entry', ns);
     const alerts = [];
 
@@ -1097,6 +1126,11 @@ function fetchDisasterAlertsFromNcdr() {
       const linkEl = entry.getChild('link', ns);
       const link = linkEl ? (linkEl.getAttribute('href') ? linkEl.getAttribute('href').getValue() : '') : '';
       const isCbs = cbsRegex.test(title) || cbsRegex.test(summary);
+      // 示警本身的有效時間（進度表 #18）：讓前端改看「還在有效期內」而不只看最後更新時間
+      const effective = parseCapTime(entry.getChildText('effective', capNs));
+      const expires = parseCapTime(entry.getChildText('expires', capNs));
+      const msgType = (entry.getChildText('msgType', capNs) || '').trim();
+      const status = (entry.getChildText('status', capNs) || '').trim();
 
       alerts.push({
         title: title,
@@ -1104,7 +1138,11 @@ function fetchDisasterAlertsFromNcdr() {
         summary: summary,
         author: author,
         link: link,
-        isCbs: isCbs
+        isCbs: isCbs,
+        effective: effective,   // 生效時間，ISO 8601（+08:00）；解析失敗為 null
+        expires: expires,       // 失效時間，同上
+        msgType: msgType,       // CAP 訊息類型：Alert／Update／Cancel，原樣
+        status: status          // CAP 狀態：Actual／Exercise／Test 等，原樣
       });
     }
     return {

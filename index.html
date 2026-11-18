@@ -444,6 +444,12 @@
     .toast.warn { background: rgba(196, 106, 22, 0.96); }
     .toast.error { background: rgba(201, 68, 43, 0.96); }
     /* 「沒存到」提示要讀完幾行字：改用「無法確認」方框的配色（美術顧問 PR #27，對比 13.96:1） */
+    .toast.toast-sticky {
+      pointer-events: auto; cursor: pointer;
+      background: var(--card-bg); color: var(--text);
+      border: 1px solid var(--border); border-left: 4px solid var(--accent);
+      text-align: left; line-height: 1.55; box-shadow: var(--shadow-md);
+    }
     /* 年度盤點紀錄卡（② #15，美術顧問樣稿 reviews/yearly-snapshot-art.md） */
     .snapshot-card { margin-top: 14px; }
     .snapshot-title { font-size: 15px; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
@@ -451,12 +457,6 @@
     .snapshot-desc { font-size: 14px; color: var(--text-muted); line-height: 1.6; margin: 6px 0 10px; }
     .snapshot-btn { width: 100%; min-height: 48px; font-size: 15px; font-weight: 800; }
     .snapshot-reason { font-size: 13px; color: var(--text-muted); line-height: 1.55; margin-top: 6px; }
-    .toast.toast-sticky {
-      pointer-events: auto; cursor: pointer;
-      background: var(--card-bg); color: var(--text);
-      border: 1px solid var(--border); border-left: 4px solid var(--accent);
-      text-align: left; line-height: 1.55; box-shadow: var(--shadow-md);
-    }
 
 
     .modal-backdrop {

@@ -91,6 +91,7 @@ function readFamilyData(action, auth) {
     members: getMembersData(inv.characters),
     locations: getLocationsData(),
     contacts: getContactsData(),
+    snapshots: getSnapshotList(),
     serverTime: new Date().toISOString()
   };
 }
@@ -220,6 +221,7 @@ function doPost(e) {
         contacts: getContactsData(),
         skipped: skipped,
         added: added,
+        snapshots: getSnapshotList(),
         serverTime: new Date().toISOString()
       });
     }
@@ -316,6 +318,10 @@ function doPost(e) {
       return createJsonOutput({ ok: true, contacts: getContactsData(), serverTime: new Date().toISOString() });
     }
 
+    if (action === 'createYearSnapshot') {
+      return createJsonOutput(createYearSnapshot());
+    }
+
     if (action === 'setGeminiKey') {
       const cleanKey = String(payload.apiKey || '').trim();
       if (cleanKey) PropertiesService.getScriptProperties().setProperty('GEMINI_API_KEY', cleanKey);
@@ -375,7 +381,9 @@ function getTargetSheet(ss) {
   const excluded = ['Leadsheet', 'Locations', 'Members', 'Contacts'];
   const sheets = ss.getSheets();
   for (let i = 0; i < sheets.length; i++) {
-    if (!excluded.includes(sheets[i].getName())) return sheets[i];
+    const name = sheets[i].getName();
+    // 年度盤點快照（含手動做的「2026盤點」「2026 盤點 的副本」）不可當成物資頁（#15）
+    if (!excluded.includes(name) && !SNAPSHOT_NAME_PATTERN.test(name)) return sheets[i];
   }
   return sheets[0];
 }
@@ -699,6 +707,94 @@ function deleteExistingItem(ref) {
   if (!loc.ok) return loc;
   targetSheet.deleteRow(loc.rowNum);
   return { ok: true };
+}
+
+// ==========================================
+// 一鍵年度快照（#15）：把物資頁複製成「YYYY 盤點」，只有擁有者可編輯
+// ==========================================
+
+const SNAPSHOT_NAME_PATTERN = /^\d{4}\s*盤點/;   // 自動挑物資頁時排除（含手動做的變形名稱）
+const SNAPSHOT_LIST_PATTERN = /^\d{4} 盤點$/;    // 回傳給前端的快照清單只列標準名稱
+const SNAPSHOT_CREATED_LABEL = '｜建立時間 ';
+
+function createYearSnapshot() {
+  const props = PropertiesService.getScriptProperties();
+  if (!(props.getProperty('INVENTORY_SHEET_NAME') || '').trim()) {
+    return { ok: false, code: 'SHEET_NAME_NOT_SET', error: '雲端還沒指定物資分頁，這次沒有留下盤點紀錄。請擁有者到 GAS 指令碼屬性設定 INVENTORY_SHEET_NAME' };
+  }
+  const ss = openFamilySpreadsheet();
+  const source = getTargetSheet(ss);
+  const now = new Date();
+  const year = Utilities.formatDate(now, 'Asia/Taipei', 'yyyy');
+  const name = year + ' 盤點';
+  const createdAt = Utilities.formatDate(now, 'Asia/Taipei', "yyyy-MM-dd'T'HH:mm:ss") + '+08:00';
+  if (ss.getSheetByName(name)) {
+    return { ok: false, code: 'SNAPSHOT_EXISTS', sheetName: name, error: '「' + name + '」已經有了，這次沒有重複建立' };
+  }
+
+  let copy = null;
+  try {
+    copy = source.copyTo(ss);
+    // 改名前再查一次：鎖擋不住擁有者在試算表手動新增同名分頁
+    if (ss.getSheetByName(name)) {
+      ss.deleteSheet(copy);
+      copy = null;
+      return { ok: false, code: 'SNAPSHOT_EXISTS', sheetName: name, error: '「' + name + '」已經有了，這次沒有重複建立' };
+    }
+    copy.setName(name);
+    ss.setActiveSheet(copy);
+    ss.moveActiveSheet(ss.getNumSheets());
+    const protection = copy.protect().setDescription(name + '（年度盤點紀錄，只有擁有者可修改）' + SNAPSHOT_CREATED_LABEL + createdAt);
+    const others = protection.getEditors();
+    if (others.length > 0) protection.removeEditors(others);
+    if (protection.canDomainEdit()) protection.setDomainEdit(false);
+  } catch (err) {
+    console.error('建立年度快照失敗：' + err.message);
+    if (copy) {
+      try {
+        ss.deleteSheet(copy);  // 只刪這次 copyTo 回傳的分頁，不用名稱找
+      } catch (delErr) {
+        console.error('刪除未完成的快照失敗：' + delErr.message);
+        let leftover = '';
+        try { leftover = copy.getName(); } catch (e) { leftover = ''; }
+        return {
+          ok: false, code: 'SNAPSHOT_FAILED', leftoverSheet: leftover,
+          error: '這次沒有留下盤點紀錄。試算表裡多了一頁沒做完的「' + leftover + '」，請到試算表把它刪掉後再按一次'
+        };
+      }
+    }
+    return { ok: false, code: 'SNAPSHOT_FAILED', error: '這次沒有留下盤點紀錄，請稍後再按一次' };
+  }
+  return { ok: true, sheetName: name, createdAt: createdAt, serverTime: new Date().toISOString() };
+}
+
+/**
+ * 列出名稱為「YYYY 盤點」的分頁（唯讀，不寫入）。createdAt 取自 App 建立時寫在保護說明裡的時間；
+ * 手動建立或讀不到時為空字串。讀取失敗回空陣列，不影響其他資料。
+ */
+function getSnapshotList() {
+  try {
+    const ss = openFamilySpreadsheet();
+    return ss.getSheets()
+      .filter(sh => SNAPSHOT_LIST_PATTERN.test(sh.getName()))
+      .map(sh => {
+        let createdAt = '';
+        try {
+          const prots = sh.getProtections(SpreadsheetApp.ProtectionType.SHEET);
+          for (let i = 0; i < prots.length; i++) {
+            const desc = prots[i].getDescription() || '';
+            const k = desc.indexOf(SNAPSHOT_CREATED_LABEL);
+            if (k >= 0) { createdAt = desc.substring(k + SNAPSHOT_CREATED_LABEL.length).trim(); break; }
+          }
+        } catch (err) {
+          createdAt = '';
+        }
+        return { sheetName: sh.getName(), createdAt: createdAt };
+      });
+  } catch (err) {
+    console.error('讀取年度快照清單失敗：' + err.message);
+    return [];
+  }
 }
 
 // ==========================================

@@ -165,15 +165,17 @@ function doPost(e) {
       return authFailureOutput(auth, '家庭通行碼驗證失敗，無法寫入雲端');
     }
 
+    // 物資寫入前先補齊穩定 ID（#26）；補 ID 失敗不影響本次寫入
+    if (INVENTORY_WRITE_ACTIONS.includes(action)) {
+      ensureItemIdsSafe();
+    }
+
     if (action === 'updateItem') {
-      const result = updateItemData(payload.row, payload.charName, payload.state, payload.expDate, payload.qty, payload.textNote, payload.spec);
+      const result = updateItemData(itemRefFrom(payload), payload.charName, payload.state, payload.expDate, payload.qty, payload.textNote, payload.spec);
       if (!result.ok) {
-        const msg = result.code === 'UNKNOWN_MEMBER'
-          ? '雲端找不到這位成員，請重新同步後再改一次'
-          : '這項物資在雲端的位置已經變了，請重新同步後再改一次';
-        return createJsonOutput({ ok: false, code: result.code, error: msg });
+        return createJsonOutput({ ok: false, code: result.code, error: itemErrorMessage(result.code) });
       }
-      return createJsonOutput({ ok: true, serverTime: new Date().toISOString() });
+      return createJsonOutput({ ok: true, id: result.id, serverTime: new Date().toISOString() });
     }
 
     if (action === 'batchSync') {
@@ -181,13 +183,21 @@ function doPost(e) {
       // 先確認物資頁存在；找不到就整批不寫，避免地點、聯絡人先寫入後重送時重複新增
       getTargetSheet(openFamilySpreadsheet());
       // 列號無效的物資更新只略過該筆，不整批中止，避免離線補傳佇列一直卡住（D-05 精神）
+      // 每一筆都重新讀表、依 ID 找列（同一批先新增後修改時列號會位移）
       const skipped = [];
+      const added = [];
       actions.forEach(act => {
         if (act.action === 'updateItem') {
-          const result = updateItemData(act.row, act.charName, act.state, act.expDate, act.qty, act.textNote, act.spec);
-          if (!result.ok) skipped.push({ action: 'updateItem', code: result.code, row: act.row, charName: act.charName });
+          const result = updateItemData(itemRefFrom(act), act.charName, act.state, act.expDate, act.qty, act.textNote, act.spec);
+          if (!result.ok) {
+            skipped.push({
+              action: 'updateItem', code: result.code, row: act.row, charName: act.charName,
+              itemId: act.itemId ? String(act.itemId) : '', itemName: result.itemName || (act.itemName ? String(act.itemName) : '')
+            });
+          }
         } else if (act.action === 'addItem') {
-          addNewItem(act.category, act.itemName, act.requiredChars || []);
+          const res = addNewItem(act.category, act.itemName, act.requiredChars || []);
+          added.push({ itemName: String(act.itemName || '').trim(), category: String(act.category || '').trim(), id: res.id, tempRow: act.row || null });
         } else if (act.action === 'addLocation') {
           addLocationRecord(act.location);
         } else if (act.action === 'deleteLocation') {
@@ -209,22 +219,29 @@ function doPost(e) {
         locations: getLocationsData(),
         contacts: getContactsData(),
         skipped: skipped,
+        added: added,
         serverTime: new Date().toISOString()
       });
     }
 
     if (action === 'addItem') {
-      addNewItem(payload.category, payload.itemName, payload.requiredChars || []);
-      return createJsonOutput({ ok: true, inventory: getInventoryData(), serverTime: new Date().toISOString() });
+      const res = addNewItem(payload.category, payload.itemName, payload.requiredChars || []);
+      return createJsonOutput({ ok: true, id: res.id, inventory: getInventoryData(), serverTime: new Date().toISOString() });
     }
 
     if (action === 'editItem') {
-      editExistingItem(payload.row, payload.newName, payload.newCategory);
-      return createJsonOutput({ ok: true, inventory: getInventoryData(), serverTime: new Date().toISOString() });
+      const res = editExistingItem(itemRefFrom(payload), payload.newName, payload.newCategory);
+      if (!res.ok) {
+        return createJsonOutput({ ok: false, code: res.code, error: itemErrorMessage(res.code), inventory: getInventoryData() });
+      }
+      return createJsonOutput({ ok: true, id: res.id, inventory: getInventoryData(), serverTime: new Date().toISOString() });
     }
 
     if (action === 'deleteItem') {
-      deleteExistingItem(payload.row);
+      const res = deleteExistingItem(itemRefFrom(payload));
+      if (!res.ok) {
+        return createJsonOutput({ ok: false, code: res.code, error: itemErrorMessage(res.code), inventory: getInventoryData() });
+      }
       return createJsonOutput({ ok: true, inventory: getInventoryData(), serverTime: new Date().toISOString() });
     }
 
@@ -454,30 +471,30 @@ function getInventoryData() {
 
         statusObj[c.name] = { state: state, exp: exp, qty: qtyText, note: textNote, spec: spec, updatedAt: updatedAt };
       });
-      items.push({ row: i + 1, category: currentCategory, name: String(itemName).trim(), status: statusObj });
+      const itemId = parseItemId(notes[i] ? notes[i][1] : '');
+      items.push({ row: i + 1, id: itemId, category: currentCategory, name: String(itemName).trim(), status: statusObj });
     }
   }
   return { sheetName: targetSheet.getName(), characters: characters.map(c => c.name), items: items };
 }
 
-function updateItemData(row, charName, state, expDate, qty, textNote, spec) {
+function updateItemData(ref, charName, state, expDate, qty, textNote, spec) {
   const ss = openFamilySpreadsheet();
   const targetSheet = getTargetSheet(ss);
   const data = targetSheet.getDataRange().getValues();
   const charRowIndex = findCharRowIndex(data);
 
-  // 列號驗證（審查 V2）：只能寫到物資列，不可寫到表頭、分類列或範圍外。
-  // doPost 全程持有 ScriptLock，檢查與寫入在同一段鎖內，中間不會被別的請求插列。
-  const rowNum = Number(row);
-  if (!isInventoryItemRow(data, charRowIndex, rowNum)) {
-    return { ok: false, code: 'INVALID_ROW' };
-  }
+  // 定位物資（#26 穩定 ID；審查 V2 列號驗證）：只能寫到物資列。
+  // doPost 全程持有 ScriptLock，定位與寫入在同一段鎖內，中間不會被別的請求插列。
+  const loc = locateItemRow(targetSheet, data, charRowIndex, ref);
+  if (!loc.ok) return loc;
+  const rowNum = loc.rowNum;
 
   // 找不到成員欄時回報失敗，不可什麼都沒寫卻回成功
   const cleanChar = String(charName || '').trim();
   const colIndex = cleanChar === '確認日期' ? 0 : data[charRowIndex].map(v => String(v).trim()).indexOf(cleanChar) + 1;
   if (colIndex <= 2) {
-    return { ok: false, code: 'UNKNOWN_MEMBER' };
+    return { ok: false, code: 'UNKNOWN_MEMBER', itemName: loc.itemName };
   }
   const cell = targetSheet.getRange(rowNum, colIndex);
 
@@ -493,7 +510,7 @@ function updateItemData(row, charName, state, expDate, qty, textNote, spec) {
   noteParts.push('Updated: ' + nowStamp);
 
   cell.setNote(noteParts.join('\n'));
-  return { ok: true };
+  return { ok: true, id: loc.id };
 }
 
 /**
@@ -568,24 +585,26 @@ function addNewItem(category, itemName, requiredChars) {
     newItemRow = lastRow + 2;
   }
 
-  targetSheet.getRange(newItemRow, 2).setValue(sanitizeCell(cleanName));
+  const nameCell = targetSheet.getRange(newItemRow, 2);
+  nameCell.setValue(sanitizeCell(cleanName));
+  const newId = newItemId();
+  nameCell.setNote(setItemIdInNote('', newId));  // 新插入的列沒有舊備註
   allChars.forEach(c => {
     const stateVal = requiredChars.includes(c.name) ? 'x' : '-';
     targetSheet.getRange(newItemRow, c.col).setValue(stateVal);
   });
-  return true;
+  return { ok: true, id: newId };
 }
 
-function editExistingItem(row, newName, newCategory) {
+function editExistingItem(ref, newName, newCategory) {
   const ss = openFamilySpreadsheet();
   const targetSheet = getTargetSheet(ss);
   const data = targetSheet.getDataRange().getValues();
   const charRowIndex = findCharRowIndex(data);
 
-  row = Number(row);
-  if (!isInventoryItemRow(data, charRowIndex, row)) {
-    throw new Error('無效的物資列號');
-  }
+  const loc = locateItemRow(targetSheet, data, charRowIndex, ref);
+  if (!loc.ok) return loc;
+  const row = loc.rowNum;
 
   const cleanNewName = (newName || '').trim();
   if (!cleanNewName) throw new Error('物資名稱不可為空');
@@ -614,7 +633,7 @@ function editExistingItem(row, newName, newCategory) {
   const cleanNewCat = (newCategory || currentCat).trim();
   targetSheet.getRange(row, 2).setValue(sanitizeCell(cleanNewName));
 
-  if (cleanNewCat === currentCat) return true;
+  if (cleanNewCat === currentCat) return { ok: true, id: loc.id };
 
   const maxCol = targetSheet.getLastColumn();
   const rowRange = targetSheet.getRange(row, 1, 1, maxCol);
@@ -666,22 +685,179 @@ function editExistingItem(row, newName, newCategory) {
   rowValues[1] = cleanNewName;
   const newRange = targetSheet.getRange(targetRow, 1, 1, maxCol);
   newRange.setValues([sanitizeRow(rowValues)]);
-  newRange.setNotes([rowNotes]);
-  return true;
+  newRange.setNotes([rowNotes]);  // B 欄備註（含 ID）跟著整列搬過去
+  return { ok: true, id: loc.id };
 }
 
-function deleteExistingItem(row) {
+function deleteExistingItem(ref) {
   const ss = openFamilySpreadsheet();
   const targetSheet = getTargetSheet(ss);
   const data = targetSheet.getDataRange().getValues();
   const charRowIndex = findCharRowIndex(data);
 
-  row = Number(row);
-  if (!isInventoryItemRow(data, charRowIndex, row)) {
-    throw new Error('無效的物資列號，無法刪除');
+  const loc = locateItemRow(targetSheet, data, charRowIndex, ref);
+  if (!loc.ok) return loc;
+  targetSheet.deleteRow(loc.rowNum);
+  return { ok: true };
+}
+
+// ==========================================
+// 物資穩定 ID（#26，審查 C1、V3）
+// ID 存在物資名稱格（B 欄）的備註，一行「ID:」開頭；備註其他行保留不動。
+// ==========================================
+
+const ITEM_ID_PREFIX = 'ID:';
+const INVENTORY_WRITE_ACTIONS = ['updateItem', 'addItem', 'editItem', 'deleteItem', 'batchSync'];
+
+function newItemId() {
+  return Utilities.getUuid().replace(/-/g, '').substring(0, 12);
+}
+
+// 從 B 欄備註取出 ID；沒有就回空字串
+function parseItemId(note) {
+  if (!note) return '';
+  const lines = String(note).split('\n');
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (line.indexOf(ITEM_ID_PREFIX) === 0) return line.substring(ITEM_ID_PREFIX.length).trim();
   }
-  targetSheet.deleteRow(row);
-  return true;
+  return '';
+}
+
+// 把 ID 寫進備註：取代原有的 ID 行，其他行原樣保留；原本沒有就加在最後一行
+function setItemIdInNote(note, id) {
+  const lines = note ? String(note).split('\n') : [];
+  const kept = lines.filter(line => line.trim().indexOf(ITEM_ID_PREFIX) !== 0);
+  while (kept.length > 0 && kept[kept.length - 1].trim() === '') kept.pop();
+  kept.push(ITEM_ID_PREFIX + id);
+  return kept.join('\n');
+}
+
+// 從請求取出物資定位資訊：itemId 優先，其次 itemName，最後只看列號（舊前端）
+function itemRefFrom(p) {
+  return {
+    row: p ? p.row : undefined,
+    itemId: p && p.itemId ? String(p.itemId).trim() : '',
+    itemName: p && typeof p.itemName === 'string' ? p.itemName.trim() : ''
+  };
+}
+
+function itemErrorMessage(code) {
+  if (code === 'UNKNOWN_MEMBER') return '雲端找不到這位成員，請重新同步後再改一次';
+  if (code === 'ITEM_NOT_FOUND') return '這項物資可能已被其他人修改或刪除，已改為不寫入，請重新同步後再確認';
+  if (code === 'ITEM_MOVED') return '這項物資已經被其他人修改，已改為不寫入，請重新同步後再確認';
+  return '這項物資在雲端的位置已經變了，請重新同步後再改一次';
+}
+
+function itemRowName(data, rowNum) {
+  return String((data[rowNum - 1] && data[rowNum - 1][1]) || '').trim();
+}
+
+/**
+ * 找出要寫入的物資列（1 起算）。
+ * - 有 itemId：用 ID 找；找不到回 ITEM_NOT_FOUND，找到兩列以上（複製整列造成）回 ITEM_MOVED，
+ *   找到的列不是物資列回 INVALID_ROW。
+ * - 沒有 itemId、有 itemName：列號那一列名稱相同就用；不同就全表找同名，剛好一筆才用，否則 ITEM_MOVED。
+ * - 兩者都沒有（舊前端）：維持只看列號，並檢查是物資列（V2）。
+ */
+function locateItemRow(sheet, data, charRowIndex, ref) {
+  ref = ref || {};
+  const firstRow = charRowIndex + 2;
+  const okResult = rowNum => ({ ok: true, rowNum: rowNum, id: '', itemName: itemRowName(data, rowNum) });
+
+  if (ref.itemId) {
+    if (data.length < firstRow) return { ok: false, code: 'ITEM_NOT_FOUND' };
+    const notes = sheet.getRange(firstRow, 2, data.length - firstRow + 1, 1).getNotes();
+    const matches = [];
+    for (let i = 0; i < notes.length; i++) {
+      if (parseItemId(notes[i][0]) === ref.itemId) matches.push(firstRow + i);
+    }
+    if (matches.length === 0) return { ok: false, code: 'ITEM_NOT_FOUND', itemName: ref.itemName || '' };
+    if (matches.length > 1) return { ok: false, code: 'ITEM_MOVED', itemName: ref.itemName || '' };
+    if (!isInventoryItemRow(data, charRowIndex, matches[0])) return { ok: false, code: 'INVALID_ROW', itemName: ref.itemName || '' };
+    const r = okResult(matches[0]);
+    r.id = ref.itemId;
+    return r;
+  }
+
+  const rowNum = Number(ref.row);
+  if (ref.itemName) {
+    if (isInventoryItemRow(data, charRowIndex, rowNum) && itemRowName(data, rowNum) === ref.itemName) {
+      return withRowId(sheet, okResult(rowNum));
+    }
+    const matches = [];
+    for (let r = firstRow; r <= data.length; r++) {
+      if (itemRowName(data, r) === ref.itemName && isInventoryItemRow(data, charRowIndex, r)) matches.push(r);
+    }
+    if (matches.length === 1) return withRowId(sheet, okResult(matches[0]));
+    return { ok: false, code: 'ITEM_MOVED', itemName: ref.itemName };
+  }
+
+  if (!isInventoryItemRow(data, charRowIndex, rowNum)) return { ok: false, code: 'INVALID_ROW' };
+  return withRowId(sheet, okResult(rowNum));
+}
+
+// 補上該列現有的 ID（回傳給前端用）
+function withRowId(sheet, result) {
+  try {
+    result.id = parseItemId(sheet.getRange(result.rowNum, 2).getNote());
+  } catch (err) {
+    result.id = '';
+  }
+  return result;
+}
+
+/**
+ * 替缺 ID 或 ID 重複的物資列補發新 ID。
+ * 重複的 ID（例如在試算表複製整列，備註跟著複製）每一筆都換新：無法判斷哪一列才是原本那項，
+ * 換新後舊 ID 的寫入會回 ITEM_NOT_FOUND，前端重新同步取得新 ID，不會寫錯（D-01）。
+ * 只處理物資列；全部都有且不重複時不寫入。回傳補發的筆數。
+ */
+function ensureItemIds(sheet) {
+  const data = sheet.getDataRange().getValues();
+  const charRowIndex = findCharRowIndex(data);
+  const firstRow = charRowIndex + 2;
+  if (data.length < firstRow) return 0;
+  const range = sheet.getRange(firstRow, 2, data.length - firstRow + 1, 1);
+  const notes = range.getNotes();
+  const count = {};
+  const isItem = [];
+  for (let i = 0; i < notes.length; i++) {
+    isItem[i] = isInventoryItemRow(data, charRowIndex, firstRow + i);
+    const id = parseItemId(notes[i][0]);
+    if (id) count[id] = (count[id] || 0) + 1;  // 分類列上的 ID 也算，避免新發的 ID 和它撞號
+  }
+  let changed = 0;
+  for (let i = 0; i < notes.length; i++) {
+    if (!isItem[i]) continue;
+    const id = parseItemId(notes[i][0]);
+    if (id && count[id] === 1) continue;
+    let fresh = newItemId();
+    while (count[fresh]) fresh = newItemId();
+    count[fresh] = 1;
+    notes[i][0] = setItemIdInNote(notes[i][0], fresh);
+    changed++;
+  }
+  if (changed > 0) range.setNotes(notes);
+  return changed;
+}
+
+// doPost 用：補 ID 失敗只記錄，不讓本次寫入失敗
+function ensureItemIdsSafe() {
+  try {
+    ensureItemIds(getTargetSheet(openFamilySpreadsheet()));
+  } catch (err) {
+    console.error('補物資 ID 失敗：' + err.message);
+  }
+}
+
+/**
+ * 在編輯器手動執行一次：替所有物資補 ID、把重複的 ID 換新。部署後請先跑一次。
+ */
+function assignItemIds() {
+  const changed = ensureItemIds(getTargetSheet(openFamilySpreadsheet()));
+  console.log('已補發 ' + changed + ' 個物資 ID');
+  return changed;
 }
 
 /**

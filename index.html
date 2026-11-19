@@ -267,6 +267,7 @@
     .alert-state-unknown { background: var(--bg); border-left: 4px solid var(--accent); }
     .alert-state-title { font-weight: 800; }
     .alert-state-time { font-size: 0.8rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+    .alert-state-note { font-size: 0.8rem; color: var(--text-muted); }
     .alert-stale-note { margin-bottom: 6px; }
     .alert-pill {
       display: inline-block; font-size: 0.75rem; font-weight: bold; line-height: 1.5;
@@ -5179,11 +5180,77 @@
     }
 
 
+    // 示警廣域字詞 → 涵蓋縣市（② #17）。詞表由災防顧問審定，審閱日期 2026-11-18
+    // （proposals/alert-broad-region.md、reviews/alert-broad-region-disaster-review.md）。
+    // 原則：寧可多算，不可少算（D-01）。字詞一律寫「臺」，示警文字比對前已把「台」轉成「臺」。
+    // 已知多算：「東北部」含「北部」、「西南部／中南部／東南部」含「南部」、「澎湖本島」含「本島」等，經災防顧問同意。
+    const ALERT_ALL_COUNTIES = ['基隆市', '臺北市', '新北市', '桃園市', '新竹市', '新竹縣', '苗栗縣', '臺中市', '彰化縣', '南投縣', '雲林縣', '嘉義市', '嘉義縣', '臺南市', '高雄市', '屏東縣', '宜蘭縣', '花蓮縣', '臺東縣', '澎湖縣', '金門縣', '連江縣'];
+    const ALERT_REGION_WORDS = (() => {
+      const N = ['基隆市', '臺北市', '新北市', '桃園市', '新竹市', '新竹縣', '苗栗縣'];
+      const C = ['苗栗縣', '臺中市', '彰化縣', '南投縣', '雲林縣', '嘉義市', '嘉義縣'];
+      const S = ['雲林縣', '嘉義市', '嘉義縣', '臺南市', '高雄市', '屏東縣'];
+      const E = ['宜蘭縣', '花蓮縣', '臺東縣'];
+      const ISL = ['澎湖縣', '金門縣', '連江縣'];
+      const MAIN = ALERT_ALL_COUNTIES.filter(c => !ISL.includes(c));
+      return [
+        [['全臺', '全國', '全省', '各縣市', '臺灣地區', '各地'], ALERT_ALL_COUNTIES],
+        [['本島'], MAIN],
+        [['北部', '北臺灣'], N],
+        [['中部', '中臺灣'], C],
+        [['南部', '南臺灣'], S],
+        [['東部', '東臺灣', '東半部'], E],
+        [['西半部'], [...N, ...C, ...S]],
+        [['中南部'], [...C, ...S]],
+        [['東北部'], ['基隆市', '臺北市', '新北市', '宜蘭縣']],
+        [['西南部'], ['嘉義市', '嘉義縣', '臺南市', '高雄市', '屏東縣']],
+        [['東南部'], ['臺東縣', '屏東縣']],
+        [['雙北'], ['臺北市', '新北市']],
+        [['大臺北', '北北基'], ['臺北市', '新北市', '基隆市']],
+        [['北北基桃'], ['臺北市', '新北市', '基隆市', '桃園市']],
+        [['北海岸'], ['新北市', '基隆市']],
+        [['竹苗'], ['新竹市', '新竹縣', '苗栗縣']],
+        [['桃竹苗'], ['桃園市', '新竹市', '新竹縣', '苗栗縣']],
+        [['中彰投'], ['臺中市', '彰化縣', '南投縣']],
+        [['雲嘉南'], ['雲林縣', '嘉義市', '嘉義縣', '臺南市']],
+        [['嘉南'], ['嘉義市', '嘉義縣', '臺南市']],
+        [['阿里山'], ['嘉義縣']],
+        [['高屏'], ['高雄市', '屏東縣']],
+        [['恆春', '小琉球'], ['屏東縣']],
+        [['花東'], ['花蓮縣', '臺東縣']],
+        [['宜花東'], ['宜蘭縣', '花蓮縣', '臺東縣']],
+        [['宜花'], ['宜蘭縣', '花蓮縣']],
+        [['蘭嶼', '綠島'], ['臺東縣']],
+        [['離島', '外島', '澎金馬'], ISL],
+        [['金馬'], ['金門縣', '連江縣']],
+        [['馬祖'], ['連江縣']]
+      ];
+    })();
+    // 選單標籤不是完整縣市名時，對到哪些縣市：縣轄市對到所屬的縣（選「彰化市」時，「中彰投」也要算）；
+    // 「新竹」「嘉義」同時代表市和縣，兩邊都算（寧可多算）
+    const ALERT_LABEL_TO_COUNTIES = { '彰化市': ['彰化縣'], '新竹': ['新竹市', '新竹縣'], '嘉義': ['嘉義市', '嘉義縣'] };
+
+    // 「各地」前一個字是地名結尾時（例如「高雄市各地區」「北部各地」），前面的地名已會對到，不算全國（災防顧問 2026-11-18）
+    // ✅ 下方的比對範圍說明（災防顧問定意思、使用者顧問定用字，2026-11-18）；分兩句各成一行
+    const ALERT_CLEAR_NOTE_HTML = '示警沒寫出縣市名稱時，這裡可能查不到。<br>請以手機的災防告警為準。';
+
+    function hasNationwideGeDi(text) {
+      let i = text.indexOf('各地');
+      while (i !== -1) {
+        if (i === 0 || !'市縣區鄉鎮部島'.includes(text[i - 1])) return true;
+        i = text.indexOf('各地', i + 2);
+      }
+      return false;
+    }
+
     function matchAlertRegion(alertItem, cityLabel) {
       if (!cityLabel || cityLabel === '全國' || cityLabel === '全部') return true;
-      const text = (alertItem.title + ' ' + alertItem.summary).replace(/台/g, '臺');
-      const key = cityLabel.replace(/台/g, '臺').replace(/[市縣]/g, '');
-      return text.includes(key);
+      const text = (String(alertItem.title || '') + ' ' + String(alertItem.summary || '')).replace(/台/g, '臺');
+      const label = cityLabel.replace(/台/g, '臺');
+      const key = label.replace(/[市縣]/g, '');
+      if (text.includes(key)) return true;
+      const mine = ALERT_LABEL_TO_COUNTIES[label] || [label];
+      return ALERT_REGION_WORDS.some(([words, counties]) =>
+        counties.some(c => mine.includes(c)) && words.some(w => w === '各地' ? hasNationwideGeDi(text) : text.includes(w)));
     }
 
 
@@ -5329,6 +5396,7 @@
           <div><span class="alert-pill alert-pill-clear">沒有示警</span></div>
           <div class="alert-state-title">✅ 近 12 小時沒有【${city}】的災害示警</div>
           <div class="alert-state-time">資料時間 ${escapeHtml(lastTime)}</div>
+          <div class="alert-state-note">${ALERT_CLEAR_NOTE_HTML}</div>
         </div>`;
       } else {
         const texts = {
@@ -6024,6 +6092,7 @@
         sumEl.innerHTML = '<span style="color:var(--text-muted);">尚未釘選外地親友縣市</span>';
         return;
       }
+      let anyClear = false;
       sumEl.innerHTML = watchCities.map(c => {
         const status = getAlertStatus(c);
         const name = escapeHtml(c);
@@ -6032,13 +6101,14 @@
           return `<div class="watch-line-alerts">🚨 <strong>${name}</strong>（${status.matches.length} 則）：${escapeHtml(status.matches[0].title)}${staleTag}</div>`;
         }
         if (status.state === 'clear') {
+          anyClear = true;
           return `<div class="watch-line-clear">✅ <strong>${name}</strong>：近 12 小時沒有災害示警</div>`;
         }
         if (status.state === 'loading') {
           return `<div class="watch-line-unknown">🔁 <strong>${name}</strong>：正在更新示警…</div>`;
         }
         return `<div class="watch-line-unknown">⚠️ <strong>${name}</strong>：無法確認</div>`;
-      }).join('');
+      }).join('') + (anyClear ? `<div class="alert-state-note">${ALERT_CLEAR_NOTE_HTML}</div>` : '');
     }
 
 

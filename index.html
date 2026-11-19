@@ -444,6 +444,13 @@
     .toast.success { background: rgba(61, 90, 82, 0.96); }
     .toast.warn { background: rgba(196, 106, 22, 0.96); }
     .toast.error { background: rgba(201, 68, 43, 0.96); }
+    /* 「沒存到」提示要讀完幾行字：改用「無法確認」方框的配色（美術顧問 PR #27，對比 13.96:1） */
+    .toast.toast-sticky {
+      pointer-events: auto; cursor: pointer;
+      background: var(--card-bg); color: var(--text);
+      border: 1px solid var(--border); border-left: 4px solid var(--accent);
+      text-align: left; line-height: 1.55; box-shadow: var(--shadow-md);
+    }
 
 
     .modal-backdrop {
@@ -2735,11 +2742,20 @@
       return navigator.onLine ? '有網路，可以查最近的 AED 和導航。' : '目前沒有網路。定位、哨音仍能用；撥號要看手機訊號，打不通請改撥 112。';
     }
 
-    function showToast(msg, type = 'info') {
+    // opts.sticky：「資料沒存到」這類通知不自動消失，點一下才關（使用者顧問 #31）
+    function showToast(msg, type = 'info', opts = {}) {
       if (isEmergencyMode) return; // 緊急模式不顯示浮動提示（工程諮詢：背景訊息不可蓋掉緊急提示）
       const container = document.getElementById('toast-container');
       const toast = document.createElement('div');
       toast.className = `toast ${type}`;
+      if (opts.sticky) {
+        container.querySelectorAll('.toast-sticky').forEach(t => t.remove()); // 只留最新一張，避免疊滿畫面（使用者顧問複審）
+        toast.classList.add('toast-sticky');
+        toast.innerText = msg + '（點一下關閉）';
+        toast.addEventListener('click', () => toast.remove());
+        container.appendChild(toast);
+        return;
+      }
       toast.innerText = msg;
       container.appendChild(toast);
       setTimeout(() => { toast.remove(); }, 2800);
@@ -2804,8 +2820,28 @@
         body: JSON.stringify(finalPayload)
       });
       const json = await res.json();
-      if (!json.ok) throw new Error(json.error || '寫入失敗');
+      if (!json.ok) {
+        const err = new Error(json.error || '寫入失敗');
+        err.code = json.code || '';
+        throw err;
+      }
       return json;
+    }
+
+    // 後端確定不會寫入的物資更新（重送也一樣），不放進離線佇列（② #31，後端 PR 13）
+    const SYNC_SKIP_CODES = ['INVALID_ROW', 'UNKNOWN_MEMBER'];
+    function syncSkipMessage(code, itemName, charName) {
+      const name = itemName || '這項物資';
+      if (code === 'UNKNOWN_MEMBER') {
+        return `⚠️「${name}」這次的修改沒有存到雲端：營地的成員名單裡找不到「${charName || ''}」。已重新同步，請到營地確認成員後再改一次。`;
+      }
+      return `⚠️「${name}」這次的修改沒有存到雲端：這項物資的資料已經變動（可能被家人改過或刪除）。已重新同步，請確認這項物資還在，再改一次。`;
+    }
+    function syncSkippedBatchMessage(skipped, total, nameOfRow) {
+      const n = skipped.length;
+      const list = skipped.slice(0, 3).map(sk => `${sk.itemName || nameOfRow(sk.row)}（${sk.charName || ''}）`).join('、') + (n > 3 ? `…等 ${n} 筆` : '');
+      const saved = total - n;
+      return `⚠️ 離線時改的有 ${n} 筆沒有存到雲端：${list}。這些物資或成員名單已經變動（可能被家人改過或刪除），請確認這些物資還在，再改一次。` + (saved > 0 ? `其他 ${saved} 筆已經存好。` : '');
     }
 
 
@@ -2824,6 +2860,11 @@
       const toSend = [...offlineQueue];
       try {
         const res = await postToGas({ action: 'batchSync', actions: toSend });
+        // 物資名稱要在雲端資料覆蓋本機之前查好
+        const skipped = Array.isArray(res.skipped) ? res.skipped : [];
+        const oldItems = (globalData && globalData.items) || [];
+        const nameOfRow = row => { const it = oldItems.find(i => i.row === row); return (it && it.name) || '1 項物資'; }; // 查不到時不顯示列號（工程顧問）
+        const skippedMsg = skipped.length ? syncSkippedBatchMessage(skipped, toSend.length, nameOfRow) : '';
         offlineQueue = [];
         localStorage.setItem(STORAGE_KEYS.QUEUE, '[]');
         updatePendingBadge();
@@ -2835,7 +2876,8 @@
         updateLastSyncText();
         renderParty(); renderInventory(); renderCampTab(); renderPlanTab();
         if (currentTab === 'map') renderMapLocations();
-        showToast(`✅ 已補傳 ${toSend.length} 筆離線變更`, 'success');
+        if (skippedMsg) showToast(skippedMsg, 'warn', { sticky: true });
+        else showToast(`✅ 已補傳 ${toSend.length} 筆離線變更`, 'success');
       } catch (err) {
         showToast('⚠️ 部分離線資料補傳失敗，稍後再試', 'warn');
       }
@@ -4049,6 +4091,12 @@
         if (res.serverTime) { localStorage.setItem(STORAGE_KEYS.LAST_SYNC, res.serverTime); updateLastSyncText(); }
         showToast('✅ 已儲存', 'success');
       } catch (err) {
+        if (SYNC_SKIP_CODES.includes(err.code)) {
+          const item = globalData.items.find(i => i.row === rowIdx);
+          showToast(syncSkipMessage(err.code, item && item.name, charName), 'warn', { sticky: true });
+          syncWithServer(false); // 畫面對齊雲端，不重送
+          return;
+        }
         enqueueAction(payload);
         showToast('🟠 連線不穩，已轉為離線暫存', 'warn');
       }

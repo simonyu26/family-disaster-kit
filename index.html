@@ -2045,6 +2045,8 @@
     <div class="modal-card">
       <h3 class="modal-title" id="item-modal-title">➕ 新增防災物資</h3>
       <input type="hidden" id="edit-item-row">
+      <input type="hidden" id="edit-item-id">
+      <input type="hidden" id="edit-item-name">
       <div class="form-group">
         <label class="form-label">物資名稱</label>
         <input type="text" id="modal-item-name" class="form-input" placeholder="例如：高能量口糧">
@@ -2264,6 +2266,8 @@
     <div class="modal-card">
       <h3 class="modal-title" id="ocr-modal-title">📷 物資規格與效期辨識確認</h3>
       <input type="hidden" id="ocr-row-idx" value="">
+      <input type="hidden" id="ocr-item-id" value="">
+      <input type="hidden" id="ocr-item-name" value="">
       <div id="ocr-status-msg" style="font-size:0.78rem; color:var(--primary-dark); background:#F5F9F6; padding:7px 10px; border-radius:8px; margin-bottom:10px;">
         可點擊下方按鈕拍攝包裝上的「有效日期／容量熱量」，或直接點選常用規格：
       </div>
@@ -2829,13 +2833,41 @@
     }
 
     // 後端確定不會寫入的物資更新（重送也一樣），不放進離線佇列（② #31，後端 PR 13）
-    const SYNC_SKIP_CODES = ['INVALID_ROW', 'UNKNOWN_MEMBER'];
+    // ITEM_NOT_FOUND、ITEM_MOVED：物資穩定 ID（② #26，後端 PR 28）
+    const SYNC_SKIP_CODES = ['INVALID_ROW', 'UNKNOWN_MEMBER', 'ITEM_NOT_FOUND', 'ITEM_MOVED'];
+    const ITEM_CHANGED_TEXT = '這項物資的資料已經變動（可能被家人改過或刪除）。已重新同步，';
     function syncSkipMessage(code, itemName, charName) {
       const name = itemName || '這項物資';
       if (code === 'UNKNOWN_MEMBER') {
         return `⚠️「${name}」這次的修改沒有存到雲端：營地的成員名單裡找不到「${charName || ''}」。已重新同步，請到營地確認成員後再改一次。`;
       }
-      return `⚠️「${name}」這次的修改沒有存到雲端：這項物資的資料已經變動（可能被家人改過或刪除）。已重新同步，請確認這項物資還在，再改一次。`;
+      return `⚠️「${name}」這次的修改沒有存到雲端：${ITEM_CHANGED_TEXT}請確認這項物資還在，再改一次。`;
+    }
+    // 改名、刪除沒完成（用字：使用者顧問 2026-11-18）
+    function editSkipMessage(oldName, newName) {
+      if (newName && newName !== oldName) return `⚠️「${oldName}」改名為「${newName}」沒有完成：${ITEM_CHANGED_TEXT}請確認這項物資還在，再改一次。`;
+      return syncSkipMessage('ITEM_NOT_FOUND', oldName);
+    }
+    function deleteSkipMessage(name) {
+      return `⚠️「${name}」這次的刪除沒有完成：${ITEM_CHANGED_TEXT}請確認這項物資還在；還在的話再刪一次，不見了就不用再做。`;
+    }
+    // 送到雲端時附上 itemId（有才送）與 itemName，讓後端改到「我看到的那一項」
+    function itemRefFields(item) {
+      const f = { itemName: (item && item.name) || '' };
+      if (item && item.id) f.itemId = item.id;
+      return f;
+    }
+    // 彈窗開著時 globalData 可能被補傳整份換掉、列號位移（工程顧問）：
+    // 用開彈窗那一刻記下的 id 找；沒有 id 時用列號並核對名稱，對不上就當作找不到
+    function findItemByRef(rowIdx, id, name) {
+      if (!globalData || !globalData.items) return null;
+      if (id) return globalData.items.find(i => i.id === id) || null;
+      const it = globalData.items.find(i => i.row === rowIdx);
+      return it && it.name === name ? it : null;
+    }
+    function notifyItemGone(msg) {
+      showToast(msg, 'warn', { sticky: true });
+      syncWithServer(false);
     }
     function syncSkippedBatchMessage(skipped, total, nameOfRow) {
       const n = skipped.length;
@@ -2847,7 +2879,8 @@
 
     function enqueueAction(payload) {
       if (payload.action === 'updateItem') {
-        offlineQueue = offlineQueue.filter(q => !(q.action === 'updateItem' && q.row === payload.row && q.charName === payload.charName));
+        const key = q => (q.itemId ? 'id:' + q.itemId : 'row:' + q.row) + '|' + q.charName;
+        offlineQueue = offlineQueue.filter(q => !(q.action === 'updateItem' && key(q) === key(payload)));
       }
       offlineQueue.push(payload);
       localStorage.setItem(STORAGE_KEYS.QUEUE, JSON.stringify(offlineQueue));
@@ -3920,8 +3953,17 @@
     }
 
 
+    // 列表輸入框在 change 時才送出；重畫時正在輸入的框被移除也會觸發 change，
+    // 這時 globalData 可能已被補傳換掉、列號位移。每次重畫記下「列號 → ID、名稱」，輸入框帶著當時的編號（工程顧問 PR #29）
+    let invRenderGen = 0;
+    const invRenderSnap = {};
     function renderInventory() {
       const container = document.getElementById('inventory');
+      if (globalData && globalData.items) {
+        invRenderGen++;
+        invRenderSnap[invRenderGen] = new Map(globalData.items.map(i => [i.row, { id: i.id || '', name: i.name }]));
+        delete invRenderSnap[invRenderGen - 5];
+      }
       container.innerHTML = '';
       if (!globalData) {
         container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--text-muted);">尚未載入物資資料，請至下方「🏕️ 營地」設定 API 網址</div>';
@@ -4038,12 +4080,12 @@
               <div class="util-bar">
                 <div class="stepper">
                   <button class="step-btn" onclick="stepQty(${item.row}, '${currentChar}', -1)">−</button>
-                  <input type="text" class="qty-input" placeholder="數量" value="${charData.qty}" onchange="updateField(${item.row}, '${currentChar}', 'qty', this.value)">
+                  <input type="text" class="qty-input" placeholder="數量" value="${charData.qty}" onchange="updateField(${item.row}, '${currentChar}', 'qty', this.value, ${invRenderGen})">
                   <button class="step-btn" onclick="stepQty(${item.row}, '${currentChar}', 1)">+</button>
                 </div>
-                <input type="date" class="util-input exp-date-input ${expClass}" value="${charData.exp}" onchange="updateField(${item.row}, '${currentChar}', 'exp', this.value)">
+                <input type="date" class="util-input exp-date-input ${expClass}" value="${charData.exp}" onchange="updateField(${item.row}, '${currentChar}', 'exp', this.value, ${invRenderGen})">
                 <button class="btn-cam-ocr" onclick="openOcrModal(${item.row})" title="拍照辨識有效期限與容量規格，或點選存放位置">📷 拍標籤/規格</button>
-                <input type="text" class="util-input note-input" placeholder="存放位置或備註..." value="${charData.note}" onchange="updateField(${item.row}, '${currentChar}', 'note', this.value)">
+                <input type="text" class="util-input note-input" placeholder="存放位置或備註..." value="${charData.note}" onchange="updateField(${item.row}, '${currentChar}', 'note', this.value, ${invRenderGen})">
                 <div class="item-updated-meta">🕒 最後更新：${charData.updatedAt || '尚未記錄'}</div>
               </div>
             `;
@@ -4074,13 +4116,16 @@
     }
 
 
-    async function commitItemUpdate(rowIdx, charName) {
+    // itemObj：從彈窗送出時傳入開彈窗時那一項；點一下立即送出的地方用列號當下查
+    async function commitItemUpdate(rowIdx, charName, itemObj) {
       localStorage.setItem(STORAGE_KEYS.DATA, JSON.stringify(globalData));
-      const charData = globalData.items.find(i => i.row === rowIdx).status[charName];
+      const theItem = itemObj || globalData.items.find(i => i.row === rowIdx);
+      rowIdx = theItem.row;
+      const charData = theItem.status[charName];
       const nowD = new Date();
       charData.updatedAt = nowD.getFullYear() + '-' + String(nowD.getMonth()+1).padStart(2,'0') + '-' + String(nowD.getDate()).padStart(2,'0') + ' ' + String(nowD.getHours()).padStart(2,'0') + ':' + String(nowD.getMinutes()).padStart(2,'0');
       const payload = {
-        action: 'updateItem', row: rowIdx, charName,
+        action: 'updateItem', row: rowIdx, charName, ...itemRefFields(theItem),
         state: charData.state, expDate: charData.exp, qty: charData.qty, textNote: charData.note, spec: charData.spec || ''
       };
 
@@ -4092,9 +4137,7 @@
         showToast('✅ 已儲存', 'success');
       } catch (err) {
         if (SYNC_SKIP_CODES.includes(err.code)) {
-          const item = globalData.items.find(i => i.row === rowIdx);
-          showToast(syncSkipMessage(err.code, item && item.name, charName), 'warn', { sticky: true });
-          syncWithServer(false); // 畫面對齊雲端，不重送
+          notifyItemGone(syncSkipMessage(err.code, theItem.name, charName)); // 畫面對齊雲端，不重送
           return;
         }
         enqueueAction(payload);
@@ -4119,11 +4162,16 @@
     }
 
 
-    function updateField(rowIdx, charName, field, value) {
-      const charData = globalData.items.find(i => i.row === rowIdx).status[charName];
+    function updateField(rowIdx, charName, field, value, gen) {
+      // 有編號：只信那次重畫的快照，快照已清掉或查不到就當作找不到（不退回列號）；沒帶編號的舊呼叫才用列號
+      const ref = gen ? (invRenderSnap[gen] && invRenderSnap[gen].get(rowIdx)) || null : null;
+      const item = gen ? (ref ? findItemByRef(rowIdx, ref.id, ref.name) : null) : globalData.items.find(i => i.row === rowIdx);
+      if (!item || !item.status[charName]) { notifyItemGone(syncSkipMessage('ITEM_NOT_FOUND', ref && ref.name, charName)); return; }
+      rowIdx = item.row;
+      const charData = item.status[charName];
       charData[field] = value;
       if (field === 'qty' && value.trim() !== '' && charData.state !== 'ready') charData.state = 'ready';
-      renderParty(); renderInventory(); commitItemUpdate(rowIdx, charName);
+      renderParty(); renderInventory(); commitItemUpdate(rowIdx, charName, item);
     }
 
 
@@ -4149,6 +4197,8 @@
       populateCategoryDatalist();
       document.getElementById('item-modal-title').innerText = '➕ 新增防災物資';
       document.getElementById('edit-item-row').value = '';
+      document.getElementById('edit-item-id').value = '';
+      document.getElementById('edit-item-name').value = '';
       document.getElementById('modal-item-name').value = '';
       document.getElementById('modal-item-cat').value = '';
       document.getElementById('modal-chars-group').style.display = 'block';
@@ -4169,6 +4219,8 @@
       populateCategoryDatalist();
       document.getElementById('item-modal-title').innerText = '✏️ 編輯物資項目';
       document.getElementById('edit-item-row').value = rowIdx;
+      document.getElementById('edit-item-id').value = item.id || '';
+      document.getElementById('edit-item-name').value = item.name;
       document.getElementById('modal-item-name').value = item.name;
       document.getElementById('modal-item-cat').value = item.category;
       document.getElementById('modal-chars-group').style.display = 'none';
@@ -4178,14 +4230,20 @@
     }
 
 
+    function getEditModalItem() {
+      const oldName = document.getElementById('edit-item-name').value;
+      const item = findItemByRef(Number(document.getElementById('edit-item-row').value), document.getElementById('edit-item-id').value, oldName);
+      return { item, oldName };
+    }
+
     function removeFromCurrentChar() {
-      const rowIdx = Number(document.getElementById('edit-item-row').value);
-      const item = globalData.items.find(i => i.row === rowIdx);
-      if (!item || !currentChar) return;
+      const { item, oldName } = getEditModalItem();
+      if (!currentChar) return;
+      if (!item) { closeModal('item-modal'); notifyItemGone(syncSkipMessage('ITEM_NOT_FOUND', oldName)); return; }
       if (!confirm(`確定要將【${item.name}】移出【${currentChar}】的背包嗎？`)) return;
       closeModal('item-modal');
       item.status[currentChar].state = 'na';
-      renderParty(); renderInventory(); commitItemUpdate(rowIdx, currentChar);
+      renderParty(); renderInventory(); commitItemUpdate(item.row, currentChar, item);
     }
 
 
@@ -4224,36 +4282,44 @@
           showToast('✅ 已新增物資：' + name, 'success');
         } catch (err) { showToast('❌ 新增失敗：' + err.message, 'error'); }
       } else {
-        const rowIdx = Number(rowStr);
         if (!navigator.onLine) { showToast('🟠 編輯物資需於連線狀態執行', 'warn'); return; }
+        const { item, oldName } = getEditModalItem();
         closeModal('item-modal');
+        if (!item) { notifyItemGone(editSkipMessage(oldName, name)); return; }
         try {
           showToast('📡 正在更新物資資訊...');
-          const res = await postToGas({ action: 'editItem', row: rowIdx, newName: name, newCategory: cat });
+          // itemName 送改名前的舊名，後端用舊名比對（工程顧問）
+          const res = await postToGas({ action: 'editItem', row: item.row, ...itemRefFields(item), newName: name, newCategory: cat });
           globalData = res.inventory;
           localStorage.setItem(STORAGE_KEYS.DATA, JSON.stringify(globalData));
           renderParty(); renderInventory();
           showToast('✅ 已更新物資', 'success');
-        } catch (err) { showToast('❌ 更新失敗：' + err.message, 'error'); }
+        } catch (err) {
+          if (SYNC_SKIP_CODES.includes(err.code)) { notifyItemGone(editSkipMessage(oldName, name)); return; }
+          showToast('❌ 更新失敗：' + err.message, 'error');
+        }
       }
     }
 
 
     async function confirmDeleteItem() {
-      const rowIdx = Number(document.getElementById('edit-item-row').value);
-      const item = globalData.items.find(i => i.row === rowIdx);
-      if (!item) return;
+      const { item, oldName } = getEditModalItem();
       if (!navigator.onLine) { showToast('🟠 刪除物資需於連線狀態執行', 'warn'); return; }
+      if (!item) { closeModal('item-modal'); notifyItemGone(deleteSkipMessage(oldName)); return; }
       if (!confirm(`確定要從全營地永久刪除【${item.name}】嗎？`)) return;
       closeModal('item-modal');
       try {
         showToast('🗑️ 正在永久刪除...');
-        const res = await postToGas({ action: 'deleteItem', row: rowIdx });
+        const res = await postToGas({ action: 'deleteItem', row: item.row, ...itemRefFields(item) });
         globalData = res.inventory;
         localStorage.setItem(STORAGE_KEYS.DATA, JSON.stringify(globalData));
         renderParty(); renderInventory();
         showToast('✅ 已永久刪除物資', 'success');
-      } catch (err) { showToast('❌ 刪除失敗：' + err.message, 'error'); }
+      } catch (err) {
+        // 失敗時不用回傳的 inventory 覆蓋，一律提示加重新同步（工程顧問）
+        if (SYNC_SKIP_CODES.includes(err.code)) { notifyItemGone(deleteSkipMessage(item.name)); return; }
+        showToast('❌ 刪除失敗：' + err.message, 'error');
+      }
     }
 
 
@@ -5866,6 +5932,8 @@
       if (!item || !currentChar) return;
       const st = item.status[currentChar] || {};
       document.getElementById('ocr-row-idx').value = rowIdx;
+      document.getElementById('ocr-item-id').value = item.id || '';
+      document.getElementById('ocr-item-name').value = item.name;
       document.getElementById('ocr-modal-title').innerText = `📷 【${item.name}】規格與標籤辨識`;
       document.getElementById('ocr-status-msg').innerText = '可拍包裝標籤由 AI 自動判讀效期與容量，或直接手動點選下方規格與存放位置：';
       const resolved = resolveItemSpec(st.spec, item);
@@ -5911,9 +5979,7 @@
             return;
           }
           try {
-            const rowIdx = Number(document.getElementById('ocr-row-idx').value);
-            const item = globalData.items.find(i => i.row === rowIdx);
-            const res = await postToGas({ action: 'recognizeLabel', imageBase64: dataUrl, itemName: item ? item.name : '' });
+            const res = await postToGas({ action: 'recognizeLabel', imageBase64: dataUrl, itemName: document.getElementById('ocr-item-name').value });
             if (res.ok && res.recognized) {
               const r = res.recognized;
               if (r.expDate && /^\d{4}-\d{2}-\d{2}$/.test(r.expDate)) {
@@ -5943,9 +6009,10 @@
 
 
     function applyOcrModalToItem() {
-      const rowIdx = Number(document.getElementById('ocr-row-idx').value);
-      const item = globalData.items.find(i => i.row === rowIdx);
-      if (!item || !currentChar) return;
+      const ocrName = document.getElementById('ocr-item-name').value;
+      const item = findItemByRef(Number(document.getElementById('ocr-row-idx').value), document.getElementById('ocr-item-id').value, ocrName);
+      if (!currentChar) return;
+      if (!item) { closeModal('ocr-modal'); notifyItemGone(syncSkipMessage('ITEM_NOT_FOUND', ocrName)); return; }
       const st = item.status[currentChar];
       st.spec = document.getElementById('ocr-spec-select').value;
       st.qty = document.getElementById('ocr-qty-input').value.trim();
@@ -5953,7 +6020,7 @@
       st.note = document.getElementById('ocr-note-input').value.trim();
       if (st.qty && st.state !== 'ready') st.state = 'ready';
       closeModal('ocr-modal');
-      renderParty(); renderInventory(); commitItemUpdate(rowIdx, currentChar);
+      renderParty(); renderInventory(); commitItemUpdate(item.row, currentChar, item);
       showToast('✅ 已更新物資規格、效期與可持續天數！', 'success');
     }
 

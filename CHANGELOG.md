@@ -11,7 +11,7 @@
 * **預先快取繞過 HTTP 快取**：新版 Service Worker 安裝時，同網站的檔案用 `cache: 'reload'` 重新抓，避免 GitHub Pages 約 10 分鐘的快取讓新 SW 裝進舊的 `index.html`，造成新舊版來回切換（工程顧問）。
 * **Service Worker 快取名稱**：`disaster-app-v2.9.9`（由 `APP_VERSION` 帶入）。
 
-## [gas] - 2026-11-18（一鍵年度快照 — 待擁有者部署 GAS）
+## [gas] - 2026-11-18（一鍵年度快照・後端 v1.4 — 已上線：2026-11-19 14:45 部署，2026-11-20 12:08 合併）
 
 * **年度快照（進度表 ② #15）**：新增 `createYearSnapshot`（POST、驗證通行碼、在鎖內）。把 `INVENTORY_SHEET_NAME` 指定的物資頁複製成「YYYY 盤點」（台北時間的年份），放在最後一頁，設保護只有擁有者可修改，保護說明記下建立時間。沒設定 `INVENTORY_SHEET_NAME` 回 `SHEET_NAME_NOT_SET`；同一年已經有了回 `SNAPSHOT_EXISTS`，不覆蓋。改名或設保護失敗時刪掉這次的複本，回 `SNAPSHOT_FAILED`；連刪除也失敗時，回傳殘留分頁名稱請擁有者手動刪。
 * **快照清單**：`getAll` 與 `batchSync` 多回 `snapshots`（名稱為「YYYY 盤點」的分頁，含 App 建立時的 `createdAt`，手動建立的為空字串）。
@@ -25,7 +25,7 @@
 * **離線佇列去重**：鍵改成 `itemId` 加成員，沒有 ID 時才用列號。
 * **Service Worker 升版**：`sw.js` 快取版本升級為 `disaster-app-v2.9.8`。
 
-## [gas] - 2026-11-18（物資改用穩定 ID — 待擁有者部署 GAS）
+## [gas] - 2026-11-18（物資改用穩定 ID・後端 v1.3 — 已上線：2026-11-19 13:58 部署，14:02 合併）
 
 * **物資穩定 ID（進度表 ② #26，審查 C1、V3）**：每項物資在名稱格（B 欄）的備註多一行 `ID:`（12 碼英數字），試算表版面不變，備註原有文字保留。`getInventoryData` 每項多回 `id`，`row` 照舊回傳。
 * **改對那一項**：`updateItem`、`editItem`、`deleteItem` 改收選填的 `itemId`、`itemName`。有 ID 就用 ID 找列，不管列號；物資已被刪除回 `ITEM_NOT_FOUND`，ID 重複回 `ITEM_MOVED`，都不寫入。只有名稱時先比對列號那一列，不同就全表找同名，剛好一筆才寫。兩者都沒有時行為與以前相同，現行前端不受影響；要等前端改送 ID 才有防護。

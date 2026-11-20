@@ -851,6 +851,10 @@
     .em-aed-dir { flex: 1; min-width: 0; font-size: 20px; font-weight: 800; line-height: 1.3; color: var(--danger); font-variant-numeric: tabular-nums; }
     .em-aed-row2 .em-nav-btn { flex-shrink: 0; }
     body.emergency-mode .em-aed-dir { color: var(--em-text); }
+    /* 緊急模式地圖頁的避難點清單：原本白字配和紙白底看不見（美術顧問 P1，2026-11-20） */
+    body.emergency-mode .loc-list-head, body.emergency-mode .loc-list-head #tile-cache-count { color: var(--em-text) !important; font-size: 16px !important; }
+    body.emergency-mode #locations-list .loc-card { background: var(--em-card); border: 2px solid var(--em-line); color: var(--em-text); }
+    body.emergency-mode #locations-list .loc-card > div:first-child > div { color: var(--em-text) !important; font-size: 16px !important; }
     .em-nowrap { white-space: nowrap; }
 
 
@@ -1253,7 +1257,7 @@
         <button class="map-btn" onclick="locateMe()">📍 更新我的 GPS 方位</button>
         <button class="map-btn outline" style="border-color:var(--danger); color:var(--danger);" onclick="loadNearbyAeds(true)">❤️ 載入周邊 AED</button>
       </div>
-      <div style="margin-top:10px; font-weight:800; color:var(--primary-dark); display:flex; justify-content:space-between; align-items:center;">
+      <div class="loc-list-head" style="margin-top:10px; font-weight:800; color:var(--primary-dark); display:flex; justify-content:space-between; align-items:center;">
         <span>📌 避難處所與集合點（點擊規劃步行路線）</span>
         <span id="tile-cache-count" style="font-size:12px; color:var(--text-muted);">計算快取中...</span>
       </div>
@@ -2494,7 +2498,7 @@
 
 
     // 版本號只寫這一處（② #29）：升版只改 APP_VERSION，畫面標籤、網頁標題與 Service Worker 快取名稱都從這裡來
-    const APP_VERSION = 'v2.9.11';
+    const APP_VERSION = 'v2.9.14';
     (function showAppVersion() {
       const pill = document.getElementById('app-version-pill');
       if (pill) pill.textContent = APP_VERSION;

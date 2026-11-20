@@ -1,4 +1,9 @@
-const APP_CACHE = 'disaster-app-v2.9.9';
+// 版本號由 index.html 的 APP_VERSION 帶進來（sw.js?v=…），這裡不再寫死（② #29）
+const APP_VERSION = (() => {
+  const v = new URL(self.location.href).searchParams.get('v') || '';
+  return /^v[0-9A-Za-z.\-]{1,20}$/.test(v) ? v : 'dev';
+})();
+const APP_CACHE = 'disaster-app-' + APP_VERSION;
 const TILE_CACHE = 'disaster-map-tiles-v1';
 
 
@@ -16,7 +21,10 @@ const APP_ASSETS = [
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(APP_CACHE).then((cache) => cache.addAll(APP_ASSETS))
+    caches.open(APP_CACHE).then((cache) => cache.addAll(
+      // 同網站檔案繞過瀏覽器 HTTP 快取，避免裝進舊的 index.html（工程顧問）
+      APP_ASSETS.map((url) => url.startsWith('http') ? url : new Request(url, { cache: 'reload' }))
+    ))
   );
   self.skipWaiting();
 });

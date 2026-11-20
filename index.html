@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#52796F">
-  <title>🏕️ 森林露營小隊・防災生存整備系統 v2.8</title>
+  <title>🏕️ 森林露營小隊・防災生存整備系統</title>
   <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
   <link rel="apple-touch-icon" href="./icon-192.png">
   <link rel="manifest" href="./manifest.json">
@@ -633,6 +633,7 @@
     .brand-title-row { display: flex; align-items: center; gap: 8px; }
     .top-bar h1 { font-size: 1.12rem; color: var(--primary-dark); letter-spacing: -0.01em; }
     .ver-pill { background: var(--primary-light); color: var(--primary-dark); font-size: 0.68rem; font-weight: 800; padding: 2px 7px; border-radius: 99px; }
+    .ver-pill:empty { display: none; }
     .status-inline { display: flex; align-items: center; gap: 8px; font-size: 0.73rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
     .status-strip { display: none !important; }
     .icon-btn {
@@ -1111,7 +1112,7 @@
     <div class="brand-col">
       <div class="brand-title-row">
         <h1>🏕️ 森林露營小隊</h1>
-        <span class="ver-pill">v2.8</span>
+        <span class="ver-pill" id="app-version-pill"></span>
       </div>
       <div class="status-inline">
         <span id="net-status" class="status-badge online">🟢 連線檢查中...</span>
@@ -2491,8 +2492,16 @@
     let aedsData = JSON.parse(localStorage.getItem('camp_aeds_cache_v20') || '[]');
 
 
+    // 版本號只寫這一處（② #29）：升版只改 APP_VERSION，畫面標籤、網頁標題與 Service Worker 快取名稱都從這裡來
+    const APP_VERSION = 'v2.9.10';
+    (function showAppVersion() {
+      const pill = document.getElementById('app-version-pill');
+      if (pill) pill.textContent = APP_VERSION;
+      document.title = document.title + ' ' + APP_VERSION;
+    })();
+
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js').catch(() => {});
+      navigator.serviceWorker.register('./sw.js?v=' + encodeURIComponent(APP_VERSION)).catch(() => {});
     }
 
 

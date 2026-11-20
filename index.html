@@ -284,9 +284,10 @@
     .watch-line-clear { color: var(--primary); }
     .watch-line-alerts { color: var(--danger); }
     .watch-line-unknown { color: var(--text); }
-    .cbs-badge {
-      display: inline-block; background: var(--danger); color: #FFF;
-      font-size: 0.75rem; font-weight: bold; padding: 1px 6px; border-radius: 6px; margin-right: 4px;
+    /* 分類標籤：中性樣式，只說「是哪一類」；紅色只代表「這是示警」（美術、使用者顧問，工項 20） */
+    .alert-type-badge {
+      display: inline-block; background: var(--bg); color: var(--text); border: 1px solid var(--border);
+      font-size: 12px; font-weight: bold; padding: 1px 8px; border-radius: 999px; margin-right: 4px;
     }
     .city-chips { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-bottom: 8px; }
     .city-chip {
@@ -1334,7 +1335,7 @@
 
       <div class="section-card">
         <div class="section-title" onclick="toggleInfoSection('ncdr-sec')">
-          <span>🚨 NCDR 示警與細胞告警（近 12h）</span>
+          <span>🚨 災害示警（近 12 小時）</span>
           <span id="ncdr-sec-arrow" style="font-size:0.8rem; color:var(--text-muted);">▼</span>
         </div>
         <div class="section-body" id="ncdr-sec">
@@ -2493,7 +2494,7 @@
 
 
     // 版本號只寫這一處（② #29）：升版只改 APP_VERSION，畫面標籤、網頁標題與 Service Worker 快取名稱都從這裡來
-    const APP_VERSION = 'v2.9.10';
+    const APP_VERSION = 'v2.9.11';
     (function showAppVersion() {
       const pill = document.getElementById('app-version-pill');
       if (pill) pill.textContent = APP_VERSION;
@@ -5379,7 +5380,11 @@
       if (taipeiMatches.length > 0) {
         const top = taipeiMatches[0];
         ticker.style.display = 'flex';
-        titleEl.innerText = `${top.isCbs ? '📲 [災防告警] ' : '🚨 '}臺北市・${top.title}（近12h共 ${taipeiMatches.length} 則）`;
+        const topType = getAlertTypeLabel(top);
+        // 標題已經寫到縣市或類別時不再重複加前綴，避免 360px 折成兩行（使用者、美術顧問）
+        const cityPrefix = String(top.title).includes('臺北市') ? '' : '臺北市・';
+        const typePrefix = topType && !String(top.title).includes(topType) ? '【' + topType + '】' : '';
+        titleEl.innerText = `🚨 ${cityPrefix}${typePrefix}${top.title}（近 12 小時共 ${taipeiMatches.length} 則）`;
         sumEl.innerText = top.summary.slice(0, 85) + (top.summary.length > 85 ? '...' : '');
       } else {
         ticker.style.display = 'none';
@@ -5497,9 +5502,10 @@
         html += `<div><span class="alert-pill alert-pill-alerts">有示警 ${status.matches.length} 則</span></div>`;
         html += status.matches.slice(0, 10).map(a => {
           const summary = String(a.summary || '');
+          const typeLabel = getAlertTypeLabel(a);
           return `
         <div class="alert-item">
-          <div class="alert-item-title">${a.isCbs ? '<span class="cbs-badge">📲 災防告警</span>' : '🚨 '}${escapeHtml(a.title)}</div>
+          <div class="alert-item-title">🚨 ${typeLabel ? `<span class="alert-type-badge">${escapeHtml(typeLabel)}</span>` : ''}${escapeHtml(a.title)}</div>
           <div class="alert-item-summary">${escapeHtml(summary.slice(0, 120))}${summary.length > 120 ? '...' : ''}</div>
           <div class="alert-item-meta">${escapeHtml(a.author)}・${escapeHtml(String(a.updated || '').slice(0, 16).replace('T', ' '))}</div>
         </div>`;
@@ -5527,6 +5533,17 @@
         </div>`;
       }
       box.innerHTML = html + `<div class="alert-source">${ALERT_SOURCE_HTML}</div>`;
+    }
+
+    // 依示警內容標出災害類別（例如「颱風」），不寫「災防告警」：App 無法得知手機是否真的收到災防告警（災防顧問，工項 20）
+    // 類別與先後順序由災防顧問定（依需要多快行動排列）；前端不再讀後端的 isCbs，所以不必和 cbsRegex 相同
+    // 「豪雨」也涵蓋大豪雨、超大豪雨
+    const ALERT_TYPE_WORDS = ['海嘯', '疏散避難', '防空', '地震', '土石流', '大規模崩塌', '堰塞湖', '水庫放流', '淹水', '火災', '火山', '大雷雨', '豪雨', '大雨', '颱風', '強風', '低溫', '高溫'];
+    function getAlertTypeLabel(a) {
+      // 先看標題，標題找不到才看摘要，避免摘要順帶提到的詞標錯類別（工程顧問）
+      const title = String((a && a.title) || '');
+      const summary = String((a && a.summary) || '');
+      return ALERT_TYPE_WORDS.find(w => title.includes(w)) || ALERT_TYPE_WORDS.find(w => summary.includes(w)) || '';
     }
 
     // 整包 0 筆，或每一筆都缺標題或時間，視為資料來源異常（災防顧問 Q2）

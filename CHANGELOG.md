@@ -4,6 +4,13 @@
 本文件記錄「防災生存整備系統（森林露營小隊版）」各版本之架構演進、功能新增、問題修復與部署軌跡。
 
 
+## [v2.9.9] - 2026-11-19（畫面上的版本號改成實際版本，版本號只寫一處 — 開發完成，待審查）
+
+* **版本號對不上（進度表 ② #29，Simon 回報）**：右上角版本膠囊與網頁標題從 v2.8 起沒有跟著升版，一直顯示「v2.8」。現在版本號只寫在 `index.html` 的 `APP_VERSION` 一處，開頁時寫進版本膠囊與網頁標題（用 `textContent`）。
+* **升版只改 `index.html` 的 `APP_VERSION`**：註冊 Service Worker 改為 `sw.js?v=版本`，`sw.js` 從網址讀版本當快取名稱（只接受 `v` 開頭的英數字，否則用 `dev`），不再寫死。往後 `sw.js` 只有邏輯要改時才動；E-11 核對改看 `APP_VERSION`（工程顧問）。
+* **預先快取繞過 HTTP 快取**：新版 Service Worker 安裝時，同網站的檔案用 `cache: 'reload'` 重新抓，避免 GitHub Pages 約 10 分鐘的快取讓新 SW 裝進舊的 `index.html`，造成新舊版來回切換（工程顧問）。
+* **Service Worker 快取名稱**：`disaster-app-v2.9.9`（由 `APP_VERSION` 帶入）。
+
 ## [gas] - 2026-11-18（一鍵年度快照 — 待擁有者部署 GAS）
 
 * **年度快照（進度表 ② #15）**：新增 `createYearSnapshot`（POST、驗證通行碼、在鎖內）。把 `INVENTORY_SHEET_NAME` 指定的物資頁複製成「YYYY 盤點」（台北時間的年份），放在最後一頁，設保護只有擁有者可修改，保護說明記下建立時間。沒設定 `INVENTORY_SHEET_NAME` 回 `SHEET_NAME_NOT_SET`；同一年已經有了回 `SNAPSHOT_EXISTS`，不覆蓋。改名或設保護失敗時刪掉這次的複本，回 `SNAPSHOT_FAILED`；連刪除也失敗時，回傳殘留分頁名稱請擁有者手動刪。

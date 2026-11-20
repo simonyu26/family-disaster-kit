@@ -8,7 +8,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
   <link rel="apple-touch-icon" href="./icon-192.png">
   <link rel="manifest" href="./manifest.json">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="./vendor/leaflet-1.9.4/leaflet.css" />
   <style>
     :root {
       --bg: #F4EAD4;
@@ -209,6 +209,8 @@
 
     /* 地圖面板與搜尋／路線 */
     #map { width: 100%; height: 310px; border-radius: 14px; border: 2px solid #D1BF9A; z-index: 1; background: #E5E0D5; }
+    .map-unavailable { display: flex; align-items: center; justify-content: center; height: 100%; padding: 16px; text-align: center; color: var(--text); font-size: 14px; line-height: 1.6; }
+    body.emergency-mode .map-unavailable { font-size: 16px; }
     .map-search-bar { display: flex; gap: 6px; margin-bottom: 8px; }
     .map-search-results {
       background: var(--card-bg); border: 1px solid #D1BF9A; border-radius: 10px;
@@ -2385,7 +2387,7 @@
   </div>
 
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="./vendor/leaflet-1.9.4/leaflet.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script>
     const DEFAULT_GAS_URL = '';
@@ -2494,7 +2496,7 @@
 
 
     // 版本號只寫這一處（② #29）：升版只改 APP_VERSION，畫面標籤、網頁標題與 Service Worker 快取名稱都從這裡來
-    const APP_VERSION = 'v2.9.11';
+    const APP_VERSION = 'v2.9.13';
     (function showAppVersion() {
       const pill = document.getElementById('app-version-pill');
       if (pill) pill.textContent = APP_VERSION;
@@ -4698,8 +4700,23 @@
 
 
     // ================= 離線地圖 + 搜尋 + 雙模路線規劃 =================
+    // 地圖程式庫沒載入時，地圖框內顯示白話，清單照常可用（② #28，工程顧問、D-05、U-03）
+    const MAP_UNAVAILABLE_TEXT = '地圖元件沒有載入。請連上網路後重新開啟 App；下方的 AED 與避難點清單仍可使用。';
+    function showMapUnavailable() {
+      const el = document.getElementById('map');
+      if (!el || el.dataset.unavailable === '1') return;
+      el.dataset.unavailable = '1';
+      el.textContent = '';
+      const msg = document.createElement('div');
+      msg.className = 'map-unavailable';
+      msg.textContent = MAP_UNAVAILABLE_TEXT;
+      el.appendChild(msg);
+    }
+
     function initMapIfNeeded() {
-      if (!mapInitialized) {
+      if (typeof L === 'undefined') {
+        showMapUnavailable();
+      } else if (!mapInitialized) {
         mapInitialized = true;
         const defaultCenter = locationsData.length > 0 ? [locationsData[0].lat, locationsData[0].lng] : [25.0330, 121.5430];
         mapInstance = L.map('map').setView(defaultCenter, 15);
@@ -4715,7 +4732,7 @@
           }
         });
       }
-      setTimeout(() => { mapInstance.invalidateSize(); }, 150);
+      if (mapInstance) setTimeout(() => { mapInstance.invalidateSize(); }, 150);
       renderMapLocations();
       renderSosInlineAeds(); renderAedLocations(); // 緊急頁清單先畫，地圖程式庫沒載入也看得到
       updateTileCacheCount();
@@ -4793,7 +4810,7 @@
       }
 
 
-      const aedIcon = L.divIcon({
+      const aedIcon = (typeof L === 'undefined') ? null : L.divIcon({
         className: '',
         html: '<div class="aed-pin">⚡</div>',
         iconSize: [26, 26],

@@ -4,6 +4,15 @@
 本文件記錄「防災生存整備系統（森林露營小隊版）」各版本之架構演進、功能新增、問題修復與部署軌跡。
 
 
+## [v2.9.13] - 2026-11-20（地圖程式庫改由本站提供，離線也能開地圖 — 開發完成，待審查）
+
+* **自行託管 Leaflet 1.9.4（② #28，S-07）**：`leaflet.js`、`leaflet.css` 與標記圖示放到 `vendor/leaflet-1.9.4/`（官方目錄結構，附 LICENSE 與雜湊說明），`index.html` 不再從 unpkg 載入。
+* **雜湊與官方 SRI 相同**：leaflet.js `sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=`、leaflet.css `sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=`。
+* **Service Worker 預存**：換成本站的 leaflet.js、leaflet.css，加上預設標記的三張圖；跨網域只剩 qrcodejs（另開一項處理）。
+* **地圖程式庫沒載入時**：地圖框改顯示「地圖元件沒有載入。請連上網路後重新開啟 App；下方的 AED 與避難點清單仍可使用。」，AED 與點位清單照常顯示，不再丟錯（D-05、U-03）。
+* 版本 v2.9.13。
+
+
 ## [docs] - 2026-11-20（原則 v1.7：避免漏排）
 
 * **起因**：工項 20（示警類別標示）樣稿 11/18 已核准、進度表排 11/20，但沒有開 PR、沒有人追，直到擁有者問起。執行長與工程顧問討論後提出，擁有者 2026-11-20 同意前四點（`proposals/prevent-missed-schedule.md`）。

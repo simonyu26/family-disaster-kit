@@ -1538,7 +1538,7 @@
                   <div id="tq-meta" style="font-size:12px;">超過 120 分鐘恐壞死，請向救護員報告時間</div>
                 </div>
                 <div style="display:flex; gap:6px;">
-                  <button id="btn-tq-toggle" class="btn btn-danger" onclick="toggleTourniquetTimer()">⏱️ 開始計時</button>
+                  <button id="btn-tq-toggle" class="btn btn-danger" onclick="toggleTourniquetTimer()">⏱️ 開始記錄綁紮時間</button>
                   <button class="btn btn-muted" onclick="resetTourniquetTimer()">🔁 重置</button>
                 </div>
               </div>
@@ -2417,6 +2417,8 @@
     let localHealthMap = JSON.parse(localStorage.getItem(STORAGE_KEYS.LOCAL_HEALTH) || '{}');
     let privacyRevealed = false;
     let tqTimer = null;
+    const TQ_META_DEFAULT = '超過 120 分鐘恐壞死，請向救護員報告時間';
+    let tqResetArmedUntil = 0; // 重置第一次按下後，5 秒內再按才清掉
     let tqStartMs = parseInt(localStorage.getItem('camp_tq_start_ms') || '0', 10) || 0;
     let sosFlashTimer = null;
 
@@ -2494,12 +2496,17 @@
 
 
     // 版本號只寫這一處（② #29）：升版只改 APP_VERSION，畫面標籤、網頁標題與 Service Worker 快取名稱都從這裡來
-    const APP_VERSION = 'v2.9.11';
+    const APP_VERSION = 'v2.9.12';
     (function showAppVersion() {
       const pill = document.getElementById('app-version-pill');
       if (pill) pill.textContent = APP_VERSION;
       document.title = document.title + ' ' + APP_VERSION;
     })();
+
+    // 重新開頁時，若止血帶正在計時就接著更新畫面（② #34）
+    if (tqStartMs) updateTourniquetUI();
+    // 手機切到背景時計時器會變慢，回到前景馬上更新（工程顧問）
+    document.addEventListener('visibilitychange', () => { if (!document.hidden && tqStartMs) updateTourniquetUI(); });
 
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('./sw.js?v=' + encodeURIComponent(APP_VERSION)).catch(() => {});
@@ -3851,38 +3858,73 @@
 
 
     // P0-3: 止血帶計時器、螢幕 SOS 閃光、離線語音朗讀
+    // 止血帶開始時刻：不是今天就加上日期（災防顧問建議）
+    function formatTqTime(ms) {
+      const d = new Date(ms);
+      const hm = d.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false });
+      return d.toDateString() === new Date().toDateString() ? hm : `${d.getMonth() + 1}/${d.getDate()} ${hm}`;
+    }
+
+    // 計時中畫面要一直更新，重新開頁也要接著跑（② #34，災防顧問 PR 19 審查第四節第 3 點）
+    function ensureTqTicking() {
+      if (tqStartMs && !tqTimer) tqTimer = setInterval(updateTourniquetUI, 15000);
+    }
+
     function updateTourniquetUI() {
       const disp = document.getElementById('tq-display');
       const btn = document.getElementById('btn-tq-toggle');
+      const meta = document.getElementById('tq-meta');
       if (!disp || !btn) return;
       if (!tqStartMs) {
         disp.innerText = '尚未開始計時';
         btn.innerText = '⏱️ 開始記錄綁紮時間';
+        btn.classList.add('btn-danger'); btn.classList.remove('btn-muted');
+        // 重置後保留原本的起始時刻，不自動消失，避免誤按重置後資訊救不回來（災防顧問必改）
+        if (meta) meta.textContent = localStorage.getItem('camp_tq_last_reset') || TQ_META_DEFAULT;
         return;
       }
-      const startTime = new Date(tqStartMs).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+      ensureTqTicking();
       const elapsedMin = Math.floor((Date.now() - tqStartMs) / 60000);
-      disp.innerText = `起始 ${startTime}（已綁紮 ${elapsedMin} 分鐘${elapsedMin >= 120 ? ' ⚠️ 已逾 2 小時！' : ''}）`;
-      btn.innerText = '⏹️ 停止／鎖定顯示';
+      disp.innerText = `起始 ${formatTqTime(tqStartMs)}（已綁紮 ${elapsedMin} 分鐘${elapsedMin >= 120 ? ' ⚠️ 已逾 2 小時！' : ''}）`;
+      btn.innerText = '⏱️ 計時中';
+      // 計時中改成不搶眼的樣式，免得焦急時一直按（使用者顧問）
+      btn.classList.add('btn-muted'); btn.classList.remove('btn-danger');
+      if (meta && !tqResetArmedUntil) meta.textContent = TQ_META_DEFAULT;
     }
 
 
     function toggleTourniquetTimer() {
       if (tqStartMs) {
-        if (tqTimer) { clearInterval(tqTimer); tqTimer = null; }
-        emNotify('⏱️ 已保留止血帶紀錄時間', 'info');
+        // 第二次按不停止計時，只提示綁紮時間；只有「重置」能清掉
+        ensureTqTicking();
+        updateTourniquetUI();
+        const elapsedMin = Math.floor((Date.now() - tqStartMs) / 60000);
+        emNotify(`⏱️ 計時還在進行：止血帶 ${formatTqTime(tqStartMs)} 綁上，已過 ${elapsedMin} 分鐘。`, 'info');
         return;
       }
       tqStartMs = Date.now();
       localStorage.setItem('camp_tq_start_ms', String(tqStartMs));
+      localStorage.removeItem('camp_tq_last_reset');
       updateTourniquetUI();
-      tqTimer = setInterval(updateTourniquetUI, 15000);
       emNotify('⏱️ 已開始記錄止血帶綁紮時間', 'error');
     }
 
 
+    // 重置要在 5 秒內按兩次才清掉，避免誤按把要交給 119 的時間清掉（使用者、災防顧問必改）
     function resetTourniquetTimer() {
+      const meta = document.getElementById('tq-meta');
+      if (tqStartMs && Date.now() > tqResetArmedUntil) {
+        tqResetArmedUntil = Date.now() + 5000;
+        if (meta) meta.textContent = `要清掉 ${formatTqTime(tqStartMs)} 的紀錄，請在 5 秒內再按一次「重置」`;
+        setTimeout(() => { if (tqResetArmedUntil && Date.now() >= tqResetArmedUntil) { tqResetArmedUntil = 0; updateTourniquetUI(); } }, 5100);
+        return;
+      }
+      tqResetArmedUntil = 0;
       if (tqTimer) { clearInterval(tqTimer); tqTimer = null; }
+      if (tqStartMs) {
+        const elapsedMin = Math.floor((Date.now() - tqStartMs) / 60000);
+        localStorage.setItem('camp_tq_last_reset', `已重置。原本綁紮起始 ${formatTqTime(tqStartMs)}（已綁 ${elapsedMin} 分鐘）`);
+      }
       tqStartMs = 0;
       localStorage.removeItem('camp_tq_start_ms');
       updateTourniquetUI();

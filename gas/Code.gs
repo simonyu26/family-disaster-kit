@@ -21,10 +21,14 @@ function openFamilySpreadsheet() {
   return SpreadsheetApp.openById(id);
 }
 
+// 後端版本號（WP-06）：每次請擁有者重貼 Code.gs 都要加一，並寫進 CHANGELOG 的 [gas] 標題
+const BACKEND_VERSION = 'v1.5';
+
 const PIN_MIN_LENGTH = 6;
-const PIN_MAX_FAILURES = 5;            // 10 分鐘內猜錯 5 次就鎖定
+const PIN_MAX_FAILURES = 10;           // 10 分鐘內猜錯 10 次就鎖定（#14：全域計數可被外人故意鎖住，放寬門檻）
 const PIN_FAILURE_WINDOW_SEC = 600;
-const PIN_LOCK_SEC = 900;              // 鎖定 15 分鐘
+const PIN_LOCK_SEC = 600;              // 鎖定 10 分鐘
+const PIN_COUNT_LOCK_WAIT_MS = 5000;   // 記錄猜錯次數時等鎖的上限
 const PIN_FAIL_COUNT_KEY = 'pinFailCount';
 const PIN_LOCKED_KEY = 'pinLocked';
 
@@ -33,8 +37,9 @@ const PIN_LOCKED_KEY = 'pinLocked';
  * - 未設定 FAMILY_PIN：一律拒絕（pinNotSet），由管理者在 GAS 指令碼屬性手動設定
  * - 猜錯次數過多：暫時鎖定（locked），鎖定期間正確通行碼也不接受
  * GAS 取不到來源 IP，因此失敗次數為全專案共用計數。
+ * alreadyLocked：呼叫端（doPost）已持有 ScriptLock 時傳 true，避免重複等鎖。
  */
-function checkAuthPin(providedPin) {
+function checkAuthPin(providedPin, alreadyLocked) {
   const savedPin = PropertiesService.getScriptProperties().getProperty('FAMILY_PIN') || '';
   if (!savedPin) return { ok: false, pinNotSet: true };
 
@@ -46,14 +51,39 @@ function checkAuthPin(providedPin) {
     return { ok: true, pinRequired: true };
   }
 
-  const fails = parseInt(cache.get(PIN_FAIL_COUNT_KEY) || '0', 10) + 1;
-  if (fails >= PIN_MAX_FAILURES) {
-    cache.put(PIN_LOCKED_KEY, '1', PIN_LOCK_SEC);
-    cache.remove(PIN_FAIL_COUNT_KEY);
-    return { ok: false, locked: true };
+  return recordPinFailure(cache, alreadyLocked)
+    ? { ok: false, locked: true }
+    : { ok: false, pinRequired: true };
+}
+
+/**
+ * 記錄一次猜錯；回傳 true 表示已達門檻（或已在鎖定中）。
+ * 讀取計數、加一、寫回要在 ScriptLock 內做，否則同時送來的多個錯誤請求會讀到同一個數字，
+ * 少算次數（#14）。doGet 沒有持鎖，這裡短暫取鎖；拿不到鎖時仍照常計數（盡力而為），不會因此放行。
+ */
+function recordPinFailure(cache, alreadyLocked) {
+  let lock = null;
+  if (!alreadyLocked) {
+    try {
+      lock = LockService.getScriptLock();
+      if (!lock.tryLock(PIN_COUNT_LOCK_WAIT_MS)) lock = null;
+    } catch (err) {
+      lock = null;
+    }
   }
-  cache.put(PIN_FAIL_COUNT_KEY, String(fails), PIN_FAILURE_WINDOW_SEC);
-  return { ok: false, pinRequired: true };
+  try {
+    if (cache.get(PIN_LOCKED_KEY)) return true;
+    const fails = parseInt(cache.get(PIN_FAIL_COUNT_KEY) || '0', 10) + 1;
+    if (fails >= PIN_MAX_FAILURES) {
+      cache.put(PIN_LOCKED_KEY, '1', PIN_LOCK_SEC);
+      cache.remove(PIN_FAIL_COUNT_KEY);
+      return true;
+    }
+    cache.put(PIN_FAIL_COUNT_KEY, String(fails), PIN_FAILURE_WINDOW_SEC);
+    return false;
+  } finally {
+    if (lock) lock.releaseLock();
+  }
 }
 
 /**
@@ -92,6 +122,7 @@ function readFamilyData(action, auth) {
     locations: getLocationsData(),
     contacts: getContactsData(),
     snapshots: getSnapshotList(),
+    backendVersion: BACKEND_VERSION,
     serverTime: new Date().toISOString()
   };
 }
@@ -139,7 +170,7 @@ function doPost(e) {
     // 更新家庭通行碼：只接受「已知舊碼換新碼」；首次設定須由管理者在 GAS 指令碼屬性手動填入，
     // 也不接受換成空值（不可經 API 解除保護）
     if (action === 'setFamilyPin') {
-      const pinAuth = checkAuthPin(payload.oldPin);
+      const pinAuth = checkAuthPin(payload.oldPin, true);
       if (!pinAuth.ok) {
         return authFailureOutput(pinAuth, '原家庭通行碼不正確，無法變更');
       }
@@ -153,7 +184,7 @@ function doPost(e) {
 
     // 讀取家庭資料：通行碼放在 POST 本文，不放網址（S-04）
     if (READ_ACTIONS.includes(action)) {
-      const readAuth = checkAuthPin(payload.pin);
+      const readAuth = checkAuthPin(payload.pin, true);
       if (!readAuth.ok) {
         return authFailureOutput(readAuth, READ_PIN_ERROR);
       }
@@ -161,7 +192,7 @@ function doPost(e) {
     }
 
     // 驗證家庭通行碼
-    const auth = checkAuthPin(payload.pin);
+    const auth = checkAuthPin(payload.pin, true);
     if (!auth.ok) {
       return authFailureOutput(auth, '家庭通行碼驗證失敗，無法寫入雲端');
     }
@@ -222,6 +253,7 @@ function doPost(e) {
         skipped: skipped,
         added: added,
         snapshots: getSnapshotList(),
+        backendVersion: BACKEND_VERSION,
         serverTime: new Date().toISOString()
       });
     }

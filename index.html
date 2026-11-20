@@ -8,7 +8,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
   <link rel="apple-touch-icon" href="./icon-192.png">
   <link rel="manifest" href="./manifest.json">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="./vendor/leaflet-1.9.4/leaflet.css" />
   <style>
     :root {
       --bg: #F4EAD4;
@@ -209,6 +209,8 @@
 
     /* 地圖面板與搜尋／路線 */
     #map { width: 100%; height: 310px; border-radius: 14px; border: 2px solid #D1BF9A; z-index: 1; background: #E5E0D5; }
+    .map-unavailable { display: flex; align-items: center; justify-content: center; height: 100%; padding: 16px; text-align: center; color: var(--text); font-size: 14px; line-height: 1.6; }
+    body.emergency-mode .map-unavailable { font-size: 16px; }
     .map-search-bar { display: flex; gap: 6px; margin-bottom: 8px; }
     .map-search-results {
       background: var(--card-bg); border: 1px solid #D1BF9A; border-radius: 10px;
@@ -2387,7 +2389,7 @@
   </div>
 
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="./vendor/leaflet-1.9.4/leaflet.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script>
     const DEFAULT_GAS_URL = '';
@@ -2498,7 +2500,7 @@
 
 
     // 版本號只寫這一處（② #29）：升版只改 APP_VERSION，畫面標籤、網頁標題與 Service Worker 快取名稱都從這裡來
-    const APP_VERSION = 'v2.9.12';
+    const APP_VERSION = 'v2.9.13';
     (function showAppVersion() {
       const pill = document.getElementById('app-version-pill');
       if (pill) pill.textContent = APP_VERSION;
@@ -4742,8 +4744,23 @@
 
 
     // ================= 離線地圖 + 搜尋 + 雙模路線規劃 =================
+    // 地圖程式庫沒載入時，地圖框內顯示白話，清單照常可用（② #28，工程顧問、D-05、U-03）
+    const MAP_UNAVAILABLE_TEXT = '地圖暫時打不開。請依下方清單的方向和距離前往。連上網路後重新開啟 App，可以再試一次。';
+    function showMapUnavailable() {
+      const el = document.getElementById('map');
+      if (!el || el.dataset.unavailable === '1') return;
+      el.dataset.unavailable = '1';
+      el.textContent = '';
+      const msg = document.createElement('div');
+      msg.className = 'map-unavailable';
+      msg.textContent = MAP_UNAVAILABLE_TEXT;
+      el.appendChild(msg);
+    }
+
     function initMapIfNeeded() {
-      if (!mapInitialized) {
+      if (typeof L === 'undefined') {
+        showMapUnavailable();
+      } else if (!mapInitialized) {
         mapInitialized = true;
         const defaultCenter = locationsData.length > 0 ? [locationsData[0].lat, locationsData[0].lng] : [25.0330, 121.5430];
         mapInstance = L.map('map').setView(defaultCenter, 15);
@@ -4759,7 +4776,7 @@
           }
         });
       }
-      setTimeout(() => { mapInstance.invalidateSize(); }, 150);
+      if (mapInstance) setTimeout(() => { mapInstance.invalidateSize(); }, 150);
       renderMapLocations();
       renderSosInlineAeds(); renderAedLocations(); // 緊急頁清單先畫，地圖程式庫沒載入也看得到
       updateTileCacheCount();
@@ -4837,7 +4854,7 @@
       }
 
 
-      const aedIcon = L.divIcon({
+      const aedIcon = (typeof L === 'undefined') ? null : L.divIcon({
         className: '',
         html: '<div class="aed-pin">⚡</div>',
         iconSize: [26, 26],
@@ -4981,6 +4998,8 @@
 
 
       if (routeLayer) routeLayer.clearLayers();
+      // 地圖程式庫沒載入時不畫線，但照常顯示距離、方向與 Google 地圖連結（② #28，工程顧問）
+      const mapReady = typeof L !== 'undefined' && !!routeLayer && !!mapInstance;
       const banner = document.getElementById('route-banner');
       const infoText = document.getElementById('route-info-text');
       document.getElementById('gmap-nav-link').href = `https://www.google.com/maps/dir/?api=1&destination=${destLat},${destLng}&travelmode=walking`;
@@ -4994,8 +5013,10 @@
           if (data.routes && data.routes.length > 0) {
             const r = data.routes[0];
             const coords = r.geometry.coordinates.map(c => [c[1], c[0]]);
-            const line = L.polyline(coords, { color: '#2A9D8F', weight: 5, opacity: 0.9 }).addTo(routeLayer);
-            mapInstance.fitBounds(line.getBounds(), { padding: [30, 30] });
+            if (mapReady) {
+              const line = L.polyline(coords, { color: '#2A9D8F', weight: 5, opacity: 0.9 }).addTo(routeLayer);
+              mapInstance.fitBounds(line.getBounds(), { padding: [30, 30] });
+            }
             const distKm = (r.distance / 1000).toFixed(2);
             const mins = Math.max(1, Math.round(r.duration / 60));
             infoText.innerText = `🚶 前往【${destName}】：步行約 ${distKm} 公里（約 ${mins} 分鐘）`;
@@ -5006,10 +5027,12 @@
       }
 
 
-      const straight = L.polyline([[userPos.lat, userPos.lng], [destLat, destLng]], {
-        color: '#E07A5F', weight: 4, dashArray: '8, 8'
-      }).addTo(routeLayer);
-      mapInstance.fitBounds(straight.getBounds(), { padding: [30, 30] });
+      if (mapReady) {
+        const straight = L.polyline([[userPos.lat, userPos.lng], [destLat, destLng]], {
+          color: '#E07A5F', weight: 4, dashArray: '8, 8'
+        }).addTo(routeLayer);
+        mapInstance.fitBounds(straight.getBounds(), { padding: [30, 30] });
+      }
       const d = calcDistanceMeters(userPos.lat, userPos.lng, destLat, destLng);
       const bearing = calcBearingText(userPos.lat, userPos.lng, destLat, destLng);
       const distStr = d >= 1000 ? `${(d / 1000).toFixed(2)} 公里` : `${Math.round(d)} 公尺`;

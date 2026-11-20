@@ -11,6 +11,12 @@
 * **預先快取繞過 HTTP 快取**：新版 Service Worker 安裝時，同網站的檔案用 `cache: 'reload'` 重新抓，避免 GitHub Pages 約 10 分鐘的快取讓新 SW 裝進舊的 `index.html`，造成新舊版來回切換（工程顧問）。
 * **Service Worker 快取名稱**：`disaster-app-v2.9.9`（由 `APP_VERSION` 帶入）。
 
+## [gas] - 2026-11-18（一鍵年度快照 — 待擁有者部署 GAS）
+
+* **年度快照（進度表 ② #15）**：新增 `createYearSnapshot`（POST、驗證通行碼、在鎖內）。把 `INVENTORY_SHEET_NAME` 指定的物資頁複製成「YYYY 盤點」（台北時間的年份），放在最後一頁，設保護只有擁有者可修改，保護說明記下建立時間。沒設定 `INVENTORY_SHEET_NAME` 回 `SHEET_NAME_NOT_SET`；同一年已經有了回 `SNAPSHOT_EXISTS`，不覆蓋。改名或設保護失敗時刪掉這次的複本，回 `SNAPSHOT_FAILED`；連刪除也失敗時，回傳殘留分頁名稱請擁有者手動刪。
+* **快照清單**：`getAll` 與 `batchSync` 多回 `snapshots`（名稱為「YYYY 盤點」的分頁，含 App 建立時的 `createdAt`，手動建立的為空字串）。
+* **不會改到快照**：沒設定 `INVENTORY_SHEET_NAME` 時，自動挑物資頁會排除「2026盤點」「2026 盤點 的副本」這類分頁。保護擋不住 App 自己寫入（Web App 以擁有者身分執行），所以這條排除規則是主要防線。
+
 ## [v2.9.8] - 2026-11-19（物資改用穩定 ID：前端 — 開發完成，待審查）
 
 * **改到「我看到的那一項」（進度表 ② #26 第二步，後端 PR 28）**：`updateItem`、`editItem`、`deleteItem` 與離線佇列都附上 `itemId`（有才送）與 `itemName`；`editItem` 送改名前的舊名。畫面內部仍用列號，工程顧問同意。

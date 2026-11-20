@@ -9,7 +9,7 @@
 * **自行託管 Leaflet 1.9.4（② #28，S-07）**：`leaflet.js`、`leaflet.css` 與標記圖示放到 `vendor/leaflet-1.9.4/`（官方目錄結構，附 LICENSE 與雜湊說明），`index.html` 不再從 unpkg 載入。
 * **雜湊與官方 SRI 相同**：leaflet.js `sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=`、leaflet.css `sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=`。
 * **Service Worker 預存**：換成本站的 leaflet.js、leaflet.css，加上預設標記的三張圖；跨網域只剩 qrcodejs（另開一項處理）。
-* **地圖程式庫沒載入時**：地圖框改顯示「地圖元件沒有載入。請連上網路後重新開啟 App；下方的 AED 與避難點清單仍可使用。」，AED 與點位清單照常顯示，不再丟錯（D-05、U-03）。
+* **地圖程式庫沒載入時**：地圖框改顯示「地圖暫時打不開。請依下方清單的方向和距離前往。連上網路後重新開啟 App，可以再試一次。」（使用者顧問定稿），AED 與點位清單照常顯示，不再丟錯；按「路線」不畫線，但照常顯示方向、直線距離與 Google 地圖連結（D-05、U-03）。
 * 版本 v2.9.13。
 
 

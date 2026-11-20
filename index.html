@@ -4701,7 +4701,7 @@
 
     // ================= 離線地圖 + 搜尋 + 雙模路線規劃 =================
     // 地圖程式庫沒載入時，地圖框內顯示白話，清單照常可用（② #28，工程顧問、D-05、U-03）
-    const MAP_UNAVAILABLE_TEXT = '地圖元件沒有載入。請連上網路後重新開啟 App；下方的 AED 與避難點清單仍可使用。';
+    const MAP_UNAVAILABLE_TEXT = '地圖暫時打不開。請依下方清單的方向和距離前往。連上網路後重新開啟 App，可以再試一次。';
     function showMapUnavailable() {
       const el = document.getElementById('map');
       if (!el || el.dataset.unavailable === '1') return;
@@ -4954,6 +4954,8 @@
 
 
       if (routeLayer) routeLayer.clearLayers();
+      // 地圖程式庫沒載入時不畫線，但照常顯示距離、方向與 Google 地圖連結（② #28，工程顧問）
+      const mapReady = typeof L !== 'undefined' && !!routeLayer && !!mapInstance;
       const banner = document.getElementById('route-banner');
       const infoText = document.getElementById('route-info-text');
       document.getElementById('gmap-nav-link').href = `https://www.google.com/maps/dir/?api=1&destination=${destLat},${destLng}&travelmode=walking`;
@@ -4967,8 +4969,10 @@
           if (data.routes && data.routes.length > 0) {
             const r = data.routes[0];
             const coords = r.geometry.coordinates.map(c => [c[1], c[0]]);
-            const line = L.polyline(coords, { color: '#2A9D8F', weight: 5, opacity: 0.9 }).addTo(routeLayer);
-            mapInstance.fitBounds(line.getBounds(), { padding: [30, 30] });
+            if (mapReady) {
+              const line = L.polyline(coords, { color: '#2A9D8F', weight: 5, opacity: 0.9 }).addTo(routeLayer);
+              mapInstance.fitBounds(line.getBounds(), { padding: [30, 30] });
+            }
             const distKm = (r.distance / 1000).toFixed(2);
             const mins = Math.max(1, Math.round(r.duration / 60));
             infoText.innerText = `🚶 前往【${destName}】：步行約 ${distKm} 公里（約 ${mins} 分鐘）`;
@@ -4979,10 +4983,12 @@
       }
 
 
-      const straight = L.polyline([[userPos.lat, userPos.lng], [destLat, destLng]], {
-        color: '#E07A5F', weight: 4, dashArray: '8, 8'
-      }).addTo(routeLayer);
-      mapInstance.fitBounds(straight.getBounds(), { padding: [30, 30] });
+      if (mapReady) {
+        const straight = L.polyline([[userPos.lat, userPos.lng], [destLat, destLng]], {
+          color: '#E07A5F', weight: 4, dashArray: '8, 8'
+        }).addTo(routeLayer);
+        mapInstance.fitBounds(straight.getBounds(), { padding: [30, 30] });
+      }
       const d = calcDistanceMeters(userPos.lat, userPos.lng, destLat, destLng);
       const bearing = calcBearingText(userPos.lat, userPos.lng, destLat, destLng);
       const distStr = d >= 1000 ? `${(d / 1000).toFixed(2)} 公里` : `${Math.round(d)} 公尺`;

@@ -5382,7 +5382,7 @@
         ticker.style.display = 'flex';
         const topType = getAlertTypeLabel(top);
         // 標題已經寫到縣市或類別時不再重複加前綴，避免 360px 折成兩行（使用者、美術顧問）
-        const cityPrefix = String(top.title).includes('臺北市') ? '' : '臺北市・';
+        const cityPrefix = String(top.title).replace(/台/g, '臺').includes('臺北市') ? '' : '臺北市・';
         const typePrefix = topType && !String(top.title).includes(topType) ? '【' + topType + '】' : '';
         titleEl.innerText = `🚨 ${cityPrefix}${typePrefix}${top.title}（近 12 小時共 ${taipeiMatches.length} 則）`;
         sumEl.innerText = top.summary.slice(0, 85) + (top.summary.length > 85 ? '...' : '');

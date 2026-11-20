@@ -540,6 +540,8 @@
     /* P0-3: 止血帶計時與螢幕 SOS 閃爍 */
     .tourniquet-box { margin-top: 10px; padding: 10px; border-radius: 10px; background: #FFF1F0; border: 2px solid #C84B31; }
     body.emergency-mode .tourniquet-box { background: #2A0A08 !important; border-color: #FF453A !important; }
+    /* 重置確認與「已重置」紀錄在緊急模式也要 16px（A-05，工程顧問） */
+    body.emergency-mode #tq-meta { font-size: 16px !important; }
     .tq-time { font-size: 1.25rem; font-weight: 900; color: #C84B31; font-family: monospace; }
     body.emergency-mode .tq-time { color: #FFD60A !important; }
     #sos-flash-overlay {
@@ -1538,7 +1540,7 @@
                   <div id="tq-meta" style="font-size:12px;">超過 120 分鐘恐壞死，請向救護員報告時間</div>
                 </div>
                 <div style="display:flex; gap:6px;">
-                  <button id="btn-tq-toggle" class="btn btn-danger" onclick="toggleTourniquetTimer()">⏱️ 開始記錄綁紮時間</button>
+                  <button id="btn-tq-toggle" class="btn btn-danger" onclick="toggleTourniquetTimer()">⏱️ 開始計時</button>
                   <button class="btn btn-muted" onclick="resetTourniquetTimer()">🔁 重置</button>
                 </div>
               </div>
@@ -3861,7 +3863,7 @@
     // 止血帶開始時刻：不是今天就加上日期（災防顧問建議）
     function formatTqTime(ms) {
       const d = new Date(ms);
-      const hm = d.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false });
+      const hm = d.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
       return d.toDateString() === new Date().toDateString() ? hm : `${d.getMonth() + 1}/${d.getDate()} ${hm}`;
     }
 
@@ -3877,7 +3879,7 @@
       if (!disp || !btn) return;
       if (!tqStartMs) {
         disp.innerText = '尚未開始計時';
-        btn.innerText = '⏱️ 開始記錄綁紮時間';
+        btn.innerText = '⏱️ 開始計時';
         btn.classList.add('btn-danger'); btn.classList.remove('btn-muted');
         // 重置後保留原本的起始時刻，不自動消失，避免誤按重置後資訊救不回來（災防顧問必改）
         if (meta) meta.textContent = localStorage.getItem('camp_tq_last_reset') || TQ_META_DEFAULT;

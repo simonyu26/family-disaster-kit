@@ -855,6 +855,9 @@
     body.emergency-mode .loc-list-head, body.emergency-mode .loc-list-head #tile-cache-count { color: var(--em-text) !important; font-size: 16px !important; }
     body.emergency-mode #locations-list .loc-card { background: var(--em-card); border: 2px solid var(--em-line); color: var(--em-text); }
     body.emergency-mode #locations-list .loc-card > div:first-child > div { color: var(--em-text) !important; font-size: 16px !important; }
+    /* 緊急模式不放刪除鍵，避免慌亂時誤刪集合點；「路線」鍵放大到 68px（A-09，擁有者 2026-11-20 同意） */
+    body.emergency-mode #locations-list .loc-card .btn-edit-item { display: none !important; }
+    body.emergency-mode #locations-list .loc-card .btn-primary { min-height: 68px; min-width: 68px; font-size: 16px !important; padding: 8px 10px !important; }
     .em-nowrap { white-space: nowrap; }
 
 
@@ -2498,7 +2501,7 @@
 
 
     // 版本號只寫這一處（② #29）：升版只改 APP_VERSION，畫面標籤、網頁標題與 Service Worker 快取名稱都從這裡來
-    const APP_VERSION = 'v2.9.14';
+    const APP_VERSION = 'v2.9.15';
     (function showAppVersion() {
       const pill = document.getElementById('app-version-pill');
       if (pill) pill.textContent = APP_VERSION;

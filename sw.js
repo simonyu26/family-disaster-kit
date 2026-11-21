@@ -13,8 +13,12 @@ const APP_ASSETS = [
   './manifest.json',
   './icon-192.png',
   './icon-512.png',
-  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
-  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
+  // Leaflet 自行託管（② #28，S-07）；預設標記圖示也要預存，離線才看得到
+  './vendor/leaflet-1.9.4/leaflet.css',
+  './vendor/leaflet-1.9.4/leaflet.js',
+  './vendor/leaflet-1.9.4/images/marker-icon.png',
+  './vendor/leaflet-1.9.4/images/marker-icon-2x.png',
+  './vendor/leaflet-1.9.4/images/marker-shadow.png',
   'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js'
 ];
 

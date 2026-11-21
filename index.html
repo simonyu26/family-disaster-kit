@@ -8,7 +8,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
   <link rel="apple-touch-icon" href="./icon-192.png">
   <link rel="manifest" href="./manifest.json">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="./vendor/leaflet-1.9.4/leaflet.css" />
   <style>
     :root {
       --bg: #F4EAD4;
@@ -209,6 +209,8 @@
 
     /* 地圖面板與搜尋／路線 */
     #map { width: 100%; height: 310px; border-radius: 14px; border: 2px solid #D1BF9A; z-index: 1; background: #E5E0D5; }
+    .map-unavailable { display: flex; align-items: center; justify-content: center; height: 100%; padding: 16px; text-align: center; color: var(--text); font-size: 14px; line-height: 1.6; }
+    body.emergency-mode .map-unavailable { font-size: 16px; }
     .map-search-bar { display: flex; gap: 6px; margin-bottom: 8px; }
     .map-search-results {
       background: var(--card-bg); border: 1px solid #D1BF9A; border-radius: 10px;
@@ -540,6 +542,8 @@
     /* P0-3: 止血帶計時與螢幕 SOS 閃爍 */
     .tourniquet-box { margin-top: 10px; padding: 10px; border-radius: 10px; background: #FFF1F0; border: 2px solid #C84B31; }
     body.emergency-mode .tourniquet-box { background: #2A0A08 !important; border-color: #FF453A !important; }
+    /* 重置確認與「已重置」紀錄在緊急模式也要 16px（A-05，工程顧問） */
+    body.emergency-mode #tq-meta { font-size: 16px !important; }
     .tq-time { font-size: 1.25rem; font-weight: 900; color: #C84B31; font-family: monospace; }
     body.emergency-mode .tq-time { color: #FFD60A !important; }
     #sos-flash-overlay {
@@ -2392,7 +2396,7 @@
   </div>
 
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="./vendor/leaflet-1.9.4/leaflet.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script>
     const DEFAULT_GAS_URL = '';
@@ -2424,6 +2428,8 @@
     let localHealthMap = JSON.parse(localStorage.getItem(STORAGE_KEYS.LOCAL_HEALTH) || '{}');
     let privacyRevealed = false;
     let tqTimer = null;
+    const TQ_META_DEFAULT = '超過 120 分鐘恐壞死，請向救護員報告時間';
+    let tqResetArmedUntil = 0; // 重置第一次按下後，5 秒內再按才清掉
     let tqStartMs = parseInt(localStorage.getItem('camp_tq_start_ms') || '0', 10) || 0;
     let sosFlashTimer = null;
 
@@ -2507,6 +2513,11 @@
       if (pill) pill.textContent = APP_VERSION;
       document.title = document.title + ' ' + APP_VERSION;
     })();
+
+    // 重新開頁時，若止血帶正在計時就接著更新畫面（② #34）
+    if (tqStartMs) updateTourniquetUI();
+    // 手機切到背景時計時器會變慢，回到前景馬上更新（工程顧問）
+    document.addEventListener('visibilitychange', () => { if (!document.hidden && tqStartMs) updateTourniquetUI(); });
 
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('./sw.js?v=' + encodeURIComponent(APP_VERSION)).catch(() => {});
@@ -3858,38 +3869,73 @@
 
 
     // P0-3: 止血帶計時器、螢幕 SOS 閃光、離線語音朗讀
+    // 止血帶開始時刻：不是今天就加上日期（災防顧問建議）
+    function formatTqTime(ms) {
+      const d = new Date(ms);
+      const hm = d.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+      return d.toDateString() === new Date().toDateString() ? hm : `${d.getMonth() + 1}/${d.getDate()} ${hm}`;
+    }
+
+    // 計時中畫面要一直更新，重新開頁也要接著跑（② #34，災防顧問 PR 19 審查第四節第 3 點）
+    function ensureTqTicking() {
+      if (tqStartMs && !tqTimer) tqTimer = setInterval(updateTourniquetUI, 15000);
+    }
+
     function updateTourniquetUI() {
       const disp = document.getElementById('tq-display');
       const btn = document.getElementById('btn-tq-toggle');
+      const meta = document.getElementById('tq-meta');
       if (!disp || !btn) return;
       if (!tqStartMs) {
         disp.innerText = '尚未開始計時';
-        btn.innerText = '⏱️ 開始記錄綁紮時間';
+        btn.innerText = '⏱️ 開始計時';
+        btn.classList.add('btn-danger'); btn.classList.remove('btn-muted');
+        // 重置後保留原本的起始時刻，不自動消失，避免誤按重置後資訊救不回來（災防顧問必改）
+        if (meta) meta.textContent = localStorage.getItem('camp_tq_last_reset') || TQ_META_DEFAULT;
         return;
       }
-      const startTime = new Date(tqStartMs).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+      ensureTqTicking();
       const elapsedMin = Math.floor((Date.now() - tqStartMs) / 60000);
-      disp.innerText = `起始 ${startTime}（已綁紮 ${elapsedMin} 分鐘${elapsedMin >= 120 ? ' ⚠️ 已逾 2 小時！' : ''}）`;
-      btn.innerText = '⏹️ 停止／鎖定顯示';
+      disp.innerText = `起始 ${formatTqTime(tqStartMs)}（已綁紮 ${elapsedMin} 分鐘${elapsedMin >= 120 ? ' ⚠️ 已逾 2 小時！' : ''}）`;
+      btn.innerText = '⏱️ 計時中';
+      // 計時中改成不搶眼的樣式，免得焦急時一直按（使用者顧問）
+      btn.classList.add('btn-muted'); btn.classList.remove('btn-danger');
+      if (meta && !tqResetArmedUntil) meta.textContent = TQ_META_DEFAULT;
     }
 
 
     function toggleTourniquetTimer() {
       if (tqStartMs) {
-        if (tqTimer) { clearInterval(tqTimer); tqTimer = null; }
-        emNotify('⏱️ 已保留止血帶紀錄時間', 'info');
+        // 第二次按不停止計時，只提示綁紮時間；只有「重置」能清掉
+        ensureTqTicking();
+        updateTourniquetUI();
+        const elapsedMin = Math.floor((Date.now() - tqStartMs) / 60000);
+        emNotify(`⏱️ 計時還在進行：止血帶 ${formatTqTime(tqStartMs)} 綁上，已過 ${elapsedMin} 分鐘。`, 'info');
         return;
       }
       tqStartMs = Date.now();
       localStorage.setItem('camp_tq_start_ms', String(tqStartMs));
+      localStorage.removeItem('camp_tq_last_reset');
       updateTourniquetUI();
-      tqTimer = setInterval(updateTourniquetUI, 15000);
       emNotify('⏱️ 已開始記錄止血帶綁紮時間', 'error');
     }
 
 
+    // 重置要在 5 秒內按兩次才清掉，避免誤按把要交給 119 的時間清掉（使用者、災防顧問必改）
     function resetTourniquetTimer() {
+      const meta = document.getElementById('tq-meta');
+      if (tqStartMs && Date.now() > tqResetArmedUntil) {
+        tqResetArmedUntil = Date.now() + 5000;
+        if (meta) meta.textContent = `要清掉 ${formatTqTime(tqStartMs)} 的紀錄，請在 5 秒內再按一次「重置」`;
+        setTimeout(() => { if (tqResetArmedUntil && Date.now() >= tqResetArmedUntil) { tqResetArmedUntil = 0; updateTourniquetUI(); } }, 5100);
+        return;
+      }
+      tqResetArmedUntil = 0;
       if (tqTimer) { clearInterval(tqTimer); tqTimer = null; }
+      if (tqStartMs) {
+        const elapsedMin = Math.floor((Date.now() - tqStartMs) / 60000);
+        localStorage.setItem('camp_tq_last_reset', `已重置。原本綁紮起始 ${formatTqTime(tqStartMs)}（已綁 ${elapsedMin} 分鐘）`);
+      }
       tqStartMs = 0;
       localStorage.removeItem('camp_tq_start_ms');
       updateTourniquetUI();
@@ -4705,8 +4751,23 @@
 
 
     // ================= 離線地圖 + 搜尋 + 雙模路線規劃 =================
+    // 地圖程式庫沒載入時，地圖框內顯示白話，清單照常可用（② #28，工程顧問、D-05、U-03）
+    const MAP_UNAVAILABLE_TEXT = '地圖暫時打不開。請依下方清單的方向和距離前往。連上網路後重新開啟 App，可以再試一次。';
+    function showMapUnavailable() {
+      const el = document.getElementById('map');
+      if (!el || el.dataset.unavailable === '1') return;
+      el.dataset.unavailable = '1';
+      el.textContent = '';
+      const msg = document.createElement('div');
+      msg.className = 'map-unavailable';
+      msg.textContent = MAP_UNAVAILABLE_TEXT;
+      el.appendChild(msg);
+    }
+
     function initMapIfNeeded() {
-      if (!mapInitialized) {
+      if (typeof L === 'undefined') {
+        showMapUnavailable();
+      } else if (!mapInitialized) {
         mapInitialized = true;
         const defaultCenter = locationsData.length > 0 ? [locationsData[0].lat, locationsData[0].lng] : [25.0330, 121.5430];
         mapInstance = L.map('map').setView(defaultCenter, 15);
@@ -4722,7 +4783,7 @@
           }
         });
       }
-      setTimeout(() => { mapInstance.invalidateSize(); }, 150);
+      if (mapInstance) setTimeout(() => { mapInstance.invalidateSize(); }, 150);
       renderMapLocations();
       renderSosInlineAeds(); renderAedLocations(); // 緊急頁清單先畫，地圖程式庫沒載入也看得到
       updateTileCacheCount();
@@ -4800,7 +4861,7 @@
       }
 
 
-      const aedIcon = L.divIcon({
+      const aedIcon = (typeof L === 'undefined') ? null : L.divIcon({
         className: '',
         html: '<div class="aed-pin">⚡</div>',
         iconSize: [26, 26],
@@ -4944,6 +5005,8 @@
 
 
       if (routeLayer) routeLayer.clearLayers();
+      // 地圖程式庫沒載入時不畫線，但照常顯示距離、方向與 Google 地圖連結（② #28，工程顧問）
+      const mapReady = typeof L !== 'undefined' && !!routeLayer && !!mapInstance;
       const banner = document.getElementById('route-banner');
       const infoText = document.getElementById('route-info-text');
       document.getElementById('gmap-nav-link').href = `https://www.google.com/maps/dir/?api=1&destination=${destLat},${destLng}&travelmode=walking`;
@@ -4957,8 +5020,10 @@
           if (data.routes && data.routes.length > 0) {
             const r = data.routes[0];
             const coords = r.geometry.coordinates.map(c => [c[1], c[0]]);
-            const line = L.polyline(coords, { color: '#2A9D8F', weight: 5, opacity: 0.9 }).addTo(routeLayer);
-            mapInstance.fitBounds(line.getBounds(), { padding: [30, 30] });
+            if (mapReady) {
+              const line = L.polyline(coords, { color: '#2A9D8F', weight: 5, opacity: 0.9 }).addTo(routeLayer);
+              mapInstance.fitBounds(line.getBounds(), { padding: [30, 30] });
+            }
             const distKm = (r.distance / 1000).toFixed(2);
             const mins = Math.max(1, Math.round(r.duration / 60));
             infoText.innerText = `🚶 前往【${destName}】：步行約 ${distKm} 公里（約 ${mins} 分鐘）`;
@@ -4969,10 +5034,12 @@
       }
 
 
-      const straight = L.polyline([[userPos.lat, userPos.lng], [destLat, destLng]], {
-        color: '#E07A5F', weight: 4, dashArray: '8, 8'
-      }).addTo(routeLayer);
-      mapInstance.fitBounds(straight.getBounds(), { padding: [30, 30] });
+      if (mapReady) {
+        const straight = L.polyline([[userPos.lat, userPos.lng], [destLat, destLng]], {
+          color: '#E07A5F', weight: 4, dashArray: '8, 8'
+        }).addTo(routeLayer);
+        mapInstance.fitBounds(straight.getBounds(), { padding: [30, 30] });
+      }
       const d = calcDistanceMeters(userPos.lat, userPos.lng, destLat, destLng);
       const bearing = calcBearingText(userPos.lat, userPos.lng, destLat, destLng);
       const distStr = d >= 1000 ? `${(d / 1000).toFixed(2)} 公里` : `${Math.round(d)} 公尺`;

@@ -445,6 +445,25 @@
       font-size: 0.85rem; font-weight: bold; text-align: center;
     }
     .toast.success { background: rgba(61, 90, 82, 0.96); }
+    /* #22 資料保存區塊：字色一律 --text，需要注意時用「無法確認」方框的左邊條（美術顧問） */
+    .data-keep-box { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; color: var(--text); font-size: 13px; line-height: 1.6; }
+    .data-keep-box.need-action { border-left: 4px solid var(--accent); }
+    .data-keep-title { font-weight: 800; margin-bottom: 4px; }
+    .data-keep-line { margin: 2px 0; }
+    .data-keep-line.is-lead { font-weight: 800; }
+    .data-keep-line.is-ok { color: var(--text-muted); }
+    .data-keep-steps { margin: 2px 0 2px 1.4em; padding: 0; }
+    .data-keep-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+    .data-keep-actions .btn { min-height: 48px; flex: 1; min-width: 120px; }
+    .data-keep-actions .btn[hidden], .data-keep-box [hidden] { display: none !important; }
+    /* #33 求救簡訊複製失敗時的唯讀文字框：4 行、收起鍵在下方（使用者、美術、災防顧問） */
+    .sos-copy-fallback { margin: 0 0 10px; }
+    .sos-copy-fallback[hidden] { display: none !important; }
+    .sos-copy-text { display: block; width: 100%; box-sizing: border-box; font-size: 16px; line-height: 1.5; padding: 6px 8px; border-radius: 8px; resize: none; background: var(--card-bg); color: var(--text); border: 1px solid var(--border); font-family: inherit; }
+    .sos-copy-close { display: block; width: 100%; min-height: 48px !important; margin-top: 6px; }
+    body.emergency-mode .sos-copy-text { background: var(--em-card); color: var(--em-text); border: 2px solid var(--em-text); }
+    body.emergency-mode .sos-copy-text:focus { outline: 2px solid var(--em-text); outline-offset: 2px; }
+    body.emergency-mode .sos-copy-close { min-height: 68px !important; font-size: 16px !important; background: var(--em-card) !important; color: var(--em-text) !important; border: 2px solid var(--em-line) !important; }
     .toast.warn { background: rgba(196, 106, 22, 0.96); }
     .toast.error { background: rgba(201, 68, 43, 0.96); }
     /* 「沒存到」提示要讀完幾行字：改用「無法確認」方框的配色（美術顧問 PR #27，對比 13.96:1） */
@@ -1493,6 +1512,11 @@
           <div class="t-sub">家人血型過敏與 Plan A / B</div>
         </div>
       </div>
+      <!-- #33 複製失敗時才出現，放在四大鍵下方，不把「立即報案求救」推出畫面（使用者顧問）；只放簡訊原文，用 .value 填入（S-01） -->
+      <div id="sos-copy-fallback" class="sos-copy-fallback" hidden>
+        <textarea id="sos-copy-text" class="sos-copy-text" rows="4" readonly aria-label="求救簡訊全文"></textarea>
+        <button class="btn btn-muted sos-copy-close" onclick="hideSosCopyFallback()">收起簡訊</button>
+      </div>
 
 
       <!-- 專注面板 A：預設顯示「最近 3 台 AED ＋ 119/110/112 直撥」 -->
@@ -1905,8 +1929,17 @@
           <span id="camp-sandbox-sec-arrow" style="font-size:0.8rem; color:var(--text-muted);">▼</span>
         </div>
         <div class="section-body" id="camp-sandbox-sec">
+          <!-- #22 資料保存：一張卡最多一個 ⚠️，最急的一行放最上面（美術顧問） -->
+          <div id="data-keep-box" class="data-keep-box">
+            <div class="data-keep-title">資料保存</div>
+            <div id="data-keep-lines"></div>
+            <div class="data-keep-actions">
+              <button id="data-keep-export-btn" class="btn btn-primary" onclick="exportFamilyBackupJson()">現在匯出</button>
+              <button id="data-keep-install-btn" class="btn btn-muted" onclick="promptInstallApp()" hidden>加到主畫面</button>
+            </div>
+          </div>
           <div style="font-size:12px; color:var(--text-muted); margin-bottom:8px; line-height:1.55;">
-            提供給其他家庭或朋友直接使用：<strong>完全不需要建立或複製 Google 試算表</strong>，可一鍵載入預設家庭範本儲存在自己手機本機，並透過匯出／匯入加密 JSON 備份檔與家人快速同步。
+            提供給其他家庭或朋友直接使用：<strong>完全不需要建立或複製 Google 試算表</strong>，可一鍵載入預設家庭範本儲存在自己手機本機，並透過匯出／匯入備份檔與家人快速同步。
           </div>
           <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px;">
             <button class="btn btn-primary" style="font-size:12px; flex:1; min-width:140px;" onclick="initLocalFamilyTemplate('core3')">🏕️ 載入「三人小家庭」預設範本</button>
@@ -2420,7 +2453,10 @@
       WEATHER_CITY: 'camp_weather_city',
       MY_CHAR: 'camp_my_char',
       COLLAPSED: 'camp_collapsed_cats',
-      LAST_SYNC: 'camp_last_sync'
+      LAST_SYNC: 'camp_last_sync',
+      LAST_BACKUP: 'camp_last_backup_at',        // 上次匯出備份成功的時間（毫秒）；匯入不算（工程顧問 #22）
+      BACKUP_NUDGE_DAY: 'camp_backup_nudge_day', // 上次跳備份提醒的日期，7 天最多一次（使用者顧問 #22）
+      SAMPLE_SIG: 'camp_sample_sig'              // 剛載入範本時的資料指紋；資料沒改過就不提醒備份範例資料
     };
 
 
@@ -2507,7 +2543,7 @@
 
 
     // 版本號只寫這一處（② #29）：升版只改 APP_VERSION，畫面標籤、網頁標題與 Service Worker 快取名稱都從這裡來
-    const APP_VERSION = 'v2.9.15';
+    const APP_VERSION = 'v2.9.17';
     (function showAppVersion() {
       const pill = document.getElementById('app-version-pill');
       if (pill) pill.textContent = APP_VERSION;
@@ -2650,6 +2686,7 @@
       }
 
 
+      initDataKeep();
       setupEmEndButton();
       if (isEmergencyMode) setEmStatus();
       if (!getGasUrl()) {
@@ -2841,6 +2878,7 @@
         localStorage.setItem(STORAGE_KEYS.LOCATIONS, JSON.stringify(locationsData));
         localStorage.setItem(STORAGE_KEYS.CONTACTS, JSON.stringify(contactsData));
         localStorage.setItem(STORAGE_KEYS.LAST_SYNC, json.serverTime || new Date().toISOString());
+        ensurePersist();
 
 
         selectInitialCharacter();
@@ -3418,20 +3456,35 @@
     // iPhone 的 Safari 只在「剛按下按鈕」時允許寫剪貼簿，所以一按就要呼叫剪貼簿（工程顧問 PR #22 必改）：
     // 需要重新定位時，用 ClipboardItem 先佔住剪貼簿、內容等定位後再給；不支援就先用現有座標複製，背景更新後請人再按一次
     let sosCopyBusy = false;
+    // #33 複製失敗的備援：不用 prompt()（單行、會擋住緊急頁），改在定位卡內顯示唯讀文字框
+    const SOS_COPY_FAIL_MSG = '沒辦法自動複製。請長按下面的文字，選「全選」，再選「拷貝」或「複製」，然後貼到簡訊或 LINE。';
+    function showSosCopyFallback(text) {
+      const box = document.getElementById('sos-copy-fallback');
+      const ta = document.getElementById('sos-copy-text');
+      if (!box || !ta) return;
+      ta.value = text;
+      box.hidden = false;
+      try {
+        ta.focus({ preventScroll: true });
+        ta.setSelectionRange(0, ta.value.length); // iPhone 的 select() 有時不反白（工程顧問）
+      } catch (e) {}
+      try { box.scrollIntoView({ block: 'nearest' }); } catch (e) {} // 不把頁面捲到頂（美術顧問）
+      emNotify(SOS_COPY_FAIL_MSG, 'warn');
+    }
+    function hideSosCopyFallback() {
+      const box = document.getElementById('sos-copy-fallback');
+      if (box) box.hidden = true;
+    }
     function copySosCoord() {
       if (sosCopyBusy) return; // 等待定位中再按一次就略過
       const needRefresh = !userPos || !userPos.ts || Date.now() - userPos.ts > SOS_POS_REFRESH_MS;
       const okMsg = '📋 已複製求救簡訊，可以直接貼到簡訊或 LINE。可以在後面補上受傷情形和在幾樓。';
-      const fallback = (text) => {
-        // 說明放進彈窗標題，彈窗會蓋住狀態列（使用者顧問）
-        prompt('沒辦法自動複製。請長按下面的文字，選「拷貝」或「複製」。', text);
-        emNotify('沒辦法自動複製，請長按文字自己複製。', 'warn');
-      };
+      const fallback = (text) => showSosCopyFallback(text);
       const clip = navigator.clipboard;
       if (!needRefresh) {
         const text = buildSosText(Date.now());
         if (!clip || !clip.writeText) return fallback(text);
-        clip.writeText(text).then(() => emNotify(okMsg, 'success'), () => fallback(text));
+        clip.writeText(text).then(() => { hideSosCopyFallback(); emNotify(okMsg, 'success'); }, () => fallback(text));
         return;
       }
       sosCopyBusy = true;
@@ -3445,7 +3498,7 @@
         } catch (e) { item = null; }
         if (item) {
           clip.write([item])
-            .then(() => emNotify(okMsg, 'success'), () => textPromise.then(fallback))
+            .then(() => { hideSosCopyFallback(); emNotify(okMsg, 'success'); }, () => textPromise.then(fallback))
             .finally(done);
           return;
         }
@@ -3454,7 +3507,7 @@
       const nowText = buildSosText(Date.now());
       const beforeTs = userPos && userPos.ts;
       const copyNow = (clip && clip.writeText) ? clip.writeText(nowText) : Promise.reject();
-      copyNow.then(() => emNotify(okMsg, 'success'), () => fallback(nowText));
+      copyNow.then(() => { hideSosCopyFallback(); emNotify(okMsg, 'success'); }, () => fallback(nowText));
       textPromise.then(() => {
         if (userPos && userPos.ts && userPos.ts !== beforeTs) emNotify('位置已更新，請再按一次「複製求救簡訊」，簡訊會用新的位置。');
       }).finally(done);
@@ -6750,6 +6803,136 @@
       renderParty(); renderInventory(); renderCampTab(); renderPlanTab();
       switchTab('inventory');
       showToast('🏕️ 已啟用獨立家庭本機範本！免開 Google 試算表即可直接使用', 'success');
+      try { localStorage.setItem(STORAGE_KEYS.SAMPLE_SIG, familyDataSig()); } catch (e) {}
+      ensurePersist();
+      renderDataKeep();
+    }
+
+
+    // ===== #22 避免手機自動清掉家庭資料（D-05）=====
+    // 三態：granted（手機同意保留）／denied（可能清掉）／unknown（不支援或還沒查到）；不寫「安全」（D-01）
+    let persistState = 'unknown';
+    let persistRequested = false;
+    let deferredInstallPrompt = null;
+    const BACKUP_REMIND_DAYS = 30;
+    const BACKUP_NUDGE_GAP_DAYS = 7;
+    function familyDataSig() {
+      const str = JSON.stringify([globalData, membersMap, locationsData, contactsData]);
+      let h = 5381;
+      for (let i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) | 0;
+      return str.length + ':' + (h >>> 0).toString(36);
+    }
+    function hasFamilyData() {
+      return Object.keys(membersMap || {}).length > 0 || (locationsData || []).length > 0;
+    }
+    // 範本原樣不算家人自己的資料，不提醒備份假資料（使用者顧問 #22）
+    function hasOwnFamilyData() {
+      if (!hasFamilyData()) return false;
+      let sig = null;
+      try { sig = localStorage.getItem(STORAGE_KEYS.SAMPLE_SIG); } catch (e) {}
+      return !sig || sig !== familyDataSig();
+    }
+    function getLastBackupAt() {
+      let v = NaN;
+      try { v = Number(localStorage.getItem(STORAGE_KEYS.LAST_BACKUP)); } catch (e) {}
+      // 讀到無效值（不是數字、未來時間）一律當成從沒匯出過（工程顧問）
+      if (!Number.isFinite(v) || v <= 0 || v > Date.now() + 86400000) return null;
+      return v;
+    }
+    function backupAgeDays(ts) { return Math.floor((Date.now() - ts) / 86400000); }
+    function isStandaloneApp() {
+      return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true;
+    }
+    function isIOSDevice() {
+      return /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    }
+    // 只在本機已有家庭資料時才要求；Firefox 會跳詢問，不能一開頁就擋住首屏（工程顧問、U-05）
+    function ensurePersist() {
+      if (persistRequested || persistState === 'granted') return;
+      if (!navigator.storage || typeof navigator.storage.persist !== 'function') return;
+      if (!hasFamilyData()) return;
+      persistRequested = true;
+      navigator.storage.persist()
+        .then(ok => { persistState = ok ? 'granted' : 'denied'; renderDataKeep(); })
+        .catch(() => {});
+    }
+    function initDataKeep() {
+      if (navigator.storage && typeof navigator.storage.persisted === 'function') {
+        navigator.storage.persisted()
+          .then(p => { persistState = p ? 'granted' : 'denied'; renderDataKeep(); ensurePersist(); })
+          .catch(() => { renderDataKeep(); });
+      }
+      window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredInstallPrompt = e; renderDataKeep(); });
+      window.addEventListener('appinstalled', () => { deferredInstallPrompt = null; persistRequested = false; ensurePersist(); renderDataKeep(); });
+      renderDataKeep();
+      maybeNudgeBackup();
+    }
+    function promptInstallApp() {
+      if (!deferredInstallPrompt) return;
+      const ev = deferredInstallPrompt;
+      deferredInstallPrompt = null;
+      try { ev.prompt(); } catch (e) {}
+      renderDataKeep();
+    }
+    function fmtMD(ts) { const d = new Date(ts); return `${d.getMonth() + 1}/${String(d.getDate()).padStart(2, '0')}`; }
+    function renderDataKeep() {
+      const wrap = document.getElementById('data-keep-lines');
+      const box = document.getElementById('data-keep-box');
+      if (!wrap || !box) return;
+      // 每一項：{ warn: 需要處理, text, steps? }；最急的一行才加 ⚠️
+      const items = [];
+      const own = hasOwnFamilyData();
+      const last = getLastBackupAt();
+      const exportBtn = document.getElementById('data-keep-export-btn');
+      if (exportBtn) exportBtn.hidden = !hasFamilyData();
+      if (own) {
+        if (last === null) items.push({ warn: true, text: '還沒有匯出過備份。' });
+        else if (backupAgeDays(last) > BACKUP_REMIND_DAYS) items.push({ warn: true, text: `已經 ${backupAgeDays(last)} 天沒有匯出備份（上次是 ${fmtMD(last)}）。` });
+        else items.push({ warn: false, ok: true, text: `上次匯出備份是 ${fmtMD(last)}。` });
+      }
+      if (persistState === 'granted') items.push({ warn: false, ok: true, text: '✅ 手機已同意保留這份資料，仍建議定期匯出備份。' });
+      else if (persistState === 'denied') items.push({ warn: true, text: '手機空間不夠時，可能會清掉這份資料。請把 App 加到主畫面，並且定期匯出備份。' });
+      else items.push({ warn: true, text: '不確定手機會不會保留這份資料。請把 App 加到主畫面，並且定期匯出備份。' });
+      const installBtn = document.getElementById('data-keep-install-btn');
+      if (installBtn) installBtn.hidden = !(deferredInstallPrompt && !isStandaloneApp());
+      if (!isStandaloneApp()) {
+        const why = '加到主畫面後，手機比較不會清掉資料，也比較快打開。';
+        if (isIOSDevice()) items.push({ warn: false, text: why, steps: [
+          '如果是從 LINE 打開的，請先按右上角的「⋯」，選「用預設瀏覽器開啟」或「用 Safari 開啟」。',
+          '按螢幕下方的「分享」圖示（方框加向上箭頭）。',
+          '往下找，按「加入主畫面」。'
+        ] });
+        else if (deferredInstallPrompt) items.push({ warn: false, text: why + '請按下面的「加到主畫面」。' });
+        else items.push({ warn: false, text: why + '請按瀏覽器右上角的三個點，選「安裝應用程式」或「加到主畫面」。' });
+      }
+      wrap.textContent = '';
+      let leadDone = false;
+      items.forEach(it => {
+        const line = document.createElement('div');
+        line.className = 'data-keep-line';
+        if (it.warn && !leadDone) { line.classList.add('is-lead'); line.textContent = '⚠️ ' + it.text; leadDone = true; }
+        else { line.textContent = it.text; if (it.ok) line.classList.add('is-ok'); }
+        if (it.warn && line.classList.contains('is-lead')) wrap.insertBefore(line, wrap.firstChild); else wrap.appendChild(line);
+        if (it.steps) {
+          const ol = document.createElement('ol');
+          ol.className = 'data-keep-steps';
+          it.steps.forEach(t => { const li = document.createElement('li'); li.textContent = t; ol.appendChild(li); });
+          wrap.appendChild(ol);
+        }
+      });
+      box.classList.toggle('need-action', leadDone);
+    }
+    // 進 App 時的備份提醒：平時模式、家人自己的資料、超過 30 天或從沒匯出，7 天最多一次（使用者顧問）
+    function maybeNudgeBackup() {
+      if (isEmergencyMode || !hasOwnFamilyData()) return;
+      const last = getLastBackupAt();
+      if (last !== null && backupAgeDays(last) <= BACKUP_REMIND_DAYS) return;
+      let lastNudge = NaN;
+      try { lastNudge = Number(localStorage.getItem(STORAGE_KEYS.BACKUP_NUDGE_DAY)); } catch (e) {}
+      if (Number.isFinite(lastNudge) && lastNudge > 0 && Date.now() - lastNudge < BACKUP_NUDGE_GAP_DAYS * 86400000) return;
+      try { localStorage.setItem(STORAGE_KEYS.BACKUP_NUDGE_DAY, String(Date.now())); } catch (e) {}
+      const msg = last === null ? '家庭資料還沒有備份，請到「營地」的「說明與系統」匯出。' : `家庭資料已經 ${backupAgeDays(last)} 天沒有備份，請到「營地」的「說明與系統」匯出。`;
+      showToast(msg); // 一般 .toast，例行提醒不用警示色（美術顧問）
     }
 
 
@@ -6768,7 +6951,10 @@
       a.href = URL.createObjectURL(blob);
       a.download = `family-camp-backup-${new Date().toISOString().slice(0,10)}.json`;
       a.click();
-      showToast('📥 已匯出家庭完整備份檔 (.json)', 'success');
+      try { localStorage.setItem(STORAGE_KEYS.LAST_BACKUP, String(Date.now())); } catch (e) {}
+      renderDataKeep();
+      // 匯出後告訴家人下一步（使用者顧問 #22）
+      showToast('✅ 已匯出備份檔。請把它傳到自己的 LINE 或存到雲端硬碟，換手機或資料不見時才找得回來。檔案裡有家人的健康資料，請只傳給自己或家人。', 'success', { sticky: true });
     }
 
 
@@ -6786,6 +6972,8 @@
           selectInitialCharacter();
           renderParty(); renderInventory(); renderCampTab(); renderPlanTab();
           showToast('✅ 已成功匯入家庭備份檔！', 'success');
+          ensurePersist();
+          renderDataKeep();
         } catch (err) {
           showToast('❌ 備份檔格式錯誤：' + err.message, 'error');
         }

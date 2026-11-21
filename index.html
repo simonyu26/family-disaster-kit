@@ -4801,7 +4801,7 @@
         box.style.display = 'block';
         box.innerHTML = matched.length === 0
           ? '<div class="map-search-item">🟠 離線模式：找不到符合的已存點位</div>'
-          : matched.map(l => `<div class="map-search-item" onclick="focusLocation(${l.lat},${l.lng})"><span>📌 ${l.name}</span><span>前往</span></div>`).join('');
+          : matched.map(l => `<div class="map-search-item" data-act="focus-loc" data-lat="${Number(l.lat)}" data-lng="${Number(l.lng)}"><span>📌 ${escapeHtml(l.name)}</span><span>前往</span></div>`).join('');
         return;
       }
 
@@ -4817,16 +4817,16 @@
         }
         box.innerHTML = '';
         items.forEach(place => {
-          const lat = parseFloat(place.lat), lng = parseFloat(place.lon);
-          const shortName = place.display_name.split(',')[0];
+          const lat = Number(parseFloat(place.lat)), lng = Number(parseFloat(place.lon));
+          const shortName = String(place.display_name || '').split(',')[0];
           const div = document.createElement('div');
           div.className = 'map-search-item';
           div.innerHTML = `
-            <div style="flex:1;" onclick="focusLocation(${lat},${lng})">
-              <strong>${shortName}</strong><br>
-              <span style="color:var(--text-muted); font-size:0.75rem;">${place.display_name}</span>
+            <div style="flex:1;" data-act="focus-loc" data-lat="${lat}" data-lng="${lng}">
+              <strong>${escapeHtml(shortName)}</strong><br>
+              <span style="color:var(--text-muted); font-size:0.75rem;">${escapeHtml(place.display_name)}</span>
             </div>
-            <button class="btn btn-muted" style="padding:4px 8px; font-size:0.75rem; white-space:nowrap;" onclick="prefillLocation('${shortName.replace(/'/g, '')}', ${lat}, ${lng})">➕ 存為點位</button>
+            <button class="btn btn-muted" style="padding:4px 8px; font-size:0.75rem; white-space:nowrap;" data-act="prefill-loc" data-name="${escapeHtml(shortName)}" data-lat="${lat}" data-lng="${lng}">➕ 存為點位</button>
           `;
           box.appendChild(div);
         });
@@ -4880,20 +4880,20 @@
         if (aedLayer) {
           L.marker([aed.lat, aed.lng], { icon: aedIcon })
             .addTo(aedLayer)
-            .bindPopup(`<b>❤️ ${aed.name}</b><br>${aed.place || ''}<br><small>${aed.addr || ''}</small>`);
+            .bindPopup(buildPopupEl([{ tag: 'b', text: `❤️ ${aed.name}` }, { text: aed.place || '' }, { tag: 'small', text: aed.addr || '' }]));
         }
         const refPos = srcLoc ? { lat: srcLoc.lat, lng: srcLoc.lng } : (userPos || (mapInstance ? mapInstance.getCenter() : { lat: 25.0330, lng: 121.5430 }));
         const d = Math.round(calcDistanceMeters(refPos.lat, refPos.lng, aed.lat, aed.lng));
         const bearing = calcBearingText(refPos.lat, refPos.lng, aed.lat, aed.lng);
         return `
           <div class="loc-card" style="border-color:#F7E3DC;">
-            <div style="flex:1; cursor:pointer;" onclick="focusLocation(${aed.lat}, ${aed.lng})">
-              <div style="font-weight:800; font-size:0.9rem; color:var(--danger);">❤️ ${aed.name}</div>
-              <div style="font-size:0.76rem; color:var(--text); margin-top:2px;">放置點：${aed.place || '詳見現場標示'}</div>
-              <div style="font-size:0.72rem; color:var(--text-muted);">${aed.addr || ''}</div>
+            <div style="flex:1; cursor:pointer;" data-act="focus-loc" data-lat="${Number(aed.lat)}" data-lng="${Number(aed.lng)}">
+              <div style="font-weight:800; font-size:0.9rem; color:var(--danger);">❤️ ${escapeHtml(aed.name)}</div>
+              <div style="font-size:0.76rem; color:var(--text); margin-top:2px;">放置點：${escapeHtml(aed.place || '詳見現場標示')}</div>
+              <div style="font-size:0.72rem; color:var(--text-muted);">${escapeHtml(aed.addr || '')}</div>
             </div>
             <div class="loc-dist">${bearing}<br>${d} 公尺</div>
-            <button class="btn btn-danger" style="padding:5px 8px; font-size:0.75rem;" onclick="planRouteTo(${aed.lat}, ${aed.lng}, '${aed.name.replace(/'/g, '')}')">🚶 路線</button>
+            <button class="btn btn-danger" style="padding:5px 8px; font-size:0.75rem;" data-act="route" data-lat="${Number(aed.lat)}" data-lng="${Number(aed.lng)}" data-name="${escapeHtml(aed.name)}">🚶 路線</button>
           </div>
         `;
       }).join('');
@@ -5261,10 +5261,10 @@
       if (w.hourlyList && w.hourlyList.length) {
         hourlyHTML = `<div class="hourly-strip">` + w.hourlyList.map(h => `
           <div class="hourly-item">
-            <div style="font-weight:bold;">${h.hour}</div>
+            <div style="font-weight:bold;">${escapeHtml(h.hour)}</div>
             <div style="margin:2px 0;">${getWmoDesc(h.code).split(' ')[0]}</div>
             <div style="font-weight:800; color:var(--primary-dark);">${Math.round(h.temp)}°</div>
-            <div style="color:#2A6F97; font-size:0.68rem;">💧${h.pop}%</div>
+            <div style="color:#2A6F97; font-size:0.68rem;">💧${Number(h.pop)}%</div>
           </div>
         `).join('') + `</div>`;
       }
@@ -5282,10 +5282,10 @@
                 <tr><th>日期</th><th>天氣</th><th>氣溫</th><th>降雨率</th></tr>
                 ${w.dailyList.map(d => `
                   <tr>
-                    <td>${d.date.slice(5)}</td>
+                    <td>${escapeHtml(String(d.date).slice(5))}</td>
                     <td>${getWmoDesc(d.code)}</td>
                     <td><strong>${Math.round(d.min)}° ~ ${Math.round(d.max)}°C</strong></td>
-                    <td>💧 ${d.pop}%</td>
+                    <td>💧 ${Number(d.pop)}%</td>
                   </tr>
                 `).join('')}
               </table>
@@ -5297,10 +5297,10 @@
 
       box.innerHTML = `
         <div style="display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap;">
-          <div style="font-size:1.05rem; font-weight:800; color:var(--primary-dark);">📍 ${w.cityName}：${w.temp}°C ・ ${getWmoDesc(w.code)}</div>
-          <div style="font-size:0.74rem; color:var(--text-muted);">更新：${w.timeText}</div>
+          <div style="font-size:1.05rem; font-weight:800; color:var(--primary-dark);">📍 ${escapeHtml(w.cityName)}：${Number(w.temp)}°C ・ ${escapeHtml(getWmoDesc(w.code))}</div>
+          <div style="font-size:0.74rem; color:var(--text-muted);">更新：${escapeHtml(w.timeText)}</div>
         </div>
-        <div style="font-size:0.82rem; margin-top:3px;">濕度 ${w.humidity}% ・ 風速 ${w.wind} km/h ・ 目前降雨 ${w.precip} mm</div>
+        <div style="font-size:0.82rem; margin-top:3px;">濕度 ${Number(w.humidity)}% ・ 風速 ${Number(w.wind)} km/h ・ 目前降雨 ${Number(w.precip)} mm</div>
         ${hourlyHTML}
         ${weeklyHTML}
       `;
@@ -5488,6 +5488,39 @@
       return String(value == null ? '' : value).replace(/[&<>"']/g, ch => (
         { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]
       ));
+    }
+
+    // 使用者與外部資料不拼進 onclick（S-01，② #3）：按鈕只放 data-act 與 data-*（值用 escapeHtml），由這裡統一處理
+    const DATA_ACTIONS = {
+      'focus-loc': d => focusLocation(Number(d.lat), Number(d.lng)),
+      'route': d => planRouteTo(Number(d.lat), Number(d.lng), d.name || ''),
+      'prefill-loc': d => prefillLocation(d.name || '', Number(d.lat), Number(d.lng))
+    };
+    document.addEventListener('click', (e) => {
+      const el = e.target.closest && e.target.closest('[data-act]');
+      if (!el) return;
+      const fn = DATA_ACTIONS[el.dataset.act];
+      if (fn) fn(el.dataset);
+    });
+    // Leaflet 彈出框會擋住點擊往外傳，所以用 DOM 元素建內容，文字一律 textContent
+    function buildPopupEl(lines, button) {
+      const box = document.createElement('div');
+      lines.forEach((ln, i) => {
+        if (!ln || !ln.text) return;
+        if (i > 0) box.appendChild(document.createElement('br'));
+        const el = document.createElement(ln.tag || 'span');
+        el.textContent = ln.text;
+        box.appendChild(el);
+      });
+      if (button) {
+        box.appendChild(document.createElement('br'));
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.textContent = button.label;
+        b.addEventListener('click', button.onClick);
+        box.appendChild(b);
+      }
+      return box;
     }
 
     function loadAlertsMeta() {
@@ -6419,7 +6452,7 @@
           if (markersLayer) {
             L.circleMarker([el.lat, el.lon], { radius: 8, fillColor: '#2A6F97', color: '#fff', weight: 2, fillOpacity: 0.9 })
               .addTo(markersLayer)
-              .bindPopup(`<b>🛡️ ${name}</b><br><button onclick="prefillLocation('${name.replace(/'/g, '')}', ${el.lat}, ${el.lon})">➕ 存為集合點</button>`);
+              .bindPopup(buildPopupEl([{ tag: 'b', text: `🛡️ ${name}` }], { label: '➕ 存為集合點', onClick: () => prefillLocation(String(name), Number(el.lat), Number(el.lon)) }));
           }
         });
         showToast(`✅ 已於地圖標記周邊 ${items.length} 處公開避難設施`, 'success');

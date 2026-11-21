@@ -445,6 +445,7 @@
       font-size: 0.85rem; font-weight: bold; text-align: center;
     }
     .toast.success { background: rgba(61, 90, 82, 0.96); }
+    .health-sync-note { font-size: 12px; line-height: 1.55; color: var(--text); margin: 4px 0 0 24px; }
     .toast.warn { background: rgba(196, 106, 22, 0.96); }
     .toast.error { background: rgba(201, 68, 43, 0.96); }
     /* 「沒存到」提示要讀完幾行字：改用「無法確認」方框的配色（美術顧問 PR #27，對比 13.96:1） */
@@ -1960,8 +1961,10 @@
               <div class="form-group" style="background:#fffdf8; padding:8px 10px; border-radius:8px; border:1px solid #d8d4ce;">
                 <label style="display:flex; align-items:flex-start; gap:8px; cursor:pointer; font-size:0.82rem; font-weight:bold;">
                   <input type="checkbox" id="setting-sync-health" style="margin-top:3px;">
-                  <span>🔒 允許將健康個資（血型／過敏／用藥）加密後同步至試算表（預設僅存於本機）</span>
+                  <span>把健康資料（血型、過敏、用藥）同步到家人共用的試算表</span>
                 </label>
+                <!-- S-03：不是加密，寫清楚誰可能看得到（使用者顧問定稿，工程顧問確認事實） -->
+                <div class="health-sync-note">沒有勾選時，這些資料只存在這支手機。勾選後，能打開這份試算表的人，或知道家庭通行碼的人，都可能看到。取消勾選不會馬上刪掉試算表上已經有的資料：每位家人要在有網路時再存一次，那一格才會清空；試算表的版本記錄仍可能留著舊資料。</div>
               </div>
               <div class="form-group" style="margin-bottom:0; padding-top:8px; border-top:1px dashed #d8d4ce;">
                 <label class="form-label">📷 Gemini API Key（選填・供拍物資標籤 AI 辨識，須先連接 GAS）</label>
@@ -2439,7 +2442,9 @@
     function isHealthSyncEnabled() { return localStorage.getItem(STORAGE_KEYS.SYNC_HEALTH) === '1'; }
 
 
-    // 前端欄位輕量 XOR + Base64 加密（以家庭通行碼為金鑰，避免試算表直接明文暴露）
+    // 前端欄位用家庭通行碼做 XOR + Base64 編碼，只讓試算表不會一眼看到明文，這不是加密（S-03）：
+    // 沒設通行碼時金鑰是公開的固定字串，有設時也很容易反推，所以畫面上不寫「加密」。
+    // 函式名稱暫不改，避免牽動其他程式（W-09，工程顧問）。
     function encryptField(plain) {
       if (!plain) return '';
       const key = getGasPin() || 'ForestCamp2026';
@@ -2507,7 +2512,7 @@
 
 
     // 版本號只寫這一處（② #29）：升版只改 APP_VERSION，畫面標籤、網頁標題與 Service Worker 快取名稱都從這裡來
-    const APP_VERSION = 'v2.9.15';
+    const APP_VERSION = 'v2.9.18';
     (function showAppVersion() {
       const pill = document.getElementById('app-version-pill');
       if (pill) pill.textContent = APP_VERSION;
@@ -4614,7 +4619,7 @@
       localStorage.setItem(STORAGE_KEYS.LOCAL_HEALTH, JSON.stringify(localHealthMap));
 
 
-      // 若使用者同意加密雲端同步，才加密送往試算表
+      // 使用者勾選同步健康資料時，才把編碼後的內容送往試算表（編碼不是加密，見 encryptField 註解）
       const syncHealth = isHealthSyncEnabled();
       const cloudBlood = syncHealth ? encryptField(blood) : '';
       const cloudMed = syncHealth ? encryptField(medical) : '';
@@ -4632,7 +4637,7 @@
           localStorage.setItem(STORAGE_KEYS.DATA, JSON.stringify(globalData));
           localStorage.setItem(STORAGE_KEYS.MEMBERS, JSON.stringify(membersMap));
           renderParty(); renderInventory(); renderCampTab(); renderPlanTab();
-          showToast(syncHealth ? '✅ 已更新成員資料（健康欄位已加密同步）' : '✅ 已更新成員（健康欄位僅存本機）', 'success');
+          showToast(syncHealth ? '✅ 已更新成員資料（健康資料已同步到試算表）' : '✅ 已更新成員資料（健康資料只存在這支手機）', 'success');
         } else {
           showToast('📡 正在新增成員與試算表欄位...');
           const res = await postToGas({ action: 'addMember', name: newName, avatar, buddy, defaultState, blood: cloudBlood, medical: cloudMed, iceContact: '', rallyNote: cloudRally, memberType, mobility, firstAidSkill });

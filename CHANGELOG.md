@@ -19,7 +19,7 @@
 * 版本 v2.9.14。
 
 
-## [v2.9.13] - 2026-11-20（地圖程式庫改由本站提供，離線也能開地圖 — 已上線：2026-11-20 22:48 合併，GitHub Pages 22:48 部署，main b5755e8）
+## [v2.9.13] - 2026-11-20（地圖程式庫改由本站提供，離線也能開地圖 — 已上線：2026-11-20 22:47 合併，GitHub Pages 22:48 部署，main b5755e8）
 
 * **自行託管 Leaflet 1.9.4（② #28，S-07）**：`leaflet.js`、`leaflet.css` 與標記圖示放到 `vendor/leaflet-1.9.4/`（官方目錄結構，附 LICENSE 與雜湊說明），`index.html` 不再從 unpkg 載入。
 * **雜湊與官方 SRI 相同**：leaflet.js `sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=`、leaflet.css `sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=`。

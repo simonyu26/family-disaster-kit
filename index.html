@@ -2507,7 +2507,7 @@
 
 
     // 版本號只寫這一處（② #29）：升版只改 APP_VERSION，畫面標籤、網頁標題與 Service Worker 快取名稱都從這裡來
-    const APP_VERSION = 'v2.9.15';
+    const APP_VERSION = 'v2.9.16';
     (function showAppVersion() {
       const pill = document.getElementById('app-version-pill');
       if (pill) pill.textContent = APP_VERSION;
@@ -2681,6 +2681,7 @@
     function initEmojiPickers() {
       const avBox = document.getElementById('avatar-emoji-picker');
       const bdBox = document.getElementById('buddy-emoji-picker');
+      // 固定字串（內建 emoji 清單）
       avBox.innerHTML = AVATAR_EMOJIS.map(e => `<button type="button" class="emoji-opt" onclick="pickEmoji('avatar','${e}')">${e}</button>`).join('');
       bdBox.innerHTML = BUDDY_EMOJIS.map(e => `<button type="button" class="emoji-opt" onclick="pickEmoji('buddy','${e}')">${e}</button>`).join('');
     }
@@ -2727,9 +2728,9 @@
 
     function renderAvatarHTML(val, isBuddy = false) {
       if (val && val.startsWith('data:image/')) {
-        return `<img src="${val}" class="${isBuddy ? 'buddy-img' : 'avatar-img'}" alt="頭像">`;
+        return `<img src="${escapeHtml(val)}" class="${isBuddy ? 'buddy-img' : 'avatar-img'}" alt="頭像">`;
       }
-      return val || (isBuddy ? '🐾' : '🧑');
+      return val ? escapeHtml(val) : (isBuddy ? '🐾' : '🧑');
     }
 
 
@@ -3116,7 +3117,7 @@
       box.innerHTML = list.map((text, idx) => {
         const isDone = !!checks[idx];
         if (isDone) doneCount++;
-        return `<label class="tl-item ${isDone ? 'done' : ''}"><input type="checkbox" ${isDone ? 'checked' : ''} onchange="toggleTimelineStep(${idx})"><span>${text}</span></label>`;
+        return `<label class="tl-item ${isDone ? 'done' : ''}"><input type="checkbox" ${isDone ? 'checked' : ''} onchange="toggleTimelineStep(${idx})"><span>${text}</span></label>`; // 固定字串（TIMELINE_DATA）
       }).join('');
       const progEl = document.getElementById('tl-progress-text');
       if (progEl) progEl.innerText = `完成進度：${doneCount} / ${list.length}`;
@@ -3706,22 +3707,22 @@
       const mobLabels = { self: '🚶 自行行動', assist: '🤝 需攙扶', carry: '🦽 輪椅／抬送' };
       box.innerHTML = mainChars.map(name => {
         const m = getMemberVisual(name);
-        const bloodShow = m.blood ? maskText(m.blood) : '';
-        const medShow = m.medical ? maskText(m.medical) : '<span style="color:var(--text-muted);">未填寫</span>';
-        const noteShow = m.rallyNote ? maskText(m.rallyNote) : '<span style="color:var(--text-muted);">未填寫</span>';
+        const bloodShow = m.blood ? escapeHtml(maskText(m.blood)) : '';
+        const medShow = m.medical ? escapeHtml(maskText(m.medical)) : '<span style="color:var(--text-muted);">未填寫</span>';
+        const noteShow = m.rallyNote ? escapeHtml(maskText(m.rallyNote)) : '<span style="color:var(--text-muted);">未填寫</span>';
         return `
           <div class="id-card">
             <div class="id-card-header">
               <div style="display:flex; align-items:center; gap:6px; font-size:0.95rem; font-weight:800; color:var(--primary-dark); flex-wrap:wrap;">
                 <span>${renderAvatarHTML(m.avatar, false)}</span>
-                <span>${name}</span>
+                <span>${escapeHtml(name)}</span>
                 ${bloodShow ? `<span style="background:#F7E3DC; color:var(--danger); padding:1px 7px; border-radius:10px; font-size:0.74rem;">🩸 ${bloodShow}</span>` : ''}
                 <span class="badge-pill badge-mob">${mobLabels[m.mobility] || '🚶 自行行動'}</span>
                 ${(m.firstAidSkill || '').includes('cpr') ? '<span class="badge-pill badge-cpr">💓 會CPR</span>' : ''}${(m.firstAidSkill || '').includes('bousai') ? '<span class="badge-pill badge-mob">🦺 防災士</span>' : ''}
               </div>
               <div style="display:flex; gap:4px;">
-                <button class="btn btn-muted" style="padding:3px 7px; font-size:0.72rem;" onclick="openMemberModal('${name}')">✏️ 編輯</button>
-                <button class="btn btn-warn" style="padding:3px 7px; font-size:0.72rem;" onclick="hideFromIdCard('${name}')" title="標記為備用背包（保留物資紀錄但不列防災卡）">🚫 移出</button>
+                <button class="btn btn-muted" style="padding:3px 7px; font-size:0.72rem;" data-act="edit-member" data-name="${escapeHtml(name)}">✏️ 編輯</button>
+                <button class="btn btn-warn" style="padding:3px 7px; font-size:0.72rem;" data-act="hide-member" data-name="${escapeHtml(name)}" title="標記為備用背包（保留物資紀錄但不列防災卡）">🚫 移出</button>
               </div>
             </div>
             <div><strong>💊 過敏／常用藥：</strong>${medShow}</div>
@@ -3767,17 +3768,17 @@
           <div class="contact-group">
             <div class="contact-group-title"><span>${g.title}（${list.length}）</span></div>
             ${list.map(c => {
-              const cleanTel = (c.phone || '').replace(/[-\s]/g, '');
+              const cleanTel = (c.phone || '').replace(/[^\d+#*]/g, ''); // 撥號連結只留數字與 + # *
               return `
                 <div class="contact-card">
                   <div style="min-width:0; flex:1;">
-                    <div style="font-weight:800; font-size:0.9rem;">${c.name} <span class="badge-pill badge-pack">${c.relation || '親友'}</span>${c.region ? `<span style="font-size:0.74rem; color:var(--text-muted); margin-left:4px;">📍${c.region}</span>` : ''}</div>
-                    <div style="font-size:0.8rem; margin-top:2px;">📞 ${maskPhone(c.phone || '未填電話')}${c.note ? ` ・ <span style="color:var(--text-muted);">${c.note}</span>` : ''}</div>
+                    <div style="font-weight:800; font-size:0.9rem;">${escapeHtml(c.name)} <span class="badge-pill badge-pack">${escapeHtml(c.relation || '親友')}</span>${c.region ? `<span style="font-size:0.74rem; color:var(--text-muted); margin-left:4px;">📍${escapeHtml(c.region)}</span>` : ''}</div>
+                    <div style="font-size:0.8rem; margin-top:2px;">📞 ${escapeHtml(maskPhone(c.phone || '未填電話'))}${c.note ? ` ・ <span style="color:var(--text-muted);">${escapeHtml(c.note)}</span>` : ''}</div>
                   </div>
                   <div style="display:flex; gap:4px; flex-shrink:0;">
                     ${cleanTel ? `<a href="tel:${cleanTel}" class="btn btn-primary" style="text-decoration:none; padding:4px 8px; font-size:0.74rem;">📞 撥打</a>` : ''}
-                    <button class="btn btn-muted" style="padding:4px 7px; font-size:0.72rem;" onclick="openContactModal('${c.id}')">✏️</button>
-                    <button class="btn btn-danger" style="padding:4px 7px; font-size:0.72rem;" onclick="deleteContact('${c.id}')">🗑️</button>
+                    <button class="btn btn-muted" style="padding:4px 7px; font-size:0.72rem;" data-act="edit-contact" data-id="${escapeHtml(c.id)}">✏️</button>
+                    <button class="btn btn-danger" style="padding:4px 7px; font-size:0.72rem;" data-act="del-contact" data-id="${escapeHtml(c.id)}">🗑️</button>
                   </div>
                 </div>
               `;
@@ -3858,10 +3859,10 @@
         <div class="rally-card">
           <div style="display:flex; justify-content:space-between; align-items:center; gap:6px;">
             <div>
-              <strong>${loc.type}</strong>・<strong style="color:var(--primary-dark);">${loc.name}</strong>
-              ${loc.note ? `<div style="font-size:0.78rem; color:var(--text-muted); margin-top:2px;">備註：${loc.note}</div>` : ''}
+              <strong>${escapeHtml(loc.type)}</strong>・<strong style="color:var(--primary-dark);">${escapeHtml(loc.name)}</strong>
+              ${loc.note ? `<div style="font-size:0.78rem; color:var(--text-muted); margin-top:2px;">備註：${escapeHtml(loc.note)}</div>` : ''}
             </div>
-            <button class="btn btn-primary" style="padding:4px 8px; font-size:0.74rem; white-space:nowrap;" onclick="switchTab('map'); setTimeout(()=>{ if(mapInstance) mapInstance.setView([${loc.lat}, ${loc.lng}], 16); }, 150);">🧭 地圖查看</button>
+            <button class="btn btn-primary" style="padding:4px 8px; font-size:0.74rem; white-space:nowrap;" data-act="map-view" data-lat="${Number(loc.lat)}" data-lng="${Number(loc.lng)}">🧭 地圖查看</button>
           </div>
         </div>
       `).join('');
@@ -4010,19 +4011,19 @@
         card.innerHTML = `
           ${myBadgeHTML}
           <div class="char-avatar">${renderAvatarHTML(vis.avatar, false)}<span class="char-buddy">${renderAvatarHTML(vis.buddy, true)}</span></div>
-          <div style="font-weight:800; font-size:0.9rem; margin-top:3px;">${char}</div>
+          <div style="font-weight:800; font-size:0.9rem; margin-top:3px;">${escapeHtml(char)}</div>
           ${roleBadge}
           <div class="progress-track">
-            <div class="progress-fill" style="width:${prog.pct}%; background:${barColor};"></div>
+            <div class="progress-fill" style="width:${Number(prog.pct)}%; background:${barColor};"></div>
           </div>
-          <div style="font-size:12px; font-weight:bold; color:var(--primary-dark); margin-top:4px;">${prog.checked}/${prog.total} (${prog.pct}%)</div>
-          <div class="pack-updated-date">${getCharLastUpdatedText(char)}</div>
-          <div class="mood-bubble" id="mood-bubble-${char}">${getBuddyMoodText(char, prog.pct)}</div>
+          <div style="font-size:12px; font-weight:bold; color:var(--primary-dark); margin-top:4px;">${Number(prog.checked)}/${Number(prog.total)} (${Number(prog.pct)}%)</div>
+          <div class="pack-updated-date">${escapeHtml(getCharLastUpdatedText(char))}</div>
+          <div class="mood-bubble" id="mood-bubble-${escapeHtml(char)}">${getBuddyMoodText(char, prog.pct)}</div>
           <div class="bond-pill">${getBuddyBondLabel(char)}</div>
           <div class="buddy-react-row" onclick="event.stopPropagation();">
-            <button type="button" class="buddy-react-btn" onclick="interactWithBuddy('${char}', 'pat')">🐾 拍拍</button>
-            <button type="button" class="buddy-react-btn" onclick="interactWithBuddy('${char}', 'snack')">🍪 點心</button>
-            <button type="button" class="buddy-react-btn" onclick="interactWithBuddy('${char}', 'safe')">🌿 安心</button>
+            <button type="button" class="buddy-react-btn" data-act="buddy" data-char="${escapeHtml(char)}" data-kind="pat">🐾 拍拍</button>
+            <button type="button" class="buddy-react-btn" data-act="buddy" data-char="${escapeHtml(char)}" data-kind="snack">🍪 點心</button>
+            <button type="button" class="buddy-react-btn" data-act="buddy" data-char="${escapeHtml(char)}" data-kind="safe">🌿 安心</button>
           </div>
         `;
         container.appendChild(card);
@@ -4102,7 +4103,7 @@
         catEl.className = 'category-title';
         catEl.onclick = () => toggleCategory(cat);
         catEl.innerHTML = `
-          <span>${getCategoryIcon(cat)}${cat}</span>
+          <span>${getCategoryIcon(cat)}${escapeHtml(cat)}</span>
           <span class="cat-meta">${invSubMode === 'character' ? `${readyCount}/${list.length}` : `${list.length} 項`} ${isCollapsed ? '▶' : '▼'}</span>
         `;
         container.appendChild(catEl);
@@ -4129,60 +4130,61 @@
             const isExpRow = !!expandedItems[item.row];
             if (isExpRow) row.classList.add('expanded');
             const specLabel = getSpecHumanLabel(charData.spec, item);
-            const specPill = specLabel ? `<span class="meta-pill" style="background:#EEF6FA; color:#1D5273;">${specLabel}</span>` : '';
-            const qtyPill = charData.qty ? `<span class="meta-pill qty">×${charData.qty}</span>` : '';
+            const specPill = specLabel ? `<span class="meta-pill" style="background:#EEF6FA; color:#1D5273;">${escapeHtml(specLabel)}</span>` : '';
+            const qtyPill = charData.qty ? `<span class="meta-pill qty">×${escapeHtml(charData.qty)}</span>` : '';
             const expPill = charData.exp
-              ? `<span class="meta-pill ${expInfo.expired ? 'danger' : (expInfo.warn ? 'warn' : '')}">${expInfo.expired ? '⚠️過期 ' : (expInfo.warn ? '🍂快到期 ' : '')}${charData.exp}</span>`
+              ? `<span class="meta-pill ${expInfo.expired ? 'danger' : (expInfo.warn ? 'warn' : '')}">${expInfo.expired ? '⚠️過期 ' : (expInfo.warn ? '🍂快到期 ' : '')}${escapeHtml(charData.exp)}</span>`
               : '';
-            const notePill = charData.note ? `<span class="meta-pill">${charData.note.slice(0, 10)}${charData.note.length > 10 ? '…' : ''}</span>` : '';
+            const notePill = charData.note ? `<span class="meta-pill">${escapeHtml(String(charData.note).slice(0, 10))}${String(charData.note).length > 10 ? '…' : ''}</span>` : '';
 
 
             row.innerHTML = `
               <div class="item-header">
-                <div style="flex:1; min-width:0; cursor:pointer;" onclick="toggleItemExpand(${item.row})">
+                <div style="flex:1; min-width:0; cursor:pointer;" onclick="toggleItemExpand(${Number(item.row)})">
                   <div class="item-name-line" style="flex-wrap:wrap;">
-                    <span class="item-name">${item.name}</span>
+                    <span class="item-name">${escapeHtml(item.name)}</span>
                     <span class="item-summary-pills">${qtyPill}${specPill}${expPill}${notePill}</span>
                     <span class="expand-hint">${isExpRow ? '▲ 收合' : '▾ 數量/效期'}</span>
                   </div>
                   ${alertLabel}
                 </div>
                 <div style="display:flex; align-items:center; gap:6px;">
-                  <button class="btn-edit-item" onclick="openEditItemModal(${item.row})" title="編輯、移出或刪除物資">✏️</button>
+                  <button class="btn-edit-item" onclick="openEditItemModal(${Number(item.row)})" title="編輯、移出或刪除物資">✏️</button>
                   <label class="switch">
-                    <input type="checkbox" onchange="toggleItemReady(${item.row}, '${currentChar}', this.checked)" ${isChecked ? 'checked' : ''}>
+                    <input type="checkbox" data-chg="toggle-ready" data-row="${Number(item.row)}" data-char="${escapeHtml(currentChar)}" ${isChecked ? 'checked' : ''}>
                     <span class="slider"></span>
                   </label>
                 </div>
               </div>
               <div class="util-bar">
                 <div class="stepper">
-                  <button class="step-btn" onclick="stepQty(${item.row}, '${currentChar}', -1)">−</button>
-                  <input type="text" class="qty-input" placeholder="數量" value="${charData.qty}" onchange="updateField(${item.row}, '${currentChar}', 'qty', this.value, ${invRenderGen})">
-                  <button class="step-btn" onclick="stepQty(${item.row}, '${currentChar}', 1)">+</button>
+                  <button class="step-btn" data-act="step-qty" data-row="${Number(item.row)}" data-char="${escapeHtml(currentChar)}" data-delta="-1">−</button>
+                  <input type="text" class="qty-input" placeholder="數量" value="${escapeHtml(charData.qty)}" data-chg="update-field" data-row="${Number(item.row)}" data-char="${escapeHtml(currentChar)}" data-field="qty" data-gen="${Number(invRenderGen)}">
+                  <button class="step-btn" data-act="step-qty" data-row="${Number(item.row)}" data-char="${escapeHtml(currentChar)}" data-delta="1">+</button>
                 </div>
-                <input type="date" class="util-input exp-date-input ${expClass}" value="${charData.exp}" onchange="updateField(${item.row}, '${currentChar}', 'exp', this.value, ${invRenderGen})">
-                <button class="btn-cam-ocr" onclick="openOcrModal(${item.row})" title="拍照辨識有效期限與容量規格，或點選存放位置">📷 拍標籤/規格</button>
-                <input type="text" class="util-input note-input" placeholder="存放位置或備註..." value="${charData.note}" onchange="updateField(${item.row}, '${currentChar}', 'note', this.value, ${invRenderGen})">
-                <div class="item-updated-meta">🕒 最後更新：${charData.updatedAt || '尚未記錄'}</div>
+                <input type="date" class="util-input exp-date-input ${expClass}" value="${escapeHtml(charData.exp)}" data-chg="update-field" data-row="${Number(item.row)}" data-char="${escapeHtml(currentChar)}" data-field="exp" data-gen="${Number(invRenderGen)}">
+                <button class="btn-cam-ocr" onclick="openOcrModal(${Number(item.row)})" title="拍照辨識有效期限與容量規格，或點選存放位置">📷 拍標籤/規格</button>
+                <input type="text" class="util-input note-input" placeholder="存放位置或備註..." value="${escapeHtml(charData.note)}" data-chg="update-field" data-row="${Number(item.row)}" data-char="${escapeHtml(currentChar)}" data-field="note" data-gen="${Number(invRenderGen)}">
+                <div class="item-updated-meta">🕒 最後更新：${escapeHtml(charData.updatedAt || '尚未記錄')}</div>
               </div>
             `;
+            bindDataChange(row);
           } else {
             const chipsHTML = globalData.characters.map(char => {
               const st = item.status[char] || { state: 'na', qty: '', exp: '' };
-              const qtyText = (st.state === 'ready' && st.qty) ? ` (${st.qty})` : '';
+              const qtyText = (st.state === 'ready' && st.qty) ? ` (${escapeHtml(st.qty)})` : '';
               const icon = st.state === 'ready' ? '✔' : (st.state === 'missing' ? '✖' : '➖');
               const expInfo = getExpStatus(st.exp);
               const borderStyle = expInfo.expired ? 'border: 2px solid var(--danger);' : (expInfo.warn ? 'border: 2px solid var(--warning);' : '');
-              return `<div class="chip ${st.state}" style="${borderStyle}" onclick="cycleChipState(${item.row}, '${char}')">${char} ${icon}${qtyText}</div>`;
+              return `<div class="chip ${escapeHtml(st.state)}" style="${borderStyle}" data-act="cycle-chip" data-row="${Number(item.row)}" data-char="${escapeHtml(char)}">${escapeHtml(char)} ${icon}${qtyText}</div>`;
             }).join('');
 
 
             row.innerHTML = `
               <div class="item-header">
                 <div class="item-name-line">
-                  <span class="item-name">${item.name}</span>
-                  <button class="btn-edit-item" onclick="openEditItemModal(${item.row})" title="編輯或刪除物資">✏️</button>
+                  <span class="item-name">${escapeHtml(item.name)}</span>
+                  <button class="btn-edit-item" onclick="openEditItemModal(${Number(item.row)})" title="編輯或刪除物資">✏️</button>
                 </div>
               </div>
               <div class="chip-container">${chipsHTML}</div>
@@ -4285,7 +4287,7 @@
       const charsBox = document.getElementById('modal-chars-list');
       charsBox.innerHTML = '';
       globalData.characters.forEach(c => {
-        charsBox.innerHTML += `<label class="char-check-pill"><input type="checkbox" value="${c}" ${c === currentChar ? 'checked' : ''}> ${c}</label>`;
+        charsBox.innerHTML += `<label class="char-check-pill"><input type="checkbox" value="${escapeHtml(c)}" ${c === currentChar ? 'checked' : ''}> ${escapeHtml(c)}</label>`;
       });
       document.getElementById('item-modal').classList.add('open');
     }
@@ -4503,7 +4505,7 @@
       select.innerHTML = '<option value="">-- 不鎖定（顯示全部）--</option>';
       if (globalData && globalData.characters) {
         globalData.characters.forEach(c => {
-          select.innerHTML += `<option value="${c}" ${c === myChar ? 'selected' : ''}>${c}</option>`;
+          select.innerHTML += `<option value="${escapeHtml(c)}" ${c === myChar ? 'selected' : ''}>${escapeHtml(c)}</option>`;
         });
       }
 
@@ -4525,13 +4527,13 @@
             <span style="display:inline-flex; align-items:center; gap:4px; font-size:1.25rem;">
               ${renderAvatarHTML(vis.avatar, false)} ${renderAvatarHTML(vis.buddy, false)}
             </span>
-            <strong>${name}</strong>
+            <strong>${escapeHtml(name)}</strong>
             ${vis.memberType === 'light' ? '<span class="badge-pill badge-pack">⚡ 輕量隨身包</span>' : (vis.memberType === 'base' ? '<span class="badge-pill badge-mob">🏠 基地儲備</span>' : '<span class="badge-pill" style="background:#E6F0EC;color:#264A3E;">🎒 標準移動包</span>')}
             ${(vis.firstAidSkill || '').includes('cpr') ? '<span class="badge-pill badge-cpr">💓 會CPR</span>' : ''}${(vis.firstAidSkill || '').includes('bousai') ? '<span class="badge-pill badge-mob">🦺 防災士</span>' : ''}
           </div>
           <div style="display:flex; gap:6px;">
-            <button class="btn btn-muted" style="padding:4px 9px; font-size:0.78rem;" onclick="openMemberModal('${name}')">✏️ 編輯</button>
-            <button class="btn btn-danger" style="padding:4px 9px; font-size:0.78rem;" onclick="deleteMember('${name}')">🗑️ 刪除</button>
+            <button class="btn btn-muted" style="padding:4px 9px; font-size:0.78rem;" data-act="edit-member" data-name="${escapeHtml(name)}">✏️ 編輯</button>
+            <button class="btn btn-danger" style="padding:4px 9px; font-size:0.78rem;" data-act="del-member" data-name="${escapeHtml(name)}">🗑️ 刪除</button>
           </div>
         `;
         listEl.appendChild(row);
@@ -4694,7 +4696,7 @@
       const filterBox = document.getElementById('filter-partners');
       filterBox.innerHTML = '';
       globalData.characters.forEach(char => {
-        filterBox.innerHTML += `<label class="filter-checkbox"><input type="checkbox" checked value="${char}" onchange="filterPrintItems()"> ${char}</label>`;
+        filterBox.innerHTML += `<label class="filter-checkbox"><input type="checkbox" checked value="${escapeHtml(char)}" onchange="filterPrintItems()"> ${escapeHtml(char)}</label>`;
       });
       document.getElementById('print-modal').style.display = 'block';
       filterPrintItems();
@@ -4729,8 +4731,8 @@
           if (!missingItemsByCategory[item.category]) missingItemsByCategory[item.category] = [];
           missingItemsByCategory[item.category].push(`
             <div class="print-item">
-              <div style="font-weight:bold;">📦 ${item.name}</div>
-              <div style="font-size:0.85rem; color:#444; margin-top:2px;">對象：${needBuy.join('、')}</div>
+              <div style="font-weight:bold;">📦 ${escapeHtml(item.name)}</div>
+              <div style="font-size:0.85rem; color:#444; margin-top:2px;">對象：${escapeHtml(needBuy.join('、'))}</div>
             </div>
           `);
         }
@@ -4741,7 +4743,7 @@
         content.innerHTML = '<p style="font-weight:bold; color:var(--primary); padding:20px 0;">🎉 所有選取夥伴的裝備都已就緒！目前無須採買。</p>';
       } else {
         for (let cat in missingItemsByCategory) {
-          content.innerHTML += `<div class="print-cat">${getCategoryIcon(cat)}${cat}</div>`;
+          content.innerHTML += `<div class="print-cat">${getCategoryIcon(cat)}${escapeHtml(cat)}</div>`;
           content.innerHTML += missingItemsByCategory[cat].join('');
         }
       }
@@ -4962,7 +4964,7 @@
         return;
       }
       locationsData.forEach(loc => {
-        if (markersLayer) L.marker([loc.lat, loc.lng]).addTo(markersLayer).bindPopup(`<b>${loc.type} ${loc.name}</b><br>${loc.note || ''}`);
+        if (markersLayer) L.marker([loc.lat, loc.lng]).addTo(markersLayer).bindPopup(buildPopupEl([{ tag: 'b', text: `${loc.type} ${loc.name}` }, { text: loc.note || '' }]));
         let distHTML = '<span style="color:var(--text-muted); font-size:0.75rem;">未定位</span>';
         if (userPos) {
           const d = calcDistanceMeters(userPos.lat, userPos.lng, loc.lat, loc.lng);
@@ -4973,13 +4975,13 @@
         const card = document.createElement('div');
         card.className = 'loc-card';
         card.innerHTML = `
-          <div style="flex:1; cursor:pointer;" onclick="focusLocation(${loc.lat}, ${loc.lng})">
-            <div style="font-weight:800; font-size:0.95rem;">${loc.type} ${loc.name}</div>
-            <div style="font-size:0.78rem; color:var(--text-muted); margin-top:2px;">${loc.note || '無備註'}・(${loc.lat.toFixed(4)}, ${loc.lng.toFixed(4)})</div>
+          <div style="flex:1; cursor:pointer;" data-act="focus-loc" data-lat="${Number(loc.lat)}" data-lng="${Number(loc.lng)}">
+            <div style="font-weight:800; font-size:0.95rem;">${escapeHtml(loc.type)} ${escapeHtml(loc.name)}</div>
+            <div style="font-size:0.78rem; color:var(--text-muted); margin-top:2px;">${escapeHtml(loc.note || '無備註')}・(${Number(loc.lat).toFixed(4)}, ${Number(loc.lng).toFixed(4)})</div>
           </div>
           ${distHTML}
-          <button class="btn btn-primary" style="padding:5px 8px; font-size:0.76rem;" onclick="planRouteTo(${loc.lat}, ${loc.lng}, '${loc.name.replace(/'/g, '')}')">🚶 路線</button>
-          <button class="btn-edit-item" onclick="deleteLocation('${loc.id}', '${loc.name}')">🗑️</button>
+          <button class="btn btn-primary" style="padding:5px 8px; font-size:0.76rem;" data-act="route" data-lat="${Number(loc.lat)}" data-lng="${Number(loc.lng)}" data-name="${escapeHtml(loc.name)}">🚶 路線</button>
+          <button class="btn-edit-item" data-act="del-loc" data-id="${escapeHtml(loc.id)}" data-name="${escapeHtml(loc.name)}">🗑️</button>
         `;
         listEl.appendChild(card);
       });
@@ -5494,14 +5496,40 @@
     const DATA_ACTIONS = {
       'focus-loc': d => focusLocation(Number(d.lat), Number(d.lng)),
       'route': d => planRouteTo(Number(d.lat), Number(d.lng), d.name || ''),
-      'prefill-loc': d => prefillLocation(d.name || '', Number(d.lat), Number(d.lng))
+      'prefill-loc': d => prefillLocation(d.name || '', Number(d.lat), Number(d.lng)),
+      'del-loc': d => deleteLocation(d.id || '', d.name || ''),
+      'map-view': d => { switchTab('map'); setTimeout(() => { if (mapInstance) mapInstance.setView([Number(d.lat), Number(d.lng)], 16); }, 150); },
+      'edit-member': d => openMemberModal(d.name || ''),
+      'hide-member': d => hideFromIdCard(d.name || ''),
+      'del-member': d => deleteMember(d.name || ''),
+      'edit-contact': d => openContactModal(d.id || ''),
+      'del-contact': d => deleteContact(d.id || ''),
+      'step-qty': d => stepQty(Number(d.row), d.char || '', Number(d.delta)),
+      'cycle-chip': d => cycleChipState(Number(d.row), d.char || ''),
+      'buddy': d => interactWithBuddy(d.char || '', d.kind || 'pat'),
+      'roll-stock': d => rollStockItem(Number(d.row), d.char || '', d.exp || '')
     };
+    // 輸入框、勾選框的 change 也一樣：data-chg 指定動作
+    const CHANGE_ACTIONS = {
+      'toggle-ready': (d, el) => toggleItemReady(Number(d.row), d.char || '', el.checked),
+      'update-field': (d, el) => updateField(Number(d.row), d.char || '', d.field || '', el.value, Number(d.gen))
+    };
+    // 用捕獲階段，外層有 stopPropagation（例如夥伴互動列）也接得到
     document.addEventListener('click', (e) => {
       const el = e.target.closest && e.target.closest('[data-act]');
       if (!el) return;
       const fn = DATA_ACTIONS[el.dataset.act];
       if (fn) fn(el.dataset);
-    });
+    }, true);
+    // change 綁在元素本身：重畫時輸入框已被移出畫面，change 仍要送得出去（工程顧問 PR #29 的情境）
+    function bindDataChange(root) {
+      root.querySelectorAll('[data-chg]').forEach(el => {
+        el.addEventListener('change', () => {
+          const fn = CHANGE_ACTIONS[el.dataset.chg];
+          if (fn) fn(el.dataset, el);
+        });
+      });
+    }
     // Leaflet 彈出框會擋住點擊往外傳，所以用 DOM 元素建內容，文字一律 textContent
     function buildPopupEl(lines, button) {
       const box = document.createElement('div');
@@ -5620,16 +5648,16 @@
       } else if (status.state === 'clear') {
         html = `<div class="alert-state alert-state-clear">
           <div><span class="alert-pill alert-pill-clear">沒有示警</span></div>
-          <div class="alert-state-title">✅ 近 12 小時沒有【${city}】的災害示警</div>
+          <div class="alert-state-title">✅ 近 12 小時沒有【${escapeHtml(city)}】的災害示警</div>
           <div class="alert-state-time">資料時間 ${escapeHtml(lastTime)}</div>
           <div class="alert-state-note">${ALERT_CLEAR_NOTE_HTML}</div>
         </div>`;
       } else {
         const texts = {
           local: ['⚠️ 尚未連接雲端，這裡無法顯示示警。', '', '請以手機的災防告警和廣播、電視為準，也可以到中央氣象署網站查看。'],
-          empty: [`⚠️ 示警資料這次沒有回傳內容，目前無法確認【${city}】有沒有示警。`, lastText, '請稍後按「🔁 更新」，並以手機的災防告警和廣播、電視為準。'],
-          truncated: [`⚠️ 目前示警很多，這裡只收到其中 ${getAlertFeedLimit()} 則，無法確認【${city}】有沒有其他示警。`, freshText, '請到國家災害防救科技中心的示警網站查看完整內容。'],
-          stale: [`⚠️ 目前無法確認【${city}】有沒有示警。`, lastText, '請連上網路後按「🔁 更新」；在這之前，請以手機的災防告警和廣播、電視為準。']
+          empty: [`⚠️ 示警資料這次沒有回傳內容，目前無法確認【${escapeHtml(city)}】有沒有示警。`, lastText, '請稍後按「🔁 更新」，並以手機的災防告警和廣播、電視為準。'],
+          truncated: [`⚠️ 目前示警很多，這裡只收到其中 ${getAlertFeedLimit()} 則，無法確認【${escapeHtml(city)}】有沒有其他示警。`, freshText, '請到國家災害防救科技中心的示警網站查看完整內容。'],
+          stale: [`⚠️ 目前無法確認【${escapeHtml(city)}】有沒有示警。`, lastText, '請連上網路後按「🔁 更新」；在這之前，請以手機的災防告警和廣播、電視為準。']
         };
         const [title, time, action] = texts[status.reason] || texts.stale;
         html = `<div class="alert-state alert-state-unknown">
@@ -5771,7 +5799,7 @@
       sel.innerHTML = '<option value="current">📍 目前／畫面周邊 AED</option>';
       (locationsData || []).forEach(loc => {
         const cnt = (aedsByLocCache[loc.id] || []).length;
-        sel.innerHTML += `<option value="${loc.id}">📌 ${loc.name}（已存 ${cnt} 台）</option>`;
+        sel.innerHTML += `<option value="${escapeHtml(loc.id)}">📌 ${escapeHtml(loc.name)}（已存 ${Number(cnt)} 台）</option>`;
       });
       sel.value = [...sel.options].some(o => o.value === prev) ? prev : 'current';
     }
@@ -5897,7 +5925,7 @@
           return m.memberType === 'main' && (m.mobility === 'assist' || m.mobility === 'carry');
         });
         careBox.innerHTML = needCare.length > 0
-          ? `<div style="padding:6px 8px; background:#FFF8E7; border-radius:8px; border:1px solid #E9C46A;">⚠️ <strong>需協助避難成員：</strong>${needCare.join('、')}（請於下方明確約定誰負責攙扶或接送）</div>`
+          ? `<div style="padding:6px 8px; background:#FFF8E7; border-radius:8px; border:1px solid #E9C46A;">⚠️ <strong>需協助避難成員：</strong>${escapeHtml(needCare.join('、'))}（請於下方明確約定誰負責攙扶或接送）</div>`
           : '<div style="color:var(--primary-dark);">✅ 目前主要成員皆標記為可自行行動。</div>';
       }
     }
@@ -5933,7 +5961,7 @@
           : '🏠 <strong>豪雨／颱風建議【就地垂直避難】</strong>（位於 3 樓以上較不易受淹水波及，注意停電後加壓馬達停水與馬桶凝固劑備援）。')
         : '✅ <strong>豪雨／颱風建議【在宅避難為主】</strong>（周邊屬低風險區，留意停水停電備援即可）。';
       box.className = 'decision-result' + ((dec.struct === 'old' || (dec.hazard === 'flood' && dec.floor === 'low')) ? ' warn' : '');
-      box.innerHTML = `<div>${eqAdvice}</div><div style="margin-top:4px;">${floodAdvice}</div>`;
+      box.innerHTML = `<div>${eqAdvice}</div><div style="margin-top:4px;">${floodAdvice}</div>`; // 固定字串（程式內建議文字）
     }
 
 
@@ -6091,11 +6119,11 @@
       if (pBox) {
         pBox.innerHTML = `
           <div class="combo-card">
-            <div class="combo-title"><span>⚡ 1. 輕裝即走 (${lightPackName || '無輕量包'})</span><span class="combo-days">${dLight.minDays} 天</span></div>
+            <div class="combo-title"><span>⚡ 1. 輕裝即走 (${escapeHtml(lightPackName || '無輕量包')})</span><span class="combo-days">${dLight.minDays} 天</span></div>
             <div class="combo-sub">💧 飲水 ${dLight.waterDays} 天 (${dLight.drinkLiters}L)<br>🥫 糧食 ${dLight.foodDays} 天 (約 ${dLight.meals} 餐)</div>
           </div>
           <div class="combo-card highlight">
-            <div class="combo-title"><span>🎒 2. 標準移動 (${baseOwner})</span><span class="combo-days">${dMain.minDays} 天</span></div>
+            <div class="combo-title"><span>🎒 2. 標準移動 (${escapeHtml(baseOwner)})</span><span class="combo-days">${dMain.minDays} 天</span></div>
             <div class="combo-sub">💧 飲水 ${dMain.waterDays} 天 (${dMain.drinkLiters}L / 目標9L)<br>🥫 糧食 ${dMain.foodDays} 天 (約 ${dMain.meals} 餐 / 目標9餐)</div>
           </div>
           <div class="combo-card">
@@ -6136,11 +6164,11 @@
           rBox.style.display = 'none';
         } else {
           rBox.style.display = 'block';
-          rBox.innerHTML = `<div style="font-weight:800; color:#9C5211; margin-bottom:4px;">🍂 滾動式消耗輪替任務（${rollingItems.length} 項需消耗換新）：</div>` +
+          rBox.innerHTML = `<div style="font-weight:800; color:#9C5211; margin-bottom:4px;">🍂 滾動式消耗輪替任務（${Number(rollingItems.length)} 項需消耗換新）：</div>` +
             rollingItems.slice(0, 6).map(r => `
               <div class="rolling-row">
-                <span>${r.expired ? '☢️' : '⚠️'} <strong>${r.name}</strong>（${r.exp}）</span>
-                <button class="btn btn-primary" style="padding:2px 8px; font-size:0.72rem;" onclick="rollStockItem(${r.row}, '${r.charName}', '${r.exp}')">✅ 已換新(+1年)</button>
+                <span>${r.expired ? '☢️' : '⚠️'} <strong>${escapeHtml(r.name)}</strong>（${escapeHtml(r.exp)}）</span>
+                <button class="btn btn-primary" style="padding:2px 8px; font-size:0.72rem;" data-act="roll-stock" data-row="${Number(r.row)}" data-char="${escapeHtml(r.charName)}" data-exp="${escapeHtml(r.exp)}">✅ 已換新(+1年)</button>
               </div>
             `).join('');
         }
@@ -6323,7 +6351,7 @@
       const sumEl = document.getElementById('watch-city-summary');
       if (!pillsEl || !sumEl) return;
       pillsEl.innerHTML = WATCH_CANDIDATES.map(c =>
-        `<span class="watch-pill ${watchCities.includes(c) ? 'active' : ''}" onclick="toggleWatchCity('${c}')">${c}</span>`
+        `<span class="watch-pill ${watchCities.includes(c) ? 'active' : ''}" onclick="toggleWatchCity('${c}')">${c}</span>` // 固定字串（WATCH_CANDIDATES）
       ).join('');
       if (watchCities.length === 0) {
         sumEl.innerHTML = '<span style="color:var(--text-muted);">尚未釘選外地親友縣市</span>';
@@ -6362,7 +6390,7 @@
       const nextD = new Date(d); nextD.setMonth(nextD.getMonth() + 6);
       const daysSince = Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24));
       const overdue = daysSince >= 180;
-      box.innerHTML = `${overdue ? '🔔 <strong>已屆半年演練時間！</strong>' : '✅ <strong>演練進度正常</strong>'}<br>上次演練：<strong>${lastDrill}</strong>（已過 ${daysSince} 天）・下次建議：<strong>${nextD.toISOString().slice(0, 10)}</strong>`;
+      box.innerHTML = `${overdue ? '🔔 <strong>已屆半年演練時間！</strong>' : '✅ <strong>演練進度正常</strong>'}<br>上次演練：<strong>${escapeHtml(lastDrill)}</strong>（已過 ${Number(daysSince)} 天）・下次建議：<strong>${nextD.toISOString().slice(0, 10)}</strong>`;
     }
 
 
@@ -6415,19 +6443,19 @@
         ${mainChars.map(n => {
           const m = getMemberVisual(n);
           return `<div style="border:1px solid #ccc; padding:8px; border-radius:6px; margin-bottom:6px;">
-            <strong>${n}</strong>（血型：${m.blood || '未填'}｜行動：${m.mobility || 'self'}）<br>
-            過敏與用藥：${m.medical || '無'} ｜ 備註：${m.rallyNote || '無'}
+            <strong>${escapeHtml(n)}</strong>（血型：${escapeHtml(m.blood || '未填')}｜行動：${escapeHtml(m.mobility || 'self')}）<br>
+            過敏與用藥：${escapeHtml(m.medical || '無')} ｜ 備註：${escapeHtml(m.rallyNote || '無')}
           </div>`;
         }).join('')}
         <h3>2. 緊急聯絡網</h3>
-        ${(contactsData || []).map(c => `<div>・<strong>${c.name}</strong>（${c.relation}）📞 ${c.phone} ${c.region ? '📍' + c.region : ''} ${c.note || ''}</div>`).join('') || '<div>尚未設定</div>'}
+        ${(contactsData || []).map(c => `<div>・<strong>${escapeHtml(c.name)}</strong>（${escapeHtml(c.relation)}）📞 ${escapeHtml(c.phone)} ${c.region ? '📍' + escapeHtml(c.region) : ''} ${escapeHtml(c.note || '')}</div>`).join('') || '<div>尚未設定</div>'}
         <h3>3. 約定集合點（Plan A / B / C）</h3>
-        ${(locationsData || []).map(l => `<div>・<strong>${l.type}</strong>：${l.name}（${l.lat.toFixed(5)}, ${l.lng.toFixed(5)}）${l.note || ''}</div>`).join('') || '<div>尚未設定</div>'}
+        ${(locationsData || []).map(l => `<div>・<strong>${escapeHtml(l.type)}</strong>：${escapeHtml(l.name)}（${Number(l.lat).toFixed(5)}, ${Number(l.lng).toFixed(5)}）${escapeHtml(l.note || '')}</div>`).join('') || '<div>尚未設定</div>'}
         <h3>4. 歸宅困難與失聯匯合協議</h3>
-        <div>・0～1 小時：${reu.h1 || '各自安全待命並報平安'}</div>
-        <div>・1～6 小時：${reu.h6 || '視交通狀況徒步返家或暫留安全處'}</div>
-        <div>・6 小時以上：${reu.h24 || '前往約定集合點會合'}</div>
-        <div>・照顧分工：${reu.care || '無特別備註'}</div>
+        <div>・0～1 小時：${escapeHtml(reu.h1 || '各自安全待命並報平安')}</div>
+        <div>・1～6 小時：${escapeHtml(reu.h6 || '視交通狀況徒步返家或暫留安全處')}</div>
+        <div>・6 小時以上：${escapeHtml(reu.h24 || '前往約定集合點會合')}</div>
+        <div>・照顧分工：${escapeHtml(reu.care || '無特別備註')}</div>
       `;
       document.getElementById('plan-print-modal').style.display = 'block';
     }
@@ -6673,7 +6701,7 @@
       const g = getGuidePersona();
       const el = document.getElementById('camp-guide-nudge-text');
       if (el) {
-        el.innerHTML = `${g.emoji} <strong>營地嚮導${g.name}</strong>：${GUIDE_TIPS[guideTipIdx % GUIDE_TIPS.length]}`;
+        el.innerHTML = `${g.emoji} <strong>營地嚮導${g.name}</strong>：${GUIDE_TIPS[guideTipIdx % GUIDE_TIPS.length]}`; // 固定字串（嚮導設定與提示）
       }
       const pfaTitle = document.getElementById('pfa-companion-title');
       if (pfaTitle) {

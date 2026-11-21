@@ -446,6 +446,7 @@
     }
     .toast.success { background: rgba(61, 90, 82, 0.96); }
     .health-sync-note { font-size: 12px; line-height: 1.55; color: var(--text); margin: 4px 0 0 24px; }
+    .health-sync-note p { margin: 0 0 4px; }
     .toast.warn { background: rgba(196, 106, 22, 0.96); }
     .toast.error { background: rgba(201, 68, 43, 0.96); }
     /* 「沒存到」提示要讀完幾行字：改用「無法確認」方框的配色（美術顧問 PR #27，對比 13.96:1） */
@@ -1964,7 +1965,11 @@
                   <span>把健康資料（血型、過敏、用藥）同步到家人共用的試算表</span>
                 </label>
                 <!-- S-03：不是加密，寫清楚誰可能看得到（使用者顧問定稿，工程顧問確認事實） -->
-                <div class="health-sync-note">沒有勾選時，這些資料只存在這支手機。勾選後，能打開這份試算表的人，或知道家庭通行碼的人，都可能看到。取消勾選不會馬上刪掉試算表上已經有的資料：每位家人要在有網路時再存一次，那一格才會清空；試算表的版本記錄仍可能留著舊資料。</div>
+                <div class="health-sync-note">
+                  <p>沒有勾選時，這些資料只存在這支手機。</p>
+                  <p>勾選後，能打開這份試算表的人，或知道家庭通行碼的人，都可能看到。</p>
+                  <p>之後取消勾選：請每位家人在有網路時，把自己的成員資料再存一次，試算表上的健康資料才會清掉。Google 試算表的「版本記錄」裡，可能還留著舊資料。</p>
+                </div>
               </div>
               <div class="form-group" style="margin-bottom:0; padding-top:8px; border-top:1px dashed #d8d4ce;">
                 <label class="form-label">📷 Gemini API Key（選填・供拍物資標籤 AI 辨識，須先連接 GAS）</label>

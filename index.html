@@ -544,6 +544,8 @@
     body.emergency-mode .tourniquet-box { background: #2A0A08 !important; border-color: #FF453A !important; }
     /* 重置確認與「已重置」紀錄在緊急模式也要 16px（A-05，工程顧問） */
     body.emergency-mode #tq-meta { font-size: 16px !important; }
+    #tq-meta.tq-meta-over { font-weight: 800; color: var(--text); }
+    body.emergency-mode #tq-meta.tq-meta-over { color: var(--em-text) !important; }
     .tq-time { font-size: 1.25rem; font-weight: 900; color: #C84B31; font-family: monospace; }
     body.emergency-mode .tq-time { color: #FFD60A !important; }
     #sos-flash-overlay {
@@ -1546,7 +1548,7 @@
                 <div>
                   <div style="font-size:12px; font-weight:800;">⏱️ 止血帶綁紮計時器<span class="help-q-btn" onclick="event.stopPropagation(); showTermHelp('tq')">?</span></div>
                   <div id="tq-display" class="tq-time">尚未開始計時</div>
-                  <div id="tq-meta" style="font-size:12px;">超過 120 分鐘恐壞死，請向救護員報告時間</div>
+                  <div id="tq-meta" style="font-size:12px;">綁超過 2 小時，肢體受傷的風險會升高；請把綁上的時間告訴救護人員</div>
                 </div>
                 <div style="display:flex; gap:6px;">
                   <button id="btn-tq-toggle" class="btn btn-danger" onclick="toggleTourniquetTimer()">⏱️ 開始計時</button>
@@ -2420,7 +2422,8 @@
       WEATHER_CITY: 'camp_weather_city',
       MY_CHAR: 'camp_my_char',
       COLLAPSED: 'camp_collapsed_cats',
-      LAST_SYNC: 'camp_last_sync'
+      LAST_SYNC: 'camp_last_sync',
+      TQ_OVER2H_NOTIFIED: 'camp_tq_over2h_notified' // 已提醒「超過 2 小時」的那次計時的起始毫秒數，同一次計時只提醒一次（工程顧問 工項 43）
     };
 
 
@@ -2428,7 +2431,15 @@
     let localHealthMap = JSON.parse(localStorage.getItem(STORAGE_KEYS.LOCAL_HEALTH) || '{}');
     let privacyRevealed = false;
     let tqTimer = null;
-    const TQ_META_DEFAULT = '超過 120 分鐘恐壞死，請向救護員報告時間';
+    // 止血帶 2 小時（工項 43，災防顧問定稿，審閱 2026-11-21）。出處（D-03）：
+    // Shackelford SA 等，TCCC Guidelines Change 14-02，J Spec Oper Med 15(1), 2015：「2 hours is generally considered a safe duration」
+    //   https://www.naemt.org/docs/default-source/education-documents/tccc/tccc-updates_092017/tccc-reference-materials/05-tccc-change-documents/14-02-tccc-shackelford-optimizing-tourniquet-use-jsom-2015.pdf
+    // Holcomb JB 等，J Trauma Acute Care Surg 95(6):e54–e60, 2023：超過 2 小時風險升高，只有受過訓練的人才處理止血帶 https://pmc.ncbi.nlm.nih.gov/articles/PMC10662576/
+    // Mayo Clinic〈嚴重出血：急救〉https://mayoclinic.org/zh-hans/first-aid/first-aid-severe-bleeding/basics/art-20056661 、
+    // 洛杉磯市消防局〈Tourniquet〉https://lafd.org/stop-the-bleed-tourniquet ：告訴救護人員綁了多久（審閱 2026-11-20）
+    const TQ_META_DEFAULT = '綁超過 2 小時，肢體受傷的風險會升高；請把綁上的時間告訴救護人員';
+    const TQ_OVER_2H_MSG = '⚠️ 已超過 2 小時：請盡快送醫，並告訴救護人員止血帶綁了多久。沒受過訓練的人不要自己鬆開。';
+    const TQ_WARN_MIN = 120;
     let tqResetArmedUntil = 0; // 重置第一次按下後，5 秒內再按才清掉
     let tqStartMs = parseInt(localStorage.getItem('camp_tq_start_ms') || '0', 10) || 0;
     let sosFlashTimer = null;
@@ -2507,7 +2518,7 @@
 
 
     // 版本號只寫這一處（② #29）：升版只改 APP_VERSION，畫面標籤、網頁標題與 Service Worker 快取名稱都從這裡來
-    const APP_VERSION = 'v2.9.15';
+    const APP_VERSION = 'v2.9.21';
     (function showAppVersion() {
       const pill = document.getElementById('app-version-pill');
       if (pill) pill.textContent = APP_VERSION;
@@ -3896,11 +3907,37 @@
       }
       ensureTqTicking();
       const elapsedMin = Math.floor((Date.now() - tqStartMs) / 60000);
-      disp.innerText = `起始 ${formatTqTime(tqStartMs)}（已綁紮 ${elapsedMin} 分鐘${elapsedMin >= 120 ? ' ⚠️ 已逾 2 小時！' : ''}）`;
+      const over2h = elapsedMin >= TQ_WARN_MIN;
+      disp.innerText = `起始 ${formatTqTime(tqStartMs)}（已綁紮 ${elapsedMin} 分鐘）`;
       btn.innerText = '⏱️ 計時中';
       // 計時中改成不搶眼的樣式，免得焦急時一直按（使用者顧問）
       btn.classList.add('btn-muted'); btn.classList.remove('btn-danger');
-      if (meta && !tqResetArmedUntil) meta.textContent = TQ_META_DEFAULT;
+      // 超過 2 小時一律顯示警示；確認重置的 5 秒過了也回到警示，不回到平時說明（工程顧問）
+      if (meta && !tqResetArmedUntil) {
+        meta.textContent = over2h ? TQ_OVER_2H_MSG : TQ_META_DEFAULT;
+        meta.classList.toggle('tq-meta-over', over2h);
+      }
+      if (over2h) maybeNotifyTqOver2h();
+    }
+
+    // 同一次計時只提醒一次；重開頁面時已超過 2 小時但還沒提醒過，也補提醒一次
+    function maybeNotifyTqOver2h() {
+      // 頁面還在載入時（例如開頁就已超過 2 小時），等載入完成、緊急頁狀態列就緒後再提醒；
+      // 這裡若出錯會讓整段程式停掉，緊急頁就不能用（D-05），所以一律延後並包 try
+      if (document.readyState !== 'complete') {
+        window.addEventListener('load', () => setTimeout(maybeNotifyTqOver2h, 0), { once: true });
+        return;
+      }
+      try { notifyTqOver2hNow(); } catch (e) {}
+    }
+    function notifyTqOver2hNow() {
+      let done = '';
+      try { done = localStorage.getItem(STORAGE_KEYS.TQ_OVER2H_NOTIFIED) || ''; } catch (e) {}
+      if (done === String(tqStartMs)) return;
+      try { localStorage.setItem(STORAGE_KEYS.TQ_OVER2H_NOTIFIED, String(tqStartMs)); } catch (e) {}
+      // 平時模式用點一下才關的提示，避免被下一則一般提示蓋掉（工程顧問）
+      if (isEmergencyMode) setEmStatus(TQ_OVER_2H_MSG, 'error');
+      else showToast(TQ_OVER_2H_MSG, 'warn', { sticky: true });
     }
 
 
@@ -3938,6 +3975,7 @@
       }
       tqStartMs = 0;
       localStorage.removeItem('camp_tq_start_ms');
+      try { localStorage.removeItem(STORAGE_KEYS.TQ_OVER2H_NOTIFIED); } catch (e) {}
       updateTourniquetUI();
     }
 
@@ -6512,8 +6550,8 @@
         body: '國際戰術與災難救援的第一線急救順序：<strong>M（Massive Hemorrhage 大出血控制）</strong>排在第一位，比呼吸道與心肺復甦更急！地震或倒塌現場傷患往往死於動脈大失血，先止血才能保命。'
       },
       tq: {
-        title: '⏱️ 為什麼止血帶要記錄時間（120 分鐘紅線）？',
-        body: '當四肢發生噴濺狀動脈大出血、直接加壓止不住時使用止血帶。綁紮阻斷血流超過 <strong>120 分鐘（2 小時）</strong>可能導致遠端組織壞死，因此務必記下綁紮起始時刻交給 119 救護人員。'
+        title: '⏱️ 為什麼止血帶要記錄時間（2 小時）？',
+        body: '當四肢發生噴濺狀動脈大出血、直接加壓止不住時使用止血帶。止血帶綁超過 <strong>2 小時</strong>，肢體受傷的風險會升高，因此務必記下綁紮起始時刻交給 119 救護人員。超過 2 小時請盡快送醫；沒受過訓練的人不要自己鬆開。<br><br>出處：TCCC 止血帶指引（J Spec Oper Med, 2015）、Holcomb 等（J Trauma Acute Care Surg, 2023）、Mayo Clinic〈嚴重出血：急救〉、洛杉磯市消防局〈Tourniquet〉。災防顧問審閱日期：2026-11-21。'
       },
       wash: {
         title: '🧼 什麼是 WASH（水、衛生與環境清潔）？',

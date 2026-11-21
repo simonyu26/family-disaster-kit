@@ -458,6 +458,8 @@
     .data-keep-actions .btn[hidden], .data-keep-box [hidden] { display: none !important; }
     /* #33 求救簡訊複製失敗時的唯讀文字框：4 行、收起鍵在下方（使用者、美術、災防顧問） */
     .sos-copy-fallback { margin: 0 0 10px; }
+    .sos-copy-hint { font-size: 14px; line-height: 1.5; color: var(--text); margin-bottom: 6px; font-weight: 700; }
+    body.emergency-mode .sos-copy-hint { font-size: 16px; color: var(--em-text); }
     .sos-copy-fallback[hidden] { display: none !important; }
     .sos-copy-text { display: block; width: 100%; box-sizing: border-box; font-size: 16px; line-height: 1.5; padding: 6px 8px; border-radius: 8px; resize: none; background: var(--card-bg); color: var(--text); border: 1px solid var(--border); font-family: inherit; }
     .sos-copy-close { display: block; width: 100%; min-height: 48px !important; margin-top: 6px; }
@@ -1514,6 +1516,7 @@
       </div>
       <!-- #33 複製失敗時才出現，放在四大鍵下方，不把「立即報案求救」推出畫面（使用者顧問）；只放簡訊原文，用 .value 填入（S-01） -->
       <div id="sos-copy-fallback" class="sos-copy-fallback" hidden>
+        <div id="sos-copy-hint" class="sos-copy-hint"></div>
         <textarea id="sos-copy-text" class="sos-copy-text" rows="4" readonly aria-label="求救簡訊全文"></textarea>
         <button class="btn btn-muted sos-copy-close" onclick="hideSosCopyFallback()">收起簡訊</button>
       </div>
@@ -2455,7 +2458,7 @@
       COLLAPSED: 'camp_collapsed_cats',
       LAST_SYNC: 'camp_last_sync',
       LAST_BACKUP: 'camp_last_backup_at',        // 上次匯出備份成功的時間（毫秒）；匯入不算（工程顧問 #22）
-      BACKUP_NUDGE_DAY: 'camp_backup_nudge_day', // 上次跳備份提醒的日期，7 天最多一次（使用者顧問 #22）
+      BACKUP_NUDGE_DAY: 'camp_backup_nudge_day', // 上次跳備份提醒的時間（毫秒），7 天最多一次（使用者顧問 #22）
       SAMPLE_SIG: 'camp_sample_sig'              // 剛載入範本時的資料指紋；資料沒改過就不提醒備份範例資料
     };
 
@@ -2604,6 +2607,7 @@
         switchTab('inventory');
         showToast('已結束應變，回到平時模式。想緩一緩，可以到「營地」的營火靜心。', 'success');
         if (navigator.onLine && getGasUrl()) syncWithServer(false);
+        ensurePersist(); // 緊急模式中不要求保留資料，離開時補做（工程顧問 PR 49）
       }
     }
 
@@ -3446,7 +3450,7 @@
         (err) => {
           disp.innerText = '還沒取得位置'; disp.classList.add('pending');
           meta.innerText = gpsErrorText(err);
-          if (!isEmergencyMode) showToast('⚠️ ' + gpsErrorText(err), 'warn'); // 緊急模式已在定位卡內顯示，不重複
+          // 定位卡內已顯示原因，平時模式也不再跳浮動提示，免得疊在文字框上（美術顧問 PR 49）
         },
         { enableHighAccuracy: true, timeout: 10000 }
       );
@@ -3456,20 +3460,23 @@
     // iPhone 的 Safari 只在「剛按下按鈕」時允許寫剪貼簿，所以一按就要呼叫剪貼簿（工程顧問 PR #22 必改）：
     // 需要重新定位時，用 ClipboardItem 先佔住剪貼簿、內容等定位後再給；不支援就先用現有座標複製，背景更新後請人再按一次
     let sosCopyBusy = false;
-    // #33 複製失敗的備援：不用 prompt()（單行、會擋住緊急頁），改在定位卡內顯示唯讀文字框
+    // #33 複製失敗的備援：不用 prompt()（單行、會擋住緊急頁），改在四大鍵下方顯示唯讀文字框
+    // 原本規劃放在定位卡內，但 360×640 實測會把「立即報案求救」推出畫面，所以移到四大鍵下方（使用者顧問）
     const SOS_COPY_FAIL_MSG = '沒辦法自動複製。請長按下面的文字，選「全選」，再選「拷貝」或「複製」，然後貼到簡訊或 LINE。';
     function showSosCopyFallback(text) {
       const box = document.getElementById('sos-copy-fallback');
       const ta = document.getElementById('sos-copy-text');
       if (!box || !ta) return;
       ta.value = text;
+      const hint = document.getElementById('sos-copy-hint');
+      if (hint) hint.textContent = SOS_COPY_FAIL_MSG; // 捲到文字框時狀態列已在畫面外，框上方再寫一次（災防顧問 PR 49）
       box.hidden = false;
       try {
         ta.focus({ preventScroll: true });
         ta.setSelectionRange(0, ta.value.length); // iPhone 的 select() 有時不反白（工程顧問）
       } catch (e) {}
       try { box.scrollIntoView({ block: 'nearest' }); } catch (e) {} // 不把頁面捲到頂（美術顧問）
-      emNotify(SOS_COPY_FAIL_MSG, 'warn');
+      if (isEmergencyMode) setEmStatus(SOS_COPY_FAIL_MSG, 'warn'); // 平時模式不再跳浮動提示，免得蓋住文字框（美術顧問 PR 49）
     }
     function hideSosCopyFallback() {
       const box = document.getElementById('sos-copy-fallback');
@@ -6848,6 +6855,7 @@
     }
     // 只在本機已有家庭資料時才要求；Firefox 會跳詢問，不能一開頁就擋住首屏（工程顧問、U-05）
     function ensurePersist() {
+      if (isEmergencyMode) return; // Firefox 的權限詢問不可蓋住緊急頁（工程顧問 PR 49 必改）
       if (persistRequested || persistState === 'granted') return;
       if (!navigator.storage || typeof navigator.storage.persist !== 'function') return;
       if (!hasFamilyData()) return;
@@ -6897,9 +6905,8 @@
       if (installBtn) installBtn.hidden = !(deferredInstallPrompt && !isStandaloneApp());
       if (!isStandaloneApp()) {
         const why = '加到主畫面後，手機比較不會清掉資料，也比較快打開。';
-        if (isIOSDevice()) items.push({ warn: false, text: why, steps: [
-          '如果是從 LINE 打開的，請先按右上角的「⋯」，選「用預設瀏覽器開啟」或「用 Safari 開啟」。',
-          '按螢幕下方的「分享」圖示（方框加向上箭頭）。',
+        if (isIOSDevice()) items.push({ warn: false, text: why + '如果是從 LINE 打開的，請先按右上角的「⋯」，選「用預設瀏覽器開啟」或「用 Safari 開啟」。', steps: [
+          '用 Safari 開啟這個網頁後，按螢幕下方的「分享」圖示（方框加向上箭頭）。',
           '往下找，按「加入主畫面」。'
         ] });
         else if (deferredInstallPrompt) items.push({ warn: false, text: why + '請按下面的「加到主畫面」。' });

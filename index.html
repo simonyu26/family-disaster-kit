@@ -2857,9 +2857,10 @@
     const GAS_READ_TIMEOUT_MS = 6000;
     const GAS_WRITE_SLOW_MS = 6000;
     const GAS_WRITE_UNSURE_MS = 30000;
-    const GAS_READ_TIMEOUT_MSG = '雲端回應太慢，先用這支手機上的資料。請稍後再按「同步」';
-    const GAS_WRITE_SLOW_MSG = '⏳ 雲端還在處理，請稍等，不用重按';
-    const GAS_WRITE_UNSURE_MSG = '⚠️ 雲端很久沒有回應，不確定有沒有存到。資料還在這支手機上，請稍後按「同步」確認';
+    const GAS_READ_TIMEOUT_MSG = '雲端回應太慢，先用這支手機上的資料。請稍後再按「同步」。';
+    const GAS_WRITE_SLOW_MSG = '⏳ 雲端還在處理，請稍等，不用重按。';
+    // 不寫「資料還在這支手機上」：頁面若在等待中被關掉，這筆不會進離線佇列，下次同步可能被雲端資料蓋掉（D-01）
+    const GAS_WRITE_UNSURE_MSG = '⚠️ 雲端很久沒有回應，不確定剛才的資料有沒有存到。請稍後按「同步」，確認雲端有沒有收到；沒有的話請再改一次。';
 
     async function fetchGasWithTimeout(input, init) {
       const controller = new AbortController();

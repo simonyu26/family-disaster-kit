@@ -2917,7 +2917,7 @@
         clearTimeout(slowTimer);
         clearTimeout(unsureTimer);
         // 最後有回應了，就收起「不確定有沒有存到」
-        if (unsureShown) document.querySelectorAll('#toast-container .toast-sticky').forEach(t => { if (t.innerText.startsWith(GAS_WRITE_UNSURE_MSG)) t.remove(); });
+        if (unsureShown) document.querySelectorAll('#toast-container .toast-sticky').forEach(t => { if (t.textContent.startsWith(GAS_WRITE_UNSURE_MSG)) t.remove(); });
       }
       const json = await res.json();
       if (!json.ok) {

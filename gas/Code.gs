@@ -207,7 +207,7 @@ function doPost(e) {
     }
 
     // 重送防重複（v1.7，工程顧問）：先驗通行碼，再查 reqId，最後才寫入。
-    // 同一個 reqId 先前已寫入成功，就回當初的結果，不再寫一次。
+    // 同一個 reqId 先前已寫入成功，就不再寫一次，回 duplicate 和 needSync 請前端重新同步。
     const reqId = IDEMPOTENT_SKIP_ACTIONS.includes(action) ? '' : validReqId(payload.reqId);
     if (reqId) {
       const remembered = getRememberedRequest(reqId);
@@ -411,10 +411,11 @@ function handleWriteAction(action, payload, auth) {
 // 重送防重複（v1.7）：前端每個寫入帶一個 reqId，逾時或斷線重送時同一個 reqId 只寫一次。
 // CacheService 是盡力而為：最多存 6 小時，而且 Google 可能提早清掉。清掉後重送仍可能重複新增，
 // 所以這只是減少重複，不是保證；前端仍要在重送後同步，讓使用者看到雲端實際內容。
+// 只記下小結果（新增物資的 id），不存整包資料：重送命中時回 needSync，請前端重新讀取最新資料，
+// 不拿最舊可能是 6 小時前的資料覆蓋畫面（工程顧問）。
 const REQ_ID_PATTERN = /^[A-Za-z0-9-]{1,64}$/;
 const REQ_CACHE_PREFIX = 'req:';
 const REQ_CACHE_SEC = 21600;           // CacheService 上限 6 小時
-const REQ_CACHE_MAX_BYTES = 90000;     // 單筆上限 100KB，留餘裕；太大只記「已完成」
 const REQ_DONE_MARK = '1';
 // 不需要防重複的操作：batchSync 改由每一筆各自的 reqId 處理；recognizeLabel 不寫入
 const IDEMPOTENT_SKIP_ACTIONS = ['batchSync', 'recognizeLabel'];
@@ -435,33 +436,29 @@ function getRememberedRequest(reqId) {
   }
 }
 
-/** 寫入成功後才記下；回應太大就只記「已完成」。快取寫不進去不影響本次回傳。 */
+/** 寫入成功後才記下：有新增物資的 id 就記 id，其餘只記「已完成」。快取寫不進去不影響本次回傳。 */
 function rememberRequest(reqId, result) {
   try {
-    let text = typeof result === 'string' ? result : JSON.stringify(result);
-    if (text !== REQ_DONE_MARK && Utilities.newBlob(text).getBytes().length > REQ_CACHE_MAX_BYTES) {
-      text = REQ_DONE_MARK;
-    }
+    const id = result && typeof result === 'object' && result.id ? String(result.id) : '';
+    const text = id ? JSON.stringify({ id: id }) : REQ_DONE_MARK;
     CacheService.getScriptCache().put(REQ_CACHE_PREFIX + reqId, text, REQ_CACHE_SEC);
   } catch (err) {
     // 記不下來只是少了防重複，不影響已完成的寫入
   }
 }
 
-/** 重送命中：回當初的結果並標示 duplicate；只記了「已完成」就請前端重新同步。 */
+/** 重送命中：不附任何家庭資料，一律請前端重新同步；有記下 id 就一起回傳。 */
 function duplicateResponse(remembered) {
+  const out = { ok: true, duplicate: true, needSync: true, serverTime: new Date().toISOString() };
   if (remembered !== REQ_DONE_MARK) {
     try {
       const obj = JSON.parse(remembered);
-      if (obj && obj.ok === true) {
-        obj.duplicate = true;
-        return obj;
-      }
+      if (obj && obj.id) out.id = String(obj.id);
     } catch (err) {
-      // 解析失敗就改請前端重新同步
+      // 解析失敗就只回 needSync
     }
   }
-  return { ok: true, duplicate: true, needSync: true, serverTime: new Date().toISOString() };
+  return out;
 }
 
 function createJsonOutput(obj) {

@@ -4,7 +4,7 @@
 本文件記錄「防災生存整備系統（森林露營小隊版）」各版本之架構演進、功能新增、問題修復與部署軌跡。
 
 
-## [v2.9.22] - 2026-11-22（緊急卡的 QR 碼沒網路也畫得出來 — 開發完成，待審查）
+## [v2.9.22] - 2026-11-22（家庭平安 QR 碼沒網路也畫得出來 — 開發完成，待審查）
 
 * **自行託管 QRCode.js 1.0.0（② #44，S-07）**：`qrcode.min.js` 放到 `vendor/qrcodejs-1.0.0/`（附 MIT LICENSE 與雜湊說明），`index.html` 不再從 cdnjs 載入。比照 Leaflet 的做法（② #28）。
 * **雜湊**：`sha512-CNgIRecGo7nphbeZ04Sc13ka07paqdeTu0WR1IM4kNcpmBAUSHSQX0FslNhTDadL4O5SAGapGt4FodqL8My0mA==`（原作者 GitHub 檔與 npm 套件逐位元組一致；cdnjs 公布值由工程顧問核對）。

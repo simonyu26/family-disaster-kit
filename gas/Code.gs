@@ -22,7 +22,7 @@ function openFamilySpreadsheet() {
 }
 
 // 後端版本號（WP-06）：每次請擁有者重貼 Code.gs 都要加一，並寫進 CHANGELOG 的 [gas] 標題
-const BACKEND_VERSION = 'v1.5';
+const BACKEND_VERSION = 'v1.6';
 
 const PIN_MIN_LENGTH = 6;
 const PIN_MAX_FAILURES = 10;           // 10 分鐘內猜錯 10 次就鎖定（#14：全域計數可被外人故意鎖住，放寬門檻）
@@ -161,10 +161,27 @@ function doGet(e) {
  * 處理外部 PWA 的 POST 請求（前端以 Content-Type: text/plain 傳送 JSON 避免 CORS Preflight）
  */
 function doPost(e) {
+  let payload;
+  try {
+    payload = JSON.parse(e.postData.contents);
+
+    // 讀取家庭資料：通行碼放在 POST 本文，不放網址（S-04）。
+    // 讀取不寫入試算表，不進全域鎖，避免排在寫入後面等最多 15 秒（工程顧問）。
+    // 沒持鎖，所以 checkAuthPin 不傳 alreadyLocked：猜錯計數由 recordPinFailure 自己短暫取鎖。
+    if (READ_ACTIONS.includes(payload.action)) {
+      const readAuth = checkAuthPin(payload.pin);
+      if (!readAuth.ok) {
+        return authFailureOutput(readAuth, READ_PIN_ERROR);
+      }
+      return createJsonOutput(readFamilyData(payload.action, readAuth));
+    }
+  } catch (err) {
+    return createJsonOutput({ ok: false, error: err.message });
+  }
+
   const lock = LockService.getScriptLock();
   try {
     lock.waitLock(15000);
-    const payload = JSON.parse(e.postData.contents);
     const action = payload.action;
 
     // 更新家庭通行碼：只接受「已知舊碼換新碼」；首次設定須由管理者在 GAS 指令碼屬性手動填入，
@@ -180,15 +197,6 @@ function doPost(e) {
       }
       PropertiesService.getScriptProperties().setProperty('FAMILY_PIN', newPin);
       return createJsonOutput({ ok: true, pinRequired: true, serverTime: new Date().toISOString() });
-    }
-
-    // 讀取家庭資料：通行碼放在 POST 本文，不放網址（S-04）
-    if (READ_ACTIONS.includes(action)) {
-      const readAuth = checkAuthPin(payload.pin, true);
-      if (!readAuth.ok) {
-        return authFailureOutput(readAuth, READ_PIN_ERROR);
-      }
-      return createJsonOutput(readFamilyData(action, readAuth));
     }
 
     // 驗證家庭通行碼

@@ -105,22 +105,23 @@ const READ_PIN_ERROR = '請輸入正確的家庭通行碼以同步雲端資料';
 
 /**
  * 讀取家庭資料（GET 與 POST 共用；呼叫前須已通過通行碼驗證）
+ * 讀取不持全域鎖，所以一律「純讀取」：不新增分頁、不補成員列，補資料留給在鎖內的寫入流程（工程顧問，v1.6）。
  */
 function readFamilyData(action, auth) {
   if (action === 'getLocations') {
-    return { ok: true, pinRequired: auth.pinRequired, locations: getLocationsData(), serverTime: new Date().toISOString() };
+    return { ok: true, pinRequired: auth.pinRequired, locations: getLocationsData(true), serverTime: new Date().toISOString() };
   }
   if (action === 'getContacts') {
-    return { ok: true, pinRequired: auth.pinRequired, contacts: getContactsData(), serverTime: new Date().toISOString() };
+    return { ok: true, pinRequired: auth.pinRequired, contacts: getContactsData(true), serverTime: new Date().toISOString() };
   }
   const inv = getInventoryData();
   return {
     ok: true,
     pinRequired: auth.pinRequired,
     inventory: inv,
-    members: getMembersData(inv.characters),
-    locations: getLocationsData(),
-    contacts: getContactsData(),
+    members: getMembersData(inv.characters, true),
+    locations: getLocationsData(true),
+    contacts: getContactsData(true),
     snapshots: getSnapshotList(),
     backendVersion: BACKEND_VERSION,
     serverTime: new Date().toISOString()
@@ -1025,10 +1026,13 @@ function getMembersSheet(ss, initialCharacters) {
   return sheet;
 }
 
-function getMembersData(initialCharacters) {
+/**
+ * readOnly：不持鎖的讀取用。分頁不存在時不建立，缺的成員只補在回傳資料裡、不寫進試算表。
+ */
+function getMembersData(initialCharacters, readOnly) {
   const ss = openFamilySpreadsheet();
-  const sheet = getMembersSheet(ss, initialCharacters);
-  const data = sheet.getDataRange().getValues();
+  const sheet = readOnly ? ss.getSheetByName('Members') : getMembersSheet(ss, initialCharacters);
+  const data = sheet ? sheet.getDataRange().getValues() : [];
   const map = {};
   for (let i = 1; i < data.length; i++) {
     const name = String(data[i][0] || '').trim();
@@ -1055,7 +1059,7 @@ function getMembersData(initialCharacters) {
           name: name, avatar: '🧑', buddy: '🐾', blood: '', medical: '', iceContact: '', rallyNote: '',
           memberType: defaultType, mobility: 'self', firstAidSkill: ''
         };
-        sheet.appendRow(sanitizeRow([name, '🧑', '🐾', '', '', '', '', defaultType, 'self', '']));
+        if (!readOnly) sheet.appendRow(sanitizeRow([name, '🧑', '🐾', '', '', '', '', defaultType, 'self', '']));
       }
     });
   }
@@ -1202,10 +1206,10 @@ function getContactsSheet(ss) {
   return sheet;
 }
 
-function getContactsData() {
+function getContactsData(readOnly) {
   const ss = openFamilySpreadsheet();
-  const sheet = getContactsSheet(ss);
-  const data = sheet.getDataRange().getValues();
+  const sheet = readOnly ? ss.getSheetByName('Contacts') : getContactsSheet(ss); // readOnly：不建立分頁
+  const data = sheet ? sheet.getDataRange().getValues() : [];
   const contacts = [];
   for (let i = 1; i < data.length; i++) {
     if (!data[i][0] && !data[i][1]) continue;
@@ -1286,10 +1290,10 @@ function getLocationsSheet(ss) {
   return sheet;
 }
 
-function getLocationsData() {
+function getLocationsData(readOnly) {
   const ss = openFamilySpreadsheet();
-  const sheet = getLocationsSheet(ss);
-  const data = sheet.getDataRange().getValues();
+  const sheet = readOnly ? ss.getSheetByName('Locations') : getLocationsSheet(ss); // readOnly：不建立分頁
+  const data = sheet ? sheet.getDataRange().getValues() : [];
   const locations = [];
   for (let i = 1; i < data.length; i++) {
     if (!data[i][0] && !data[i][1]) continue;

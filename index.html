@@ -593,6 +593,13 @@
     .mood-bubble { font-size: 0.66rem; background: #FFF8E7; color: #8C5811; border: 1px solid #E9C46A; border-radius: 10px; padding: 1px 6px; margin-top: 3px; display: inline-block; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .daily-quest-box { margin: 8px 12px 4px; padding: 9px 12px; background: linear-gradient(135deg, #F4F9F4, #FFFDF7); border: 1.5px solid #B7D3C4; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 0.82rem; }
     #qr-modal-box { display: flex; justify-content: center; padding: 14px; background: #fff; border-radius: 12px; margin: 10px 0; }
+    #qr-modal-box { flex-direction: column; align-items: center; gap: 8px; }
+    #qr-modal-box .qr-canvas { display: block; image-rendering: pixelated; flex: none; }
+    /* 平安卡視窗在緊急模式：外框、文字、關閉鍵跟著緊急模式配色（美術顧問） */
+    body.emergency-mode #qr-modal .modal-card { background: var(--em-card); border: 1px solid var(--em-line); color: var(--em-text); }
+    body.emergency-mode #qr-modal .modal-title, body.emergency-mode #qr-modal #qr-modal-sub { color: var(--em-text); }
+    #qr-modal .modal-actions .btn { min-height: 48px; min-width: 96px; }
+    body.emergency-mode #qr-modal .modal-actions .btn { min-height: 68px; font-size: 16px !important; background: var(--em-card) !important; border: 1px solid var(--em-line) !important; color: var(--em-text) !important; } /* 壓過緊急模式 .btn-primary 的琥珀色：這顆只是關閉，不該最搶眼 */
     /* QR 碼產生不出來時的白話說明（平安卡內容仍在下方文字摘要） */
     .qr-fallback-msg { color: var(--text); font-size: 0.9rem; line-height: 1.5; text-align: left; }
     body.emergency-mode .qr-fallback-msg { font-size: 16px; }
@@ -2405,7 +2412,7 @@
 
 
   <script src="./vendor/leaflet-1.9.4/leaflet.js"></script>
-  <script src="./vendor/qrcodejs-1.0.0/qrcode.min.js"></script>
+  <script src="./vendor/qrcode-generator-1.4.4/qrcode.js"></script>
   <script>
     const DEFAULT_GAS_URL = '';
 
@@ -6350,33 +6357,122 @@
 
 
     const QR_FALLBACK_MSG = '⚠️ QR 碼做不出來，平安卡的內容都在下面的文字裡（往下捲可看到聯絡人和集合點）。需要時，把手機交給救護人員或幫忙的人直接看；也可以先截圖存起來，沒網路也看得到。';
-    function openFamilyQrModal() {
+    // QR 碼要「掃得出來」（工程顧問）：版本最多 30（137 格），顯示至少 280px、每格至少 2px，四周留白 4 格
+    const QR_MAX_MODULES = 137;
+    const QR_QUIET = 4;
+    const QR_MIN_PX = 280;
+    const QR_TITLE = '[森林露營小隊・家庭平安卡]';
+
+    function familyQrParts() {
       const mainChars = (globalData && globalData.characters) ? globalData.characters.filter(n => getMemberVisual(n).memberType !== 'pack') : [];
-      const memberLines = mainChars.map(n => {
+      const members = mainChars.map(n => {
         const m = getMemberVisual(n);
-        return `${n}(${m.blood || '血型未填'}):${m.medical || '過敏未填'}`; // 沒填不等於沒有過敏（D-01，災防顧問）
-      }).join('\n');
-      const contactLines = (contactsData || []).slice(0, 3).map(c => `${c.name}(${c.relation}):${c.phone}`).join('\n');
-      const rallyLines = (locationsData || []).slice(0, 2).map(l => `${l.type}:${l.name}`).join('\n');
-      const qrText = `[森林露營小隊・家庭平安卡]\n${memberLines}\n[聯絡人]\n${contactLines || '未設定'}\n[集合點]\n${rallyLines || '未設定'}`;
+        return { name: n, blood: m.blood || '血型未填', medical: m.medical || '過敏未填' }; // 沒填不等於沒有過敏（D-01，災防顧問）
+      });
+      const contacts = (contactsData || []).slice(0, 3).map(c => `${c.name}(${c.relation}):${c.phone}`);
+      const rally = (locationsData || []).slice(0, 2).map(l => `${l.type}:${l.name}`);
+      return { members, contacts, rally };
+    }
 
+    function composeFamilyQrText(parts, note, medMax) {
+      const cut = t => (medMax && t.length > medMax) ? t.slice(0, medMax) + '…（未完整）' : t;
+      const lines = [];
+      if (note) lines.push(note); // 「內容過長，未完整」放第一行（D-01，災防顧問）
+      lines.push(QR_TITLE);
+      parts.members.forEach(m => lines.push(`${m.name}(${m.blood}):${cut(m.medical)}`));
+      lines.push('[聯絡人]', ...(parts.contacts.length ? parts.contacts : ['未設定']));
+      lines.push('[集合點]', ...(parts.rally.length ? parts.rally : ['未設定']));
+      return lines.join('\n');
+    }
 
+    // 產生 QR；裝不下（超過版本 30）回傳 null
+    function makeFamilyQr(text) {
+      if (typeof qrcode === 'undefined') return null;
+      qrcode.stringToBytes = qrcode.stringToBytesFuncs['UTF-8']; // 中文以 UTF-8 編碼
+      try {
+        const qr = qrcode(0, 'M'); // 0：依內容自動選版本
+        qr.addData(text, 'Byte');
+        qr.make();
+        return qr.getModuleCount() <= QR_MAX_MODULES ? qr : null;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    // 能不截就不截；一定要截時以一筆為單位拿掉，順序：集合點 → 其餘聯絡人 → 第 1 位聯絡人 → 平均縮短每人醫療文字（不拿掉任何成員）（災防顧問）
+    function fitFamilyQr(parts) {
+      let qr = makeFamilyQr(composeFamilyQrText(parts));
+      if (qr) return { qr, text: composeFamilyQrText(parts), dropped: null };
+      const p = { members: parts.members, contacts: parts.contacts.slice(), rally: parts.rally.slice() };
+      const dropped = { rally: 0, contacts: 0, medShort: false };
+      const noteOf = () => {
+        const bits = [];
+        if (dropped.rally) bits.push(`集合點 ${dropped.rally} 筆`);
+        if (dropped.contacts) bits.push(`聯絡人 ${dropped.contacts} 筆`);
+        let n = '[內容過長，未完整' + (bits.length ? '：已拿掉' + bits.join('、') : '');
+        if (dropped.medShort) n += (bits.length ? '；' : '：') + '醫療資料已縮短';
+        return n + ']';
+      };
+      const attempt = medMax => { const t = composeFamilyQrText(p, noteOf(), medMax); const q = makeFamilyQr(t); return q ? { qr: q, text: t, dropped } : null; };
+      while (p.rally.length) { p.rally.pop(); dropped.rally++; const r = attempt(); if (r) return r; }
+      while (p.contacts.length > 1) { p.contacts.pop(); dropped.contacts++; const r = attempt(); if (r) return r; }
+      if (p.contacts.length) { p.contacts.pop(); dropped.contacts++; const r = attempt(); if (r) return r; }
+      dropped.medShort = true;
+      const longest = Math.max(0, ...p.members.map(m => m.medical.length));
+      for (let max = longest - 5; max >= 4; max -= 5) { const r = attempt(max); if (r) return r; }
+      return null;
+    }
+
+    // 自己畫：每格邊界取整數像素，避免縮放模糊；顯示寬度 280px 起，格子不小於 2px
+    function drawFamilyQr(qr) {
+      const count = qr.getModuleCount();
+      const cells = count + QR_QUIET * 2;
+      const cssSize = Math.max(QR_MIN_PX, cells * 2);
+      const canvas = document.createElement('canvas');
+      canvas.className = 'qr-canvas';
+      canvas.width = canvas.height = cssSize; // 高解析度螢幕由 CSS image-rendering 保持銳利
+      const ctx = canvas.getContext('2d');
+      const css = getComputedStyle(document.documentElement);
+      // QR 碼要純黑白才掃得到，借用緊急模式的純黑、純白色票（ART_DESIGN_SPEC）
+      ctx.fillStyle = css.getPropertyValue('--em-text').trim() || '#FFFFFF';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = css.getPropertyValue('--em-bg').trim() || '#000000';
+      const unit = canvas.width / cells;
+      for (let r = 0; r < count; r++) {
+        for (let c = 0; c < count; c++) {
+          if (!qr.isDark(r, c)) continue;
+          const x0 = Math.round((c + QR_QUIET) * unit), x1 = Math.round((c + QR_QUIET + 1) * unit);
+          const y0 = Math.round((r + QR_QUIET) * unit), y1 = Math.round((r + QR_QUIET + 1) * unit);
+          ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
+        }
+      }
+      return canvas;
+    }
+
+    function openFamilyQrModal() {
+      const parts = familyQrParts();
+      const fullText = composeFamilyQrText(parts);
       const box = document.getElementById('qr-modal-box');
       const prev = document.getElementById('qr-text-preview');
-      if (prev) prev.innerText = qrText;
+      if (prev) prev.textContent = fullText; // 畫面上永遠是完整內容
+      let drawn = false;
       if (box) {
         box.innerHTML = '';
-        let drawn = false;
-        // 套件遇到中文常算錯長度而丟錯（code length overflow）。失敗時視窗照開，文字摘要照樣看得到（D-05）
         try {
-          if (typeof QRCode !== 'undefined') {
-            new QRCode(box, { text: qrText.slice(0, 420), width: 200, height: 200, correctLevel: QRCode.CorrectLevel.M });
+          const fit = fitFamilyQr(parts);
+          if (fit) {
+            if (fit.dropped) {
+              const warn = document.createElement('div');
+              warn.className = 'qr-fallback-msg';
+              warn.textContent = `⚠️ 內容太多，QR 碼裡只放了一部分（${fit.text.split('\n')[0].replace(/^\[|\]$/g, '')}）。完整內容在下面的文字裡。`;
+              box.appendChild(warn);
+            }
+            box.appendChild(drawFamilyQr(fit.qr));
             drawn = true;
           }
         } catch (e) {
           drawn = false;
         }
-        document.getElementById('qr-modal').classList.toggle('qr-failed', !drawn);
         if (!drawn) {
           box.innerHTML = ''; // 清掉畫到一半的畫布
           const msg = document.createElement('div');
@@ -6385,6 +6481,7 @@
           box.appendChild(msg);
         }
       }
+      document.getElementById('qr-modal').classList.toggle('qr-failed', !drawn);
       document.getElementById('qr-modal').classList.add('open');
     }
 

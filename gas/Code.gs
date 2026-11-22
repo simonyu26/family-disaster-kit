@@ -22,7 +22,7 @@ function openFamilySpreadsheet() {
 }
 
 // 後端版本號（WP-06）：每次請擁有者重貼 Code.gs 都要加一，並寫進 CHANGELOG 的 [gas] 標題
-const BACKEND_VERSION = 'v1.6';
+const BACKEND_VERSION = 'v1.7';
 
 const PIN_MIN_LENGTH = 6;
 const PIN_MAX_FAILURES = 10;           // 10 分鐘內猜錯 10 次就鎖定（#14：全域計數可被外人故意鎖住，放寬門檻）
@@ -206,179 +206,262 @@ function doPost(e) {
       return authFailureOutput(auth, '家庭通行碼驗證失敗，無法寫入雲端');
     }
 
+    // 重送防重複（v1.7，工程顧問）：先驗通行碼，再查 reqId，最後才寫入。
+    // 同一個 reqId 先前已寫入成功，就回當初的結果，不再寫一次。
+    const reqId = IDEMPOTENT_SKIP_ACTIONS.includes(action) ? '' : validReqId(payload.reqId);
+    if (reqId) {
+      const remembered = getRememberedRequest(reqId);
+      if (remembered !== null) return createJsonOutput(duplicateResponse(remembered));
+    }
+
     // 物資寫入前先補齊穩定 ID（#26）；補 ID 失敗不影響本次寫入
     if (INVENTORY_WRITE_ACTIONS.includes(action)) {
       ensureItemIdsSafe();
     }
 
-    if (action === 'updateItem') {
-      const result = updateItemData(itemRefFrom(payload), payload.charName, payload.state, payload.expDate, payload.qty, payload.textNote, payload.spec);
-      if (!result.ok) {
-        return createJsonOutput({ ok: false, code: result.code, error: itemErrorMessage(result.code) });
-      }
-      return createJsonOutput({ ok: true, id: result.id, serverTime: new Date().toISOString() });
-    }
-
-    if (action === 'batchSync') {
-      const actions = payload.actions || [];
-      // 先確認物資頁存在；找不到就整批不寫，避免地點、聯絡人先寫入後重送時重複新增
-      getTargetSheet(openFamilySpreadsheet());
-      // 列號無效的物資更新只略過該筆，不整批中止，避免離線補傳佇列一直卡住（D-05 精神）
-      // 每一筆都重新讀表、依 ID 找列（同一批先新增後修改時列號會位移）
-      const skipped = [];
-      const added = [];
-      actions.forEach(act => {
-        if (act.action === 'updateItem') {
-          const result = updateItemData(itemRefFrom(act), act.charName, act.state, act.expDate, act.qty, act.textNote, act.spec);
-          if (!result.ok) {
-            skipped.push({
-              action: 'updateItem', code: result.code, row: act.row, charName: act.charName,
-              itemId: act.itemId ? String(act.itemId) : '', itemName: result.itemName || (act.itemName ? String(act.itemName) : '')
-            });
-          }
-        } else if (act.action === 'addItem') {
-          const res = addNewItem(act.category, act.itemName, act.requiredChars || []);
-          added.push({ itemName: String(act.itemName || '').trim(), category: String(act.category || '').trim(), id: res.id, tempRow: act.row || null });
-        } else if (act.action === 'addLocation') {
-          addLocationRecord(act.location);
-        } else if (act.action === 'deleteLocation') {
-          deleteLocationRecord(act.id);
-        } else if (act.action === 'addContact') {
-          addContactRecord(act.contact);
-        } else if (act.action === 'updateContact') {
-          updateContactRecord(act.contact);
-        } else if (act.action === 'deleteContact') {
-          deleteContactRecord(act.id);
-        }
-      });
-      const inv = getInventoryData();
-      return createJsonOutput({
-        ok: true,
-        pinRequired: auth.pinRequired,
-        inventory: inv,
-        members: getMembersData(inv.characters),
-        locations: getLocationsData(),
-        contacts: getContactsData(),
-        skipped: skipped,
-        added: added,
-        snapshots: getSnapshotList(),
-        backendVersion: BACKEND_VERSION,
-        serverTime: new Date().toISOString()
-      });
-    }
-
-    if (action === 'addItem') {
-      const res = addNewItem(payload.category, payload.itemName, payload.requiredChars || []);
-      return createJsonOutput({ ok: true, id: res.id, inventory: getInventoryData(), serverTime: new Date().toISOString() });
-    }
-
-    if (action === 'editItem') {
-      const res = editExistingItem(itemRefFrom(payload), payload.newName, payload.newCategory);
-      if (!res.ok) {
-        return createJsonOutput({ ok: false, code: res.code, error: itemErrorMessage(res.code), inventory: getInventoryData() });
-      }
-      return createJsonOutput({ ok: true, id: res.id, inventory: getInventoryData(), serverTime: new Date().toISOString() });
-    }
-
-    if (action === 'deleteItem') {
-      const res = deleteExistingItem(itemRefFrom(payload));
-      if (!res.ok) {
-        return createJsonOutput({ ok: false, code: res.code, error: itemErrorMessage(res.code), inventory: getInventoryData() });
-      }
-      return createJsonOutput({ ok: true, inventory: getInventoryData(), serverTime: new Date().toISOString() });
-    }
-
-    // 成員管理 API（支援 10 欄：改名、頭像、血型、醫療、成員類型、行動能力、急救技能）
-    if (action === 'addMember') {
-      addMemberRecord(
-        payload.name, payload.avatar, payload.buddy, payload.defaultState || '-',
-        payload.blood, payload.medical, payload.iceContact, payload.rallyNote,
-        payload.memberType, payload.mobility, payload.firstAidSkill
-      );
-      const inv = getInventoryData();
-      return createJsonOutput({
-        ok: true,
-        inventory: inv,
-        members: getMembersData(inv.characters),
-        serverTime: new Date().toISOString()
-      });
-    }
-
-    if (action === 'updateMember') {
-      const oldName = payload.oldName || payload.name;
-      const newName = payload.newName || payload.name;
-      updateMemberRecord(
-        oldName, newName, payload.avatar, payload.buddy,
-        payload.blood, payload.medical, payload.iceContact, payload.rallyNote,
-        payload.memberType, payload.mobility, payload.firstAidSkill
-      );
-      const inv = getInventoryData();
-      return createJsonOutput({
-        ok: true,
-        inventory: inv,
-        members: getMembersData(inv.characters),
-        serverTime: new Date().toISOString()
-      });
-    }
-
-    if (action === 'deleteMember') {
-      deleteMemberRecord(payload.name);
-      const inv = getInventoryData();
-      return createJsonOutput({
-        ok: true,
-        inventory: inv,
-        members: getMembersData(inv.characters),
-        serverTime: new Date().toISOString()
-      });
-    }
-
-    // 地點與集合點管理 API
-    if (action === 'addLocation') {
-      addLocationRecord(payload.location);
-      return createJsonOutput({ ok: true, locations: getLocationsData(), serverTime: new Date().toISOString() });
-    }
-
-    if (action === 'deleteLocation') {
-      deleteLocationRecord(payload.id);
-      return createJsonOutput({ ok: true, locations: getLocationsData(), serverTime: new Date().toISOString() });
-    }
-
-    // 家庭緊急聯絡網管理 API
-    if (action === 'addContact') {
-      addContactRecord(payload.contact);
-      return createJsonOutput({ ok: true, contacts: getContactsData(), serverTime: new Date().toISOString() });
-    }
-
-    if (action === 'updateContact') {
-      updateContactRecord(payload.contact);
-      return createJsonOutput({ ok: true, contacts: getContactsData(), serverTime: new Date().toISOString() });
-    }
-
-    if (action === 'deleteContact') {
-      deleteContactRecord(payload.id);
-      return createJsonOutput({ ok: true, contacts: getContactsData(), serverTime: new Date().toISOString() });
-    }
-
-    if (action === 'createYearSnapshot') {
-      return createJsonOutput(createYearSnapshot());
-    }
-
-    if (action === 'setGeminiKey') {
-      const cleanKey = String(payload.apiKey || '').trim();
-      if (cleanKey) PropertiesService.getScriptProperties().setProperty('GEMINI_API_KEY', cleanKey);
-      return createJsonOutput({ ok: true, hasGeminiKey: !!cleanKey, serverTime: new Date().toISOString() });
-    }
-
-    if (action === 'recognizeLabel') {
-      return createJsonOutput(recognizeItemLabelByGemini(payload.imageBase64, payload.itemName || ''));
-    }
-
-    return createJsonOutput({ ok: false, error: '未知的操作類型：' + action });
+    const result = handleWriteAction(action, payload, auth);
+    if (reqId && result && result.ok === true) rememberRequest(reqId, result);
+    return createJsonOutput(result);
   } catch (err) {
     return createJsonOutput({ ok: false, error: err.message });
   } finally {
     lock.releaseLock();
   }
+}
+
+/**
+ * 寫入類操作（v1.7 從 doPost 拆出）：在全域鎖內、通行碼驗過後才呼叫，回傳要給前端的物件。
+ */
+function handleWriteAction(action, payload, auth) {
+  if (action === 'updateItem') {
+    const result = updateItemData(itemRefFrom(payload), payload.charName, payload.state, payload.expDate, payload.qty, payload.textNote, payload.spec);
+    if (!result.ok) {
+      return { ok: false, code: result.code, error: itemErrorMessage(result.code) };
+    }
+    return { ok: true, id: result.id, serverTime: new Date().toISOString() };
+  }
+
+  if (action === 'batchSync') {
+    const actions = payload.actions || [];
+    // 先確認物資頁存在；找不到就整批不寫，避免地點、聯絡人先寫入後重送時重複新增
+    getTargetSheet(openFamilySpreadsheet());
+    // 列號無效的物資更新只略過該筆，不整批中止，避免離線補傳佇列一直卡住（D-05 精神）
+    // 每一筆都重新讀表、依 ID 找列（同一批先新增後修改時列號會位移）
+    const skipped = [];
+    const added = [];
+    const duplicates = [];
+    actions.forEach(act => {
+      // 每一筆各自帶 reqId：先前已寫入成功的就略過；寫入成功才記下（重送防重複，v1.7）
+      const actReqId = validReqId(act && act.reqId);
+      if (actReqId && getRememberedRequest(actReqId) !== null) {
+        duplicates.push(actReqId);
+        return;
+      }
+      let actOk = true;
+      if (act.action === 'updateItem') {
+        const result = updateItemData(itemRefFrom(act), act.charName, act.state, act.expDate, act.qty, act.textNote, act.spec);
+        if (!result.ok) {
+          actOk = false;
+          skipped.push({
+            action: 'updateItem', code: result.code, row: act.row, charName: act.charName,
+            itemId: act.itemId ? String(act.itemId) : '', itemName: result.itemName || (act.itemName ? String(act.itemName) : '')
+          });
+        }
+      } else if (act.action === 'addItem') {
+        const res = addNewItem(act.category, act.itemName, act.requiredChars || []);
+        added.push({ itemName: String(act.itemName || '').trim(), category: String(act.category || '').trim(), id: res.id, tempRow: act.row || null });
+      } else if (act.action === 'addLocation') {
+        addLocationRecord(act.location);
+      } else if (act.action === 'deleteLocation') {
+        deleteLocationRecord(act.id);
+      } else if (act.action === 'addContact') {
+        addContactRecord(act.contact);
+      } else if (act.action === 'updateContact') {
+        updateContactRecord(act.contact);
+      } else if (act.action === 'deleteContact') {
+        deleteContactRecord(act.id);
+      }
+      if (actOk && actReqId) rememberRequest(actReqId, REQ_DONE_MARK);
+    });
+    const inv = getInventoryData();
+    return {
+      ok: true,
+      pinRequired: auth.pinRequired,
+      inventory: inv,
+      members: getMembersData(inv.characters),
+      locations: getLocationsData(),
+      contacts: getContactsData(),
+      skipped: skipped,
+      added: added,
+      duplicates: duplicates,
+      snapshots: getSnapshotList(),
+      backendVersion: BACKEND_VERSION,
+      serverTime: new Date().toISOString()
+    };
+  }
+
+  if (action === 'addItem') {
+    const res = addNewItem(payload.category, payload.itemName, payload.requiredChars || []);
+    return { ok: true, id: res.id, inventory: getInventoryData(), serverTime: new Date().toISOString() };
+  }
+
+  if (action === 'editItem') {
+    const res = editExistingItem(itemRefFrom(payload), payload.newName, payload.newCategory);
+    if (!res.ok) {
+      return { ok: false, code: res.code, error: itemErrorMessage(res.code), inventory: getInventoryData() };
+    }
+    return { ok: true, id: res.id, inventory: getInventoryData(), serverTime: new Date().toISOString() };
+  }
+
+  if (action === 'deleteItem') {
+    const res = deleteExistingItem(itemRefFrom(payload));
+    if (!res.ok) {
+      return { ok: false, code: res.code, error: itemErrorMessage(res.code), inventory: getInventoryData() };
+    }
+    return { ok: true, inventory: getInventoryData(), serverTime: new Date().toISOString() };
+  }
+
+  // 成員管理 API（支援 10 欄：改名、頭像、血型、醫療、成員類型、行動能力、急救技能）
+  if (action === 'addMember') {
+    addMemberRecord(
+      payload.name, payload.avatar, payload.buddy, payload.defaultState || '-',
+      payload.blood, payload.medical, payload.iceContact, payload.rallyNote,
+      payload.memberType, payload.mobility, payload.firstAidSkill
+    );
+    const inv = getInventoryData();
+    return {
+      ok: true,
+      inventory: inv,
+      members: getMembersData(inv.characters),
+      serverTime: new Date().toISOString()
+    };
+  }
+
+  if (action === 'updateMember') {
+    const oldName = payload.oldName || payload.name;
+    const newName = payload.newName || payload.name;
+    updateMemberRecord(
+      oldName, newName, payload.avatar, payload.buddy,
+      payload.blood, payload.medical, payload.iceContact, payload.rallyNote,
+      payload.memberType, payload.mobility, payload.firstAidSkill
+    );
+    const inv = getInventoryData();
+    return {
+      ok: true,
+      inventory: inv,
+      members: getMembersData(inv.characters),
+      serverTime: new Date().toISOString()
+    };
+  }
+
+  if (action === 'deleteMember') {
+    deleteMemberRecord(payload.name);
+    const inv = getInventoryData();
+    return {
+      ok: true,
+      inventory: inv,
+      members: getMembersData(inv.characters),
+      serverTime: new Date().toISOString()
+    };
+  }
+
+  // 地點與集合點管理 API
+  if (action === 'addLocation') {
+    addLocationRecord(payload.location);
+    return { ok: true, locations: getLocationsData(), serverTime: new Date().toISOString() };
+  }
+
+  if (action === 'deleteLocation') {
+    deleteLocationRecord(payload.id);
+    return { ok: true, locations: getLocationsData(), serverTime: new Date().toISOString() };
+  }
+
+  // 家庭緊急聯絡網管理 API
+  if (action === 'addContact') {
+    addContactRecord(payload.contact);
+    return { ok: true, contacts: getContactsData(), serverTime: new Date().toISOString() };
+  }
+
+  if (action === 'updateContact') {
+    updateContactRecord(payload.contact);
+    return { ok: true, contacts: getContactsData(), serverTime: new Date().toISOString() };
+  }
+
+  if (action === 'deleteContact') {
+    deleteContactRecord(payload.id);
+    return { ok: true, contacts: getContactsData(), serverTime: new Date().toISOString() };
+  }
+
+  if (action === 'createYearSnapshot') {
+    return createYearSnapshot();
+  }
+
+  if (action === 'setGeminiKey') {
+    const cleanKey = String(payload.apiKey || '').trim();
+    if (cleanKey) PropertiesService.getScriptProperties().setProperty('GEMINI_API_KEY', cleanKey);
+    return { ok: true, hasGeminiKey: !!cleanKey, serverTime: new Date().toISOString() };
+  }
+
+  if (action === 'recognizeLabel') {
+    return recognizeItemLabelByGemini(payload.imageBase64, payload.itemName || '');
+  }
+
+  return { ok: false, error: '未知的操作類型：' + action };
+}
+// 重送防重複（v1.7）：前端每個寫入帶一個 reqId，逾時或斷線重送時同一個 reqId 只寫一次。
+// CacheService 是盡力而為：最多存 6 小時，而且 Google 可能提早清掉。清掉後重送仍可能重複新增，
+// 所以這只是減少重複，不是保證；前端仍要在重送後同步，讓使用者看到雲端實際內容。
+const REQ_ID_PATTERN = /^[A-Za-z0-9-]{1,64}$/;
+const REQ_CACHE_PREFIX = 'req:';
+const REQ_CACHE_SEC = 21600;           // CacheService 上限 6 小時
+const REQ_CACHE_MAX_BYTES = 90000;     // 單筆上限 100KB，留餘裕；太大只記「已完成」
+const REQ_DONE_MARK = '1';
+// 不需要防重複的操作：batchSync 改由每一筆各自的 reqId 處理；recognizeLabel 不寫入
+const IDEMPOTENT_SKIP_ACTIONS = ['batchSync', 'recognizeLabel'];
+
+/** reqId 格式不對就當沒帶（回空字串），照一般寫入處理，不擋請求。 */
+function validReqId(value) {
+  const id = typeof value === 'string' ? value : '';
+  return REQ_ID_PATTERN.test(id) ? id : '';
+}
+
+/** 回傳先前記下的內容字串；沒有或快取讀取失敗回 null。 */
+function getRememberedRequest(reqId) {
+  try {
+    const hit = CacheService.getScriptCache().get(REQ_CACHE_PREFIX + reqId);
+    return (hit === null || hit === undefined) ? null : hit;
+  } catch (err) {
+    return null;
+  }
+}
+
+/** 寫入成功後才記下；回應太大就只記「已完成」。快取寫不進去不影響本次回傳。 */
+function rememberRequest(reqId, result) {
+  try {
+    let text = typeof result === 'string' ? result : JSON.stringify(result);
+    if (text !== REQ_DONE_MARK && Utilities.newBlob(text).getBytes().length > REQ_CACHE_MAX_BYTES) {
+      text = REQ_DONE_MARK;
+    }
+    CacheService.getScriptCache().put(REQ_CACHE_PREFIX + reqId, text, REQ_CACHE_SEC);
+  } catch (err) {
+    // 記不下來只是少了防重複，不影響已完成的寫入
+  }
+}
+
+/** 重送命中：回當初的結果並標示 duplicate；只記了「已完成」就請前端重新同步。 */
+function duplicateResponse(remembered) {
+  if (remembered !== REQ_DONE_MARK) {
+    try {
+      const obj = JSON.parse(remembered);
+      if (obj && obj.ok === true) {
+        obj.duplicate = true;
+        return obj;
+      }
+    } catch (err) {
+      // 解析失敗就改請前端重新同步
+    }
+  }
+  return { ok: true, duplicate: true, needSync: true, serverTime: new Date().toISOString() };
 }
 
 function createJsonOutput(obj) {

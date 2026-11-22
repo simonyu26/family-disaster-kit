@@ -6377,26 +6377,11 @@
       return { members, contacts, rally };
     }
 
-    // 縮短醫療文字只截在分隔符號，不截在句中（D-01，災防顧問）：
-    // 上限內找最後一個分隔符號；找不到就保留第一段完整內容（即使超過上限）
-    const QR_MED_SEPARATORS = /[、，,；;。／\/\s]/;
-    function cutMedicalText(t, max) {
-      if (!max || t.length <= max) return t;
-      let cutAt = -1;
-      for (let i = Math.min(max, t.length - 1); i > 0; i--) { if (QR_MED_SEPARATORS.test(t[i])) { cutAt = i; break; } }
-      if (cutAt < 0) {
-        for (let i = 1; i < t.length; i++) { if (QR_MED_SEPARATORS.test(t[i])) { cutAt = i; break; } }
-        if (cutAt < 0) return t; // 整段沒有分隔符號：不截
-      }
-      return t.slice(0, cutAt) + '…（未完整）';
-    }
-
-    function composeFamilyQrText(parts, note, medMax) {
-      const cut = t => cutMedicalText(t, medMax);
+    function composeFamilyQrText(parts, note) {
       const lines = [];
       if (note) lines.push(note); // 「內容過長，未完整」放第一行（D-01，災防顧問）
       lines.push(QR_TITLE);
-      parts.members.forEach(m => lines.push(`${m.name}(${m.blood}):${cut(m.medical)}`));
+      parts.members.forEach(m => lines.push(`${m.name}(${m.blood}):${m.medical}`)); // 醫療文字一律完整，不縮短（D-01）
       lines.push('[聯絡人]', ...(parts.contacts.length ? parts.contacts : ['未設定']));
       lines.push('[集合點]', ...(parts.rally.length ? parts.rally : ['未設定']));
       return lines.join('\n');
@@ -6416,27 +6401,23 @@
       }
     }
 
-    // 能不截就不截；一定要截時以一筆為單位拿掉，順序：集合點 → 其餘聯絡人 → 第 1 位聯絡人 → 平均縮短每人醫療文字（不拿掉任何成員）（災防顧問）
+    // 能不截就不截；一定要截時以一筆為單位拿掉，順序：集合點 → 其餘聯絡人 → 第 1 位聯絡人（災防顧問）
+    // 成員與醫療文字一律完整：醫療文字常有否定句或但書，截了可能變成錯誤的「安全」。還是放不下就不畫 QR，只給完整文字（D-01）
     function fitFamilyQr(parts) {
       let qr = makeFamilyQr(composeFamilyQrText(parts));
       if (qr) return { qr, text: composeFamilyQrText(parts), dropped: null };
       const p = { members: parts.members, contacts: parts.contacts.slice(), rally: parts.rally.slice() };
-      const dropped = { rally: 0, contacts: 0, medShort: false };
+      const dropped = { rally: 0, contacts: 0 };
       const noteOf = () => {
         const bits = [];
         if (dropped.rally) bits.push(`集合點 ${dropped.rally} 筆`);
         if (dropped.contacts) bits.push(`聯絡人 ${dropped.contacts} 筆`);
-        let n = '[內容過長，未完整' + (bits.length ? '：已拿掉' + bits.join('、') : '');
-        if (dropped.medShort) n += (bits.length ? '；' : '：') + '醫療資料已縮短';
-        return n + ']';
+        return '[內容過長，未完整：已拿掉' + bits.join('、') + ']';
       };
-      const attempt = medMax => { const t = composeFamilyQrText(p, noteOf(), medMax); const q = makeFamilyQr(t); return q ? { qr: q, text: t, dropped } : null; };
+      const attempt = () => { const t = composeFamilyQrText(p, noteOf()); const q = makeFamilyQr(t); return q ? { qr: q, text: t, dropped } : null; };
       while (p.rally.length) { p.rally.pop(); dropped.rally++; const r = attempt(); if (r) return r; }
       while (p.contacts.length > 1) { p.contacts.pop(); dropped.contacts++; const r = attempt(); if (r) return r; }
       if (p.contacts.length) { p.contacts.pop(); dropped.contacts++; const r = attempt(); if (r) return r; }
-      dropped.medShort = true;
-      const longest = Math.max(0, ...p.members.map(m => m.medical.length));
-      for (let max = longest - 5; max >= 4; max -= 5) { const r = attempt(max); if (r) return r; }
       return null;
     }
 
@@ -6484,9 +6465,7 @@
               const d = fit.dropped, lost = [];
               if (d.rally) lost.push(`集合點 ${d.rally} 筆`);
               if (d.contacts) lost.push(`聯絡人 ${d.contacts} 筆`);
-              let what = lost.length ? '少了' + lost.join('、') : '';
-              if (d.medShort) what += what ? '，醫療資料也縮短了' : '醫療資料縮短了';
-              warn.textContent = `⚠️ 內容太多，QR 碼裡只放了一部分：${what}。完整內容請看下面的文字。`; // 使用者顧問定稿
+              warn.textContent = `⚠️ 內容太多，QR 碼裡只放了一部分：少了${lost.join('、')}。完整內容請看下面的文字。`; // 使用者顧問定稿
               box.appendChild(warn);
             }
             box.appendChild(drawFamilyQr(fit.qr));

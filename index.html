@@ -6318,7 +6318,8 @@
       work: [PLACE_CHECK_WATER, PLACE_CHECK_FOOD, { label: '好走的鞋', kws: ['鞋'] }, PLACE_CHECK_LIGHT, { label: '口罩', kws: ['口罩'] }, PLACE_CHECK_MEDS],
       other: [PLACE_CHECK_WATER, PLACE_CHECK_FOOD, PLACE_CHECK_LIGHT, PLACE_CHECK_FIRSTAID, PLACE_CHECK_MEDS]
     };
-    const PLACE_DELETED_PHOTO_MSG = '照片已從 App 刪除，家人的手機也看不到了。但雲端試算表的「版本記錄」裡可能還留著舊照片，能編輯這份試算表的人看得到，不會自動清掉。有設定每日自動備份的話，備份檔裡也還有。想完全清除，請看使用說明。（點一下這則可以收起）'; // 災防顧問 PR 67 定稿＋每日備份（gas-backup，選用）事實補充
+    const PLACE_QUEUED_PHOTO_MSG = '這個地點的照片還在雲端，家人的手機還看得到。等這次刪除送到雲端後，照片才會一起刪掉。';
+    const PLACE_DELETED_PHOTO_MSG = '照片已從 App 刪除，家人的手機也看不到了。但雲端試算表的「版本記錄」裡可能還留著舊照片，能編輯這份試算表的人看得到，不會自動清掉。有設定每日自動備份的話，備份檔裡也還有。想完全清除，請看使用說明。'; // 災防顧問 PR 67 定稿＋每日備份（gas-backup，選用）事實補充
 
     let placesData = [];
     try { placesData = JSON.parse(localStorage.getItem(STORAGE_KEYS.PLACES) || '[]'); } catch (e) { placesData = []; }
@@ -6728,21 +6729,22 @@
         : { action: 'updatePlace', place: record }, `✅ 已存好「${name}」`);
     }
     // 地點的新增、修改、刪除：有雲端就送出，離線就進補傳佇列；本機模式只存這支手機
+    // 回傳 'sent'（雲端已收到）、'local'（本機模式）、'queued'（先存在手機，之後補傳）或 false（沒存到）
     async function sendPlaceWrite(payload, doneText) {
-      if (!getGasUrl()) { showToast(doneText, 'success'); return true; }
-      if (!navigator.onLine) { enqueueAction(payload); showToast(doneText.replace('✅', '🟠') + '。目前離線，連上網路後會送到雲端。', 'warn'); return true; }
+      if (!getGasUrl()) { showToast(doneText, 'success'); return 'local'; }
+      if (!navigator.onLine) { enqueueAction(payload); showToast(doneText.replace('✅', '🟠') + '。目前離線，連上網路後會送到雲端。', 'warn'); return 'queued'; }
       try {
         const res = await postToGas(payload);
         if (res.places) setPlacesData(res.places);
         if (res.members) { membersMap = res.members; localStorage.setItem(STORAGE_KEYS.MEMBERS, JSON.stringify(membersMap)); }
         renderParty(); renderInventory();
         showToast(doneText, 'success');
-        return true;
+        return 'sent';
       } catch (err) {
         if (err && err.data) { showToast('⚠️ ' + friendlyServerMessage(err, '這次沒有存到雲端。請按「同步」看最新的地點清單後再試一次。'), 'warn'); return false; }
         enqueueAction(payload);
         showToast(doneText.replace('✅', '🟠') + '。雲端暫時連不上，先存在這支手機，之後會補傳。', 'warn');
-        return true;
+        return 'queued';
       }
     }
     function askDeletePlace() {
@@ -6767,7 +6769,9 @@
       await photoDbDel(p.id).catch(() => {});
       renderParty(); renderInventory();
       const ok = await sendPlaceWrite({ action: 'deletePlace', id: p.id, reassignTo: '' }, `✅ 已刪除「${p.name}」`);
-      if (ok && hadShared) setTimeout(() => showToast(PLACE_DELETED_PHOTO_MSG, 'info', { sticky: true }), 1800);
+      // 雲端真的刪了才說「家人看不到了」；還在佇列時照實說（工程顧問 PR 67 建議，D-01）
+      if (ok === 'sent' && hadShared) setTimeout(() => showToast(PLACE_DELETED_PHOTO_MSG, 'info', { sticky: true }), 1800);
+      else if (ok === 'queued' && hadShared) setTimeout(() => showToast(PLACE_QUEUED_PHOTO_MSG, 'warn', { sticky: true }), 1800);
     }
 
     // ---------- 分享照片給家人、放大檢視、刪除照片（f5、f6） ----------

@@ -2678,7 +2678,7 @@
 
 
     // 版本號只寫這一處（② #29）：升版只改 APP_VERSION，畫面標籤、網頁標題與 Service Worker 快取名稱都從這裡來
-    const APP_VERSION = 'v2.9.30';
+    const APP_VERSION = 'v2.9.31';
     (function showAppVersion() {
       const pill = document.getElementById('app-version-pill');
       if (pill) pill.textContent = APP_VERSION;
@@ -3212,6 +3212,22 @@
 
 
     const PLACE_QUEUE_ACTIONS = ['setMemberPlace', 'addPlace', 'updatePlace', 'deletePlace'];
+    // 後端 v1.10 起，新增物資、點位、聯絡人的那一筆資料有問題時會被略過（工項 57），另外提示
+    const OTHER_QUEUE_ACTIONS = { addItem: '物資', addLocation: '避難點', deleteLocation: '避難點', addContact: '聯絡人', updateContact: '聯絡人', deleteContact: '聯絡人' };
+    function isOtherSkipped(sk) {
+      return !!sk && (Object.prototype.hasOwnProperty.call(OTHER_QUEUE_ACTIONS, sk.action) || sk.code === 'UNKNOWN_ACTION');
+    }
+    // 名稱只當文字，交給 showToast（innerText）顯示（S-01）；沒有名稱時寫「1 筆聯絡人」這類說法
+    function otherSkippedMessage(list) {
+      const n = list.length;
+      const label = sk => {
+        const name = typeof sk.name === 'string' ? sk.name.trim() : '';
+        const kind = OTHER_QUEUE_ACTIONS[sk.action] || '資料';
+        return name ? `「${name}」` : `1 筆${kind}`;
+      };
+      const shown = list.slice(0, 3).map(label).join('、') + (n > 3 ? `…等 ${n} 筆` : '');
+      return `⚠️ 離線時改的避難點、聯絡人或新增的物資，有 ${n} 筆沒有存到雲端：${shown}。可能家人已經改過或刪掉。已重新同步，請確認後再改一次。`;
+    }
     function enqueueAction(payload) {
       if (payload.action === 'updateItem') {
         const key = q => (q.itemId ? 'id:' + q.itemId : 'row:' + q.row) + '|' + q.charName;
@@ -3242,9 +3258,13 @@
         const nameOfRow = row => { const it = oldItems.find(i => i.row === row); return (it && it.name) || '1 項物資'; }; // 查不到時不顯示列號（工程顧問）
         // 地點的動作（v2.9.30）另外提示，不顯示後端原文（可能是英文系統訊息，U-03）
         const placeSkipped = skipped.filter(sk => sk && PLACE_QUEUE_ACTIONS.includes(sk.action));
-        const itemSkipped = skipped.filter(sk => !(sk && PLACE_QUEUE_ACTIONS.includes(sk.action)));
-        const skippedMsg = (itemSkipped.length ? syncSkippedBatchMessage(itemSkipped, toSend.length - placeSkipped.length, nameOfRow) : '')
-          + (placeSkipped.length ? (itemSkipped.length ? '\n' : '') + `⚠️ 離線時改的存放地點有 ${placeSkipped.length} 筆沒有存到雲端：可能家人已經刪掉或改過那個地點。已重新同步，請確認地點清單後再改一次。` : '');
+        const otherSkipped = skipped.filter(sk => isOtherSkipped(sk));
+        const itemSkipped = skipped.filter(sk => !(sk && PLACE_QUEUE_ACTIONS.includes(sk.action)) && !isOtherSkipped(sk));
+        const msgs = [];
+        if (itemSkipped.length) msgs.push(syncSkippedBatchMessage(itemSkipped, toSend.length - placeSkipped.length - otherSkipped.length, nameOfRow));
+        if (placeSkipped.length) msgs.push(`⚠️ 離線時改的存放地點有 ${placeSkipped.length} 筆沒有存到雲端：可能家人已經刪掉或改過那個地點。已重新同步，請確認地點清單後再改一次。`);
+        if (otherSkipped.length) msgs.push(otherSkippedMessage(otherSkipped));
+        const skippedMsg = msgs.join('\n');
         offlineQueue = [];
         localStorage.setItem(STORAGE_KEYS.QUEUE, '[]');
         updatePendingBadge();

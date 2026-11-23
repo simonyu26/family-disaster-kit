@@ -2507,7 +2507,7 @@
 
 
     // 版本號只寫這一處（② #29）：升版只改 APP_VERSION，畫面標籤、網頁標題與 Service Worker 快取名稱都從這裡來
-    const APP_VERSION = 'v2.9.27';
+    const APP_VERSION = 'v2.9.28';
     (function showAppVersion() {
       const pill = document.getElementById('app-version-pill');
       if (pill) pill.textContent = APP_VERSION;
@@ -4666,16 +4666,21 @@
     }
 
 
+    // 家庭通行碼只能換成新的，不能清空（② #14）：雲端本來就不接受空值，畫面也不再提供清空的選項
+    const GAS_PIN_MIN_LENGTH = 6; // 和後端 PIN_MIN_LENGTH 相同
     async function saveGasServerPin() {
       const newPin = document.getElementById('setting-gas-pin').value.trim();
       const oldPin = getGasPin();
+      if (newPin.length < GAS_PIN_MIN_LENGTH) {
+        showToast(`🟠 新的家庭通行碼至少要 ${GAS_PIN_MIN_LENGTH} 碼。家庭通行碼只能換成新的，不能留空。`, 'warn');
+        return;
+      }
       if (!navigator.onLine || !getGasUrl()) { showToast('🟠 變更雲端通行碼需於連線狀態執行', 'warn'); return; }
       try {
         showToast('🔒 正在更新 GAS 雲端家庭通行碼...');
         await postToGas({ action: 'setFamilyPin', oldPin, newPin });
-        if (newPin) localStorage.setItem(STORAGE_KEYS.GAS_PIN, newPin);
-        else localStorage.removeItem(STORAGE_KEYS.GAS_PIN);
-        showToast(newPin ? '✅ 已啟用雲端家庭通行碼保護' : '🔓 已解除雲端通行碼', 'success');
+        localStorage.setItem(STORAGE_KEYS.GAS_PIN, newPin);
+        showToast('✅ 已換成新的家庭通行碼。請告訴其他家人，在他們的手機上也改成新的通行碼；家人的手機改好之前，修改送不到雲端。', 'success');
       } catch (e) { showToast('❌ 更新失敗：' + e.message, 'error'); }
     }
 
@@ -4793,12 +4798,14 @@
 
 
     // 只接受 Google Apps Script 網頁應用程式網址，避免同步到其他網站
-    const GAS_URL_PATTERN = /^https:\/\/script\.google\.com\/(a\/[^\/?#]+\/)?macros\/s\/[A-Za-z0-9_-]+\/(exec|dev)$/;
+    // 一般帳號：https://script.google.com/macros/s/ID/exec
+    // 公司或學校（Workspace）帳號：https://script.google.com/a/macros/網域/s/ID/exec（② #14：原本誤寫成 /a/網域/macros/s/）
+    const GAS_URL_PATTERN = /^https:\/\/script\.google\.com\/(a\/macros\/[^\/?#]+\/|macros\/)s\/[A-Za-z0-9_-]+\/(exec|dev)$/;
 
     function saveSettings() {
       const url = document.getElementById('setting-gas-url').value.trim();
       if (url && !GAS_URL_PATTERN.test(url)) {
-        showToast('🟠 雲端網址格式不正確。請貼上 GAS「部署」後取得的網址，開頭是 https://script.google.com/macros/s/，結尾是 /exec', 'warn');
+        showToast('🟠 雲端網址格式不正確。請貼上 GAS「部署」後取得的網址，開頭是 https://script.google.com/macros/s/（公司或學校帳號是 https://script.google.com/a/macros/網域/s/），結尾是 /exec', 'warn');
         return;
       }
       const gasPin = document.getElementById('setting-gas-pin').value.trim();

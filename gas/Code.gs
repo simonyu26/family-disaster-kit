@@ -22,7 +22,7 @@ function openFamilySpreadsheet() {
 }
 
 // 後端版本號（WP-06）：每次請擁有者重貼 Code.gs 都要加一，並寫進 CHANGELOG 的 [gas] 標題
-const BACKEND_VERSION = 'v1.7';
+const BACKEND_VERSION = 'v1.8';
 
 const PIN_MIN_LENGTH = 6;
 const PIN_MAX_FAILURES = 10;           // 10 分鐘內猜錯 10 次就鎖定（#14：全域計數可被外人故意鎖住，放寬門檻）
@@ -59,7 +59,7 @@ function checkAuthPin(providedPin, alreadyLocked) {
 /**
  * 記錄一次猜錯；回傳 true 表示已達門檻（或已在鎖定中）。
  * 讀取計數、加一、寫回要在 ScriptLock 內做，否則同時送來的多個錯誤請求會讀到同一個數字，
- * 少算次數（#14）。doGet 沒有持鎖，這裡短暫取鎖；拿不到鎖時仍照常計數（盡力而為），不會因此放行。
+ * 少算次數（#14）。POST 讀取沒有持鎖，這裡短暫取鎖；拿不到鎖時仍照常計數（盡力而為），不會因此放行。
  */
 function recordPinFailure(cache, alreadyLocked) {
   let lock = null;
@@ -101,6 +101,7 @@ function authFailureOutput(auth, wrongPinMessage) {
 }
 
 const READ_ACTIONS = ['getAll', 'getLocations', 'getContacts'];
+const GET_READ_DISABLED_MSG = '這個讀取方式已經停用。請重新整理 App，更新到最新版後再同步。';
 const READ_PIN_ERROR = '請輸入正確的家庭通行碼以同步雲端資料';
 
 /**
@@ -130,12 +131,12 @@ function readFamilyData(action, auth) {
 
 /**
  * 處理外部 PWA 的 GET 請求
- * 過渡期：仍接受以網址參數 pin 讀取家庭資料，等前端改用 POST 上線後即移除（S-04、E-12）。
+ * 只提供公開防災情資（示警、AED）；家庭資料的 GET 讀取已在 v1.8 關閉（② #25，S-04）。
  */
 function doGet(e) {
   try {
     const params = (e && e.parameter) ? e.parameter : {};
-    const action = params.action ? params.action : 'getAll';
+    const action = params.action ? String(params.action) : '';
 
     // 公開防災情資代理（NCDR 與 AED 不涉及試算表個資，免通行碼即可查詢）
     if (action === 'getAlerts') {
@@ -147,12 +148,9 @@ function doGet(e) {
       return createJsonOutput(getNearbyAeds(lat, lng));
     }
 
-    // 驗證家庭通行碼（過渡期 GET 讀取）
-    const auth = checkAuthPin(params.pin);
-    if (!auth.ok) {
-      return authFailureOutput(auth, READ_PIN_ERROR);
-    }
-    return createJsonOutput(readFamilyData(action, auth));
+    // 家庭資料一律改用 POST 讀取，通行碼不放網址（② #25，S-04；前端 v2.9.23 起已改用 POST）。
+    // 其他 GET 一律拒絕，包括沒帶 action 的請求。不讀網址上的 pin、不驗證，也不計入猜錯次數。
+    return createJsonOutput({ ok: false, code: 'GET_READ_DISABLED', error: GET_READ_DISABLED_MSG });
   } catch (err) {
     return createJsonOutput({ ok: false, error: err.message });
   }

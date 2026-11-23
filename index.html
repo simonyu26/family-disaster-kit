@@ -2923,7 +2923,7 @@
     // 不再自動送出，避免每次開 App 自動補傳＋讀取都算猜錯，累積到上限把全家鎖住。
     // 只存通行碼的簡短指紋，不另存一份通行碼本身。
     const PIN_REJECTED_KEY = 'camp_gas_pin_rejected';
-    const PIN_WRONG_WRITE_MSG = '⚠️ 家庭通行碼不對，這次的修改先存在這支手機。請到「營地」更新通行碼，之後按「同步」就會送出。';
+    const PIN_WRONG_WRITE_MSG = '⚠️ 家庭通行碼不對，這次的修改先存在這支手機。可能是家人換過通行碼了。請向家人問新的通行碼，到「營地」改好，再按「同步」，就會送出。';
     const PIN_REJECTED_ERR = '家庭通行碼不對，請到「營地」更新通行碼後，再按「同步」。';
     function pinFingerprint(pin) {
       let h = 5381;
@@ -2940,7 +2940,7 @@
     function writeFailToast(err, fallbackMsg) {
       if (err && err.code === 'AUTH') {
         const d = err.data || {};
-        if (d.locked || d.pinNotSet) showToast('⚠️ ' + err.message + '。這次的修改先存在這支手機，之後會再送出。', 'warn', { sticky: true });
+        if (d.locked || d.pinNotSet) showToast('⚠️ ' + err.message + '。這次的修改先存在這支手機，等雲端可以用了，按「同步」才會送出。', 'warn', { sticky: true });
         else showToast(PIN_WRONG_WRITE_MSG, 'warn', { sticky: true });
         return;
       }

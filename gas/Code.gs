@@ -1609,19 +1609,22 @@ function updatePlaceRecord(place) {
 
 /**
  * 刪除存放地點：同一次持鎖動作裡一起刪掉照片（工程顧問、災防顧問）。
- * reassignTo：放在這個地點的包要改放哪裡（前端先問使用者）；沒給就留著舊 ID，前端顯示「地點不見了」，不算成家裡（D-01）。
+ * reassignTo：放在這個地點的包要改放哪裡（前端先問使用者）。
+ *   空字串＝改成「還沒選」；合格的地點值＝改放那裡；沒給（undefined）＝留著舊 ID，前端顯示「地點不見了」，不算成家裡（D-01）。
  * 已經不存在就回 false，不丟錯，重送不會卡住離線佇列。
  */
 function deletePlaceRecord(id, reassignTo) {
   const placeId = String(id || '');
   if (!PLACE_ID_PATTERN.test(placeId)) return false;
   let target;
-  if (reassignTo !== undefined && reassignTo !== null && reassignTo !== '') {
+  if (reassignTo === '') {
+    target = '';
+  } else if (reassignTo !== undefined && reassignTo !== null) {
     target = requireMemberPlace(reassignTo);
     if (target === placeId) throw new Error('要改放的地點不能是正在刪除的地點，請選另一個地點。');
   }
   const ss = openFamilySpreadsheet();
-  if (target) {
+  if (target !== undefined) {
     const mSheet = getMembersSheet(ss, []);
     const mData = mSheet.getDataRange().getValues();
     for (let i = 1; i < mData.length; i++) {
@@ -1657,7 +1660,7 @@ function deletePhotoChunks(ss, placeId, keepVer) {
 function checkPhotoBase64(value) {
   const b64 = String(value || '');
   if (!b64) throw new Error('沒有收到照片，請再拍一次。');
-  if (b64.length > PHOTO_MAX_CHARS) throw new Error('照片太大了，請重新整理 App 後再拍一次（App 會先把照片縮小）。');
+  if (b64.length > PHOTO_MAX_CHARS) throw new Error('照片太大了，這次沒有存。請重新整理 App 後再拍一次。');
   // 只收 JPEG（base64 開頭 /9j/ 是 JPEG 的檔頭）
   if (!/^[A-Za-z0-9+\/]+={0,2}$/.test(b64) || b64.indexOf('/9j/') !== 0) {
     throw new Error('照片格式不正確，請再拍一次。');

@@ -593,6 +593,14 @@
     .mood-bubble { font-size: 0.66rem; background: #FFF8E7; color: #8C5811; border: 1px solid #E9C46A; border-radius: 10px; padding: 1px 6px; margin-top: 3px; display: inline-block; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .daily-quest-box { margin: 8px 12px 4px; padding: 9px 12px; background: linear-gradient(135deg, #F4F9F4, #FFFDF7); border: 1.5px solid #B7D3C4; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 0.82rem; }
     #qr-modal-box { display: flex; justify-content: center; padding: 14px; background: #fff; border-radius: 12px; margin: 10px 0; }
+    /* QR 碼產生不出來時的白話說明（平安卡內容仍在下方文字摘要） */
+    .qr-fallback-msg { color: var(--text); font-size: 0.9rem; line-height: 1.5; text-align: left; }
+    body.emergency-mode .qr-fallback-msg { font-size: 16px; }
+    /* 平安卡文字摘要：QR 碼做不出來時，這段就是給救護人員看的內容 */
+    #qr-text-preview { font-size: 0.75rem; text-align: left; background: var(--bg); color: var(--text); padding: 8px; border-radius: 8px; max-height: 110px; overflow-y: auto; white-space: pre-wrap; }
+    #qr-modal.qr-failed #qr-text-preview { font-size: 0.9rem; max-height: 40vh; border: 1px solid var(--border); }
+    #qr-modal.qr-failed #qr-modal-sub { display: none; }
+    body.emergency-mode #qr-modal #qr-text-preview { font-size: 16px; line-height: 1.5; background: var(--em-card); color: var(--em-text); border: 1px solid var(--em-line); max-height: 40vh; }
     #plan-print-modal { display: none; position: fixed; inset: 0; background: #fff; z-index: 2100; overflow-y: auto; padding: 20px; color: #222; }
     @media print {
       body > *:not(#print-modal):not(#plan-print-modal) { display: none !important; }
@@ -2369,9 +2377,9 @@
   <div id="qr-modal" class="modal-backdrop">
     <div class="modal-card" style="text-align:center;">
       <h3 class="modal-title">📱 家庭離線平安卡 QR Code</h3>
-      <div style="font-size:0.78rem; color:var(--text-muted);">斷網時可用另一支手機相機掃描讀取文字摘要（含成員醫療重點、集合點與主要聯絡人）</div>
+      <div id="qr-modal-sub" style="font-size:0.78rem; color:var(--text-muted);">斷網時可用另一支手機相機掃描讀取文字摘要（含成員醫療重點、集合點與主要聯絡人）</div>
       <div id="qr-modal-box"></div>
-      <div id="qr-text-preview" style="font-size:0.74rem; text-align:left; background:#FAF6EC; padding:8px; border-radius:8px; max-height:110px; overflow-y:auto; white-space:pre-wrap;"></div>
+      <div id="qr-text-preview"></div>
       <div class="modal-actions" style="justify-content:center;">
         <button class="btn btn-primary" onclick="closeModal('qr-modal')">關閉</button>
       </div>
@@ -2507,7 +2515,7 @@
 
 
     // 版本號只寫這一處（② #29）：升版只改 APP_VERSION，畫面標籤、網頁標題與 Service Worker 快取名稱都從這裡來
-    const APP_VERSION = 'v2.9.16';
+    const APP_VERSION = 'v2.9.16.1';
     (function showAppVersion() {
       const pill = document.getElementById('app-version-pill');
       if (pill) pill.textContent = APP_VERSION;
@@ -6402,11 +6410,12 @@
     }
 
 
+    const QR_FALLBACK_MSG = '⚠️ QR 碼做不出來，平安卡的內容都在下面的文字裡（往下捲可看到聯絡人和集合點）。需要時，把手機交給救護人員或幫忙的人直接看；也可以先截圖存起來，沒網路也看得到。';
     function openFamilyQrModal() {
       const mainChars = (globalData && globalData.characters) ? globalData.characters.filter(n => getMemberVisual(n).memberType !== 'pack') : [];
       const memberLines = mainChars.map(n => {
         const m = getMemberVisual(n);
-        return `${n}(${m.blood || '血型未填'}):${m.medical || '無過敏'}`;
+        return `${n}(${m.blood || '血型未填'}):${m.medical || '過敏未填'}`; // 沒填不等於沒有過敏（D-01，災防顧問）
       }).join('\n');
       const contactLines = (contactsData || []).slice(0, 3).map(c => `${c.name}(${c.relation}):${c.phone}`).join('\n');
       const rallyLines = (locationsData || []).slice(0, 2).map(l => `${l.type}:${l.name}`).join('\n');
@@ -6418,10 +6427,23 @@
       if (prev) prev.innerText = qrText;
       if (box) {
         box.innerHTML = '';
-        if (typeof QRCode !== 'undefined') {
-          new QRCode(box, { text: qrText.slice(0, 420), width: 200, height: 200, correctLevel: QRCode.CorrectLevel.M });
-        } else {
-          box.innerHTML = '<div style="color:var(--danger);">離線尚未快取 QR 套件，請檢視下方純文字摘要</div>';
+        let drawn = false;
+        // 套件遇到中文常算錯長度而丟錯（code length overflow）。失敗時視窗照開，文字摘要照樣看得到（D-05）
+        try {
+          if (typeof QRCode !== 'undefined') {
+            new QRCode(box, { text: qrText.slice(0, 420), width: 200, height: 200, correctLevel: QRCode.CorrectLevel.M });
+            drawn = true;
+          }
+        } catch (e) {
+          drawn = false;
+        }
+        document.getElementById('qr-modal').classList.toggle('qr-failed', !drawn);
+        if (!drawn) {
+          box.innerHTML = ''; // 清掉畫到一半的畫布
+          const msg = document.createElement('div');
+          msg.className = 'qr-fallback-msg';
+          msg.textContent = QR_FALLBACK_MSG;
+          box.appendChild(msg);
         }
       }
       document.getElementById('qr-modal').classList.add('open');

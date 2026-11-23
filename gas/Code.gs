@@ -22,7 +22,7 @@ function openFamilySpreadsheet() {
 }
 
 // 後端版本號（WP-06）：每次請擁有者重貼 Code.gs 都要加一，並寫進 CHANGELOG 的 [gas] 標題
-const BACKEND_VERSION = 'v1.8';
+const BACKEND_VERSION = 'v1.9';
 
 const PIN_MIN_LENGTH = 6;
 const PIN_MAX_FAILURES = 10;           // 10 分鐘內猜錯 10 次就鎖定（#14：全域計數可被外人故意鎖住，放寬門檻）
@@ -100,7 +100,7 @@ function authFailureOutput(auth, wrongPinMessage) {
   return createJsonOutput({ ok: false, authRequired: true, error: wrongPinMessage });
 }
 
-const READ_ACTIONS = ['getAll', 'getLocations', 'getContacts'];
+const READ_ACTIONS = ['getAll', 'getLocations', 'getContacts', 'getPlacePhoto'];
 const GET_READ_DISABLED_MSG = '這個讀取方式已經停用。請重新整理 App，更新到最新版後再同步。';
 const READ_PIN_ERROR = '請輸入正確的家庭通行碼以同步雲端資料';
 
@@ -108,12 +108,15 @@ const READ_PIN_ERROR = '請輸入正確的家庭通行碼以同步雲端資料';
  * 讀取家庭資料（GET 與 POST 共用；呼叫前須已通過通行碼驗證）
  * 讀取不持全域鎖，所以一律「純讀取」：不新增分頁、不補成員列，補資料留給在鎖內的寫入流程（工程顧問，v1.6）。
  */
-function readFamilyData(action, auth) {
+function readFamilyData(action, auth, payload) {
   if (action === 'getLocations') {
     return { ok: true, pinRequired: auth.pinRequired, locations: getLocationsData(true), serverTime: new Date().toISOString() };
   }
   if (action === 'getContacts') {
     return { ok: true, pinRequired: auth.pinRequired, contacts: getContactsData(true), serverTime: new Date().toISOString() };
+  }
+  if (action === 'getPlacePhoto') {
+    return getPlacePhotoData(payload.placeId);
   }
   const inv = getInventoryData();
   return {
@@ -122,6 +125,7 @@ function readFamilyData(action, auth) {
     inventory: inv,
     members: getMembersData(inv.characters, true),
     locations: getLocationsData(true),
+    places: getPlacesData(true),
     contacts: getContactsData(true),
     snapshots: getSnapshotList(),
     backendVersion: BACKEND_VERSION,
@@ -172,7 +176,7 @@ function doPost(e) {
       if (!readAuth.ok) {
         return authFailureOutput(readAuth, READ_PIN_ERROR);
       }
-      return createJsonOutput(readFamilyData(payload.action, readAuth));
+      return createJsonOutput(readFamilyData(payload.action, readAuth, payload));
     }
   } catch (err) {
     return createJsonOutput({ ok: false, error: err.message });
@@ -278,6 +282,14 @@ function handleWriteAction(action, payload, auth) {
         updateContactRecord(act.contact);
       } else if (act.action === 'deleteContact') {
         deleteContactRecord(act.id);
+      } else if (PLACE_BATCH_ACTIONS.includes(act.action)) {
+        // 地點動作逐筆接住錯誤（工程顧問）：例如家人已刪掉這個地點，這一筆放進 skipped 就好，
+        // 不讓整批丟錯，否則離線佇列每次重送都會卡在同一筆
+        const placeResult = runPlaceBatchAction(act);
+        if (!placeResult.ok) {
+          actOk = false;
+          skipped.push(placeResult.skip);
+        }
       }
       if (actOk && actReqId) rememberRequest(actReqId, REQ_DONE_MARK);
     });
@@ -288,6 +300,7 @@ function handleWriteAction(action, payload, auth) {
       inventory: inv,
       members: getMembersData(inv.characters),
       locations: getLocationsData(),
+      places: getPlacesData(),
       contacts: getContactsData(),
       skipped: skipped,
       added: added,
@@ -324,7 +337,7 @@ function handleWriteAction(action, payload, auth) {
     addMemberRecord(
       payload.name, payload.avatar, payload.buddy, payload.defaultState || '-',
       payload.blood, payload.medical, payload.iceContact, payload.rallyNote,
-      payload.memberType, payload.mobility, payload.firstAidSkill
+      payload.memberType, payload.mobility, payload.firstAidSkill, payload.place
     );
     const inv = getInventoryData();
     return {
@@ -341,7 +354,7 @@ function handleWriteAction(action, payload, auth) {
     updateMemberRecord(
       oldName, newName, payload.avatar, payload.buddy,
       payload.blood, payload.medical, payload.iceContact, payload.rallyNote,
-      payload.memberType, payload.mobility, payload.firstAidSkill
+      payload.memberType, payload.mobility, payload.firstAidSkill, payload.place
     );
     const inv = getInventoryData();
     return {
@@ -372,6 +385,41 @@ function handleWriteAction(action, payload, auth) {
   if (action === 'deleteLocation') {
     deleteLocationRecord(payload.id);
     return { ok: true, locations: getLocationsData(), serverTime: new Date().toISOString() };
+  }
+
+  // 存放地點與地點照片（v1.9）
+  if (action === 'setMemberPlace') {
+    if (!setMemberPlaceRecord(payload.name, payload.place)) {
+      return { ok: false, code: 'UNKNOWN_MEMBER', error: '營地的成員名單裡找不到「' + String(payload.name || '') + '」，這次沒有存。請按「同步」後再選一次地點。' };
+    }
+    const inv = getInventoryData();
+    return { ok: true, members: getMembersData(inv.characters), serverTime: new Date().toISOString() };
+  }
+
+  if (action === 'addPlace') {
+    const id = addPlaceRecord(payload.place);
+    return { ok: true, id: id, places: getPlacesData(), serverTime: new Date().toISOString() };
+  }
+
+  if (action === 'updatePlace') {
+    updatePlaceRecord(payload.place);
+    return { ok: true, places: getPlacesData(), serverTime: new Date().toISOString() };
+  }
+
+  if (action === 'deletePlace') {
+    deletePlaceRecord(payload.id, payload.reassignTo);
+    const inv = getInventoryData();
+    return { ok: true, places: getPlacesData(), members: getMembersData(inv.characters), serverTime: new Date().toISOString() };
+  }
+
+  if (action === 'setPlacePhoto') {
+    const photoVer = setPlacePhotoRecord(payload.placeId, payload.photoBase64);
+    return { ok: true, photoVer: photoVer, places: getPlacesData(), serverTime: new Date().toISOString() };
+  }
+
+  if (action === 'deletePlacePhoto') {
+    deletePlacePhotoRecord(payload.placeId);
+    return { ok: true, places: getPlacesData(), serverTime: new Date().toISOString() };
   }
 
   // 家庭緊急聯絡網管理 API
@@ -485,10 +533,13 @@ function sanitizeRow(values) {
   return values.map(sanitizeCell);
 }
 
+// 不是物資表的固定分頁（v1.9 加上存放地點 Places 與地點照片 PlacePhotos，避免被誤認成物資表）
+const FIXED_SHEET_NAMES = ['Leadsheet', 'Locations', 'Members', 'Contacts', 'Places', 'PlacePhotos'];
+
 function getTargetSheet(ss) {
   const sheetName = (PropertiesService.getScriptProperties().getProperty('INVENTORY_SHEET_NAME') || '').trim();
   if (sheetName) {
-    if (['Leadsheet', 'Locations', 'Members', 'Contacts'].includes(sheetName)) {
+    if (FIXED_SHEET_NAMES.includes(sheetName)) {
       throw new Error('INVENTORY_SHEET_NAME 不可設為「' + sheetName + '」（這是成員、聯絡人或地點用的分頁）。請改成物資分頁的名稱，例如「目前物資」');
     }
     const named = ss.getSheetByName(sheetName);
@@ -497,7 +548,7 @@ function getTargetSheet(ss) {
     }
     return named;
   }
-  const excluded = ['Leadsheet', 'Locations', 'Members', 'Contacts'];
+  const excluded = FIXED_SHEET_NAMES;
   const sheets = ss.getSheets();
   for (let i = 0; i < sheets.length; i++) {
     const name = sheets[i].getName();
@@ -1076,12 +1127,15 @@ function assignItemIds() {
 }
 
 /**
- * 成員設定與家庭防災卡資料庫 (Members 工作表，擴充至 10 欄：
- * 名稱、頭像、夥伴動物、血型、過敏與用藥、緊急聯絡人、特殊醫療備註、成員類型、行動能力、急救技能)
+ * 成員設定與家庭防災卡資料庫 (Members 工作表，擴充至 11 欄：
+ * 名稱、頭像、夥伴動物、血型、過敏與用藥、緊急聯絡人、特殊醫療備註、成員類型、行動能力、急救技能、存放地點)
+ * 存放地點（v1.9）：空白＝還沒選；home／car／work／other＝地點類型；plc_ 開頭＝Places 工作表的地點 ID。
+ * 讀取時不轉換舊值（v1.6 讀取不寫入），使用者重新選地點時才寫入新值。
  */
+const MEMBER_COLS = 11;
 function getMembersSheet(ss, initialCharacters) {
   let sheet = ss.getSheetByName('Members');
-  const headers = ['名稱', '頭像', '夥伴動物', '血型', '過敏與用藥', '緊急聯絡人', '特殊醫療備註', '成員類型', '行動能力', '急救技能'];
+  const headers = ['名稱', '頭像', '夥伴動物', '血型', '過敏與用藥', '緊急聯絡人', '特殊醫療備註', '成員類型', '行動能力', '急救技能', '存放地點'];
   // 只保留非個人的預設值；成員頭像與夥伴改由使用者在介面中設定
   const defaultMap = {
     '家庭儲備': { avatar: '⛺', buddy: '🐻', type: 'pack' }
@@ -1089,17 +1143,17 @@ function getMembersSheet(ss, initialCharacters) {
 
   if (!sheet) {
     sheet = ss.insertSheet('Members');
-    sheet.getRange(1, 1, 1, 10).setValues([headers]);
+    sheet.getRange(1, 1, 1, MEMBER_COLS).setValues([headers]);
     sheet.setFrozenRows(1);
     if (initialCharacters && initialCharacters.length > 0) {
       const rows = initialCharacters.map(name => {
         const def = defaultMap[name] || { avatar: '🧑', buddy: '🐾', type: (name.endsWith('+') || name === '家庭儲備') ? 'pack' : 'main' };
-        return [name, def.avatar, def.buddy, '', '', '', '', def.type, 'self', ''];
+        return [name, def.avatar, def.buddy, '', '', '', '', def.type, 'self', '', ''];
       });
-      sheet.getRange(2, 1, rows.length, 10).setValues(rows.map(sanitizeRow));
+      sheet.getRange(2, 1, rows.length, MEMBER_COLS).setValues(rows.map(sanitizeRow));
     }
-  } else if (sheet.getLastColumn() < 10) {
-    sheet.getRange(1, 1, 1, 10).setValues([headers]);
+  } else if (sheet.getLastColumn() < MEMBER_COLS) {
+    sheet.getRange(1, 1, 1, MEMBER_COLS).setValues([headers]);
   }
   return sheet;
 }
@@ -1126,7 +1180,8 @@ function getMembersData(initialCharacters, readOnly) {
       rallyNote: String(data[i][6] || ''),
       memberType: String(data[i][7] || defaultType),
       mobility: String(data[i][8] || 'self'),
-      firstAidSkill: String(data[i][9] || '')
+      firstAidSkill: String(data[i][9] || ''),
+      place: String(data[i][10] || '')
     };
   }
   if (initialCharacters) {
@@ -1135,18 +1190,20 @@ function getMembersData(initialCharacters, readOnly) {
         const defaultType = (name.endsWith('+') || name === '家庭儲備') ? 'pack' : 'main';
         map[name] = {
           name: name, avatar: '🧑', buddy: '🐾', blood: '', medical: '', iceContact: '', rallyNote: '',
-          memberType: defaultType, mobility: 'self', firstAidSkill: ''
+          memberType: defaultType, mobility: 'self', firstAidSkill: '', place: ''
         };
-        if (!readOnly) sheet.appendRow(sanitizeRow([name, '🧑', '🐾', '', '', '', '', defaultType, 'self', '']));
+        if (!readOnly) sheet.appendRow(sanitizeRow([name, '🧑', '🐾', '', '', '', '', defaultType, 'self', '', '']));
       }
     });
   }
   return map;
 }
 
-function addMemberRecord(name, avatar, buddy, defaultState, blood, medical, iceContact, rallyNote, memberType, mobility, firstAidSkill) {
+function addMemberRecord(name, avatar, buddy, defaultState, blood, medical, iceContact, rallyNote, memberType, mobility, firstAidSkill, place) {
   const cleanName = (name || '').trim();
   if (!cleanName) throw new Error('成員名稱不可為空');
+  // 先檢查存放地點，不合格就整筆不寫，避免物資表已加欄、成員表卻沒寫入
+  const cleanPlace = (place === undefined || place === '') ? '' : requireMemberPlace(place);
 
   const ss = openFamilySpreadsheet();
   const targetSheet = getTargetSheet(ss);
@@ -1195,15 +1252,17 @@ function addMemberRecord(name, avatar, buddy, defaultState, blood, medical, iceC
   mSheet.appendRow(sanitizeRow([
     cleanName, avatar || '🧑', buddy || '🐾',
     blood || '', medical || '', iceContact || '', rallyNote || '',
-    mType, mobility || 'self', firstAidSkill || ''
+    mType, mobility || 'self', firstAidSkill || '', cleanPlace
   ]));
   return true;
 }
 
-function updateMemberRecord(oldName, newName, avatar, buddy, blood, medical, iceContact, rallyNote, memberType, mobility, firstAidSkill) {
+function updateMemberRecord(oldName, newName, avatar, buddy, blood, medical, iceContact, rallyNote, memberType, mobility, firstAidSkill, place) {
   const cleanOld = (oldName || '').trim();
   const cleanNew = (newName || cleanOld).trim();
   if (!cleanOld || !cleanNew) throw new Error('成員名稱不可為空');
+  // 沒帶 place（舊版前端）就不動這一欄；帶了就要是合格的值，不接受改回空白
+  const cleanPlace = (place === undefined) ? undefined : requireMemberPlace(place);
 
   const ss = openFamilySpreadsheet();
 
@@ -1235,6 +1294,7 @@ function updateMemberRecord(oldName, newName, avatar, buddy, blood, medical, ice
       if (memberType !== undefined) sheet.getRange(i + 1, 8).setValue(sanitizeCell(memberType));
       if (mobility !== undefined) sheet.getRange(i + 1, 9).setValue(sanitizeCell(mobility));
       if (firstAidSkill !== undefined) sheet.getRange(i + 1, 10).setValue(sanitizeCell(firstAidSkill));
+      if (cleanPlace !== undefined) sheet.getRange(i + 1, 11).setValue(cleanPlace);
       return true;
     }
   }
@@ -1242,7 +1302,7 @@ function updateMemberRecord(oldName, newName, avatar, buddy, blood, medical, ice
   sheet.appendRow(sanitizeRow([
     cleanNew, avatar || '🧑', buddy || '🐾',
     blood || '', medical || '', iceContact || '', rallyNote || '',
-    mType, mobility || 'self', firstAidSkill || ''
+    mType, mobility || 'self', firstAidSkill || '', cleanPlace || ''
   ]));
   return true;
 }
@@ -1415,6 +1475,336 @@ function deleteLocationRecord(id) {
     }
   }
   return false;
+}
+
+/**
+ * 存放地點（v1.9，Places 工作表）：物資包放在哪裡，例如家裡、車上、公司。
+ * 跟地圖上的避難點位（Locations）分開：存放地點不記經緯度，家裡的位置不會畫到地圖上。
+ * 欄位：地點 ID、名稱、類型、人數、照片版本、照片段數、更新時間、建立者
+ */
+const PLACE_TYPES = ['home', 'car', 'work', 'other'];
+const PLACE_ID_PATTERN = /^plc_[A-Za-z0-9-]{1,64}$/;
+const PLACE_NAME_MAX = 30;
+const PLACE_HEADCOUNT_MAX = 50;
+const PLACE_HEADERS = ['地點 ID', '名稱', '類型', '人數', '照片版本', '照片段數', '更新時間', '建立者'];
+const PLACE_NOT_FOUND_MSG = '找不到這個存放地點，可能已被家人刪除。請按「同步」看最新的地點清單。';
+
+// 地點照片（PlacePhotos 工作表）：前端先縮成長邊 800px、拿掉 EXIF 的 JPEG，再以 base64 送來。
+// 一格最多 5 萬字，所以切段存；不用雲端硬碟，免得每個家庭都要重新授權整個雲端硬碟（工程顧問）。
+const PHOTO_HEADERS = ['地點 ID', '照片版本', '段序', '資料'];
+const PHOTO_MAX_CHARS = 300000;        // 約 220KB 的 JPEG
+const PHOTO_CHUNK_CHARS = 40000;
+const PHOTO_CHUNK_PREFIX = 'b';        // 每段前面加一個字母，避免以 + = 開頭被試算表當成公式或數字
+
+function validMemberPlace(value) {
+  const v = String(value === undefined || value === null ? '' : value).trim();
+  if (PLACE_TYPES.includes(v) || PLACE_ID_PATTERN.test(v)) return v;
+  return null;
+}
+
+function requireMemberPlace(value) {
+  const v = validMemberPlace(value);
+  if (v === null) throw new Error('存放地點的格式不正確，這次沒有存。請重新整理 App 後再選一次地點。');
+  return v;
+}
+
+const PLACE_BATCH_ACTIONS = ['setMemberPlace', 'addPlace', 'updatePlace', 'deletePlace'];
+
+/**
+ * 批次裡的一筆地點動作；出錯時回 { ok:false, skip }，不往外丟。
+ */
+function runPlaceBatchAction(act) {
+  const base = { action: String(act.action) };
+  try {
+    if (act.action === 'setMemberPlace') {
+      if (!setMemberPlaceRecord(act.name, act.place)) {
+        return { ok: false, skip: Object.assign(base, { code: 'UNKNOWN_MEMBER', charName: String(act.name || '') }) };
+      }
+    } else if (act.action === 'addPlace') {
+      addPlaceRecord(act.place);
+    } else if (act.action === 'updatePlace') {
+      updatePlaceRecord(act.place);
+    } else if (act.action === 'deletePlace') {
+      deletePlaceRecord(act.id, act.reassignTo);
+    }
+    return { ok: true };
+  } catch (err) {
+    const placeName = act.place && act.place.name ? String(act.place.name).slice(0, PLACE_NAME_MAX) : '';
+    return { ok: false, skip: Object.assign(base, { code: 'PLACE_ACTION_FAILED', placeName: placeName, error: String(err && err.message || '') }) };
+  }
+}
+
+/**
+ * 只改一個包的存放地點（可離線補傳；不像 updateMember 會在找不到時新增一列）。
+ * 找不到這個包就回 false，由呼叫端回 UNKNOWN_MEMBER。
+ */
+function setMemberPlaceRecord(name, place) {
+  const cleanName = String(name || '').trim();
+  const cleanPlace = requireMemberPlace(place);
+  if (!cleanName) return false;
+  const ss = openFamilySpreadsheet();
+  const sheet = getMembersSheet(ss, []);
+  const data = sheet.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]).trim() === cleanName) {
+      sheet.getRange(i + 1, 11).setValue(cleanPlace);
+      return true;
+    }
+  }
+  return false;
+}
+
+function getPlacesSheet(ss, readOnly) {
+  let sheet = ss.getSheetByName('Places');
+  if (!sheet && !readOnly) {
+    sheet = ss.insertSheet('Places');
+    sheet.getRange(1, 1, 1, PLACE_HEADERS.length).setValues([PLACE_HEADERS]);
+    sheet.setFrozenRows(1);
+  }
+  return sheet;
+}
+
+function getPlacePhotosSheet(ss, readOnly) {
+  let sheet = ss.getSheetByName('PlacePhotos');
+  if (!sheet && !readOnly) {
+    sheet = ss.insertSheet('PlacePhotos');
+    sheet.getRange(1, 1, 1, PHOTO_HEADERS.length).setValues([PHOTO_HEADERS]);
+    sheet.setFrozenRows(1);
+  }
+  return sheet;
+}
+
+/**
+ * readOnly：不持鎖的讀取用，分頁不存在時不建立，回空清單。
+ * 不回照片本身（照片另外用 getPlacePhoto 取），只回 photoVer 讓前端知道有沒有照片、要不要重抓。
+ */
+function getPlacesData(readOnly) {
+  const ss = openFamilySpreadsheet();
+  const sheet = getPlacesSheet(ss, readOnly);
+  if (!sheet) return [];
+  const data = sheet.getDataRange().getValues();
+  const places = [];
+  for (let i = 1; i < data.length; i++) {
+    const id = String(data[i][0] || '').trim();
+    if (!PLACE_ID_PATTERN.test(id)) continue;
+    const type = String(data[i][2] || '');
+    places.push({
+      id: id,
+      name: String(data[i][1] || ''),
+      type: PLACE_TYPES.includes(type) ? type : 'other',
+      headcount: cleanHeadcount(data[i][3]),
+      photoVer: String(data[i][4] || ''),
+      updatedAt: String(data[i][6] || ''),
+      creator: String(data[i][7] || '')
+    });
+  }
+  return places;
+}
+
+function cleanHeadcount(value) {
+  const n = Math.floor(Number(value));
+  if (!isFinite(n) || n < 1) return 1;
+  return Math.min(n, PLACE_HEADCOUNT_MAX);
+}
+
+function cleanPlaceName(value) {
+  const name = String(value === undefined || value === null ? '' : value).trim();
+  if (!name) throw new Error('請幫這個存放地點取個名字，例如「家裡」或「爸爸的車」。');
+  if (name.length > PLACE_NAME_MAX) throw new Error('存放地點的名字請在 ' + PLACE_NAME_MAX + ' 個字以內。');
+  return name;
+}
+
+function cleanPlaceType(value) {
+  const type = String(value || '').trim();
+  if (!PLACE_TYPES.includes(type)) throw new Error('存放地點的類型不正確，這次沒有存。請重新整理 App 後再試一次。');
+  return type;
+}
+
+function findPlaceRow(data, id) {
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]).trim() === id) return i;
+  }
+  return -1;
+}
+
+/**
+ * 新增存放地點。前端離線時會先自己產生 plc_ ID（包要先指向它），補傳時沿用；
+ * 同一個 ID 已存在就不再新增，重送不會多一筆。
+ */
+function addPlaceRecord(place) {
+  const p = place || {};
+  const name = cleanPlaceName(p.name);
+  const type = cleanPlaceType(p.type);
+  const headcount = cleanHeadcount(p.headcount);
+  const id = PLACE_ID_PATTERN.test(String(p.id || '')) ? String(p.id) : ('plc_' + Utilities.getUuid());
+  const ss = openFamilySpreadsheet();
+  const sheet = getPlacesSheet(ss);
+  if (findPlaceRow(sheet.getDataRange().getValues(), id) >= 1) return id;
+  const creator = String(p.creator || '').trim().slice(0, PLACE_NAME_MAX);
+  sheet.appendRow(sanitizeRow([id, name, type, headcount, '', 0, new Date().toISOString(), creator]));
+  return id;
+}
+
+function updatePlaceRecord(place) {
+  const p = place || {};
+  const id = String(p.id || '');
+  if (!PLACE_ID_PATTERN.test(id)) throw new Error(PLACE_NOT_FOUND_MSG);
+  const ss = openFamilySpreadsheet();
+  const sheet = getPlacesSheet(ss);
+  const row = findPlaceRow(sheet.getDataRange().getValues(), id);
+  if (row < 1) throw new Error(PLACE_NOT_FOUND_MSG);
+  // 先全部檢查完再寫，避免改到一半
+  const name = p.name !== undefined ? cleanPlaceName(p.name) : undefined;
+  const type = p.type !== undefined ? cleanPlaceType(p.type) : undefined;
+  const headcount = p.headcount !== undefined ? cleanHeadcount(p.headcount) : undefined;
+  if (name !== undefined) sheet.getRange(row + 1, 2).setValue(sanitizeCell(name));
+  if (type !== undefined) sheet.getRange(row + 1, 3).setValue(type);
+  if (headcount !== undefined) sheet.getRange(row + 1, 4).setValue(headcount);
+  sheet.getRange(row + 1, 7).setValue(new Date().toISOString());
+  return true;
+}
+
+/**
+ * 刪除存放地點：同一次持鎖動作裡一起刪掉照片（工程顧問、災防顧問）。
+ * reassignTo：放在這個地點的包要改放哪裡（前端先問使用者）。
+ *   空字串＝改成「還沒選」；合格的地點值＝改放那裡；沒給（undefined）＝留著舊 ID，前端顯示「地點不見了」，不算成家裡（D-01）。
+ * 已經不存在就回 false，不丟錯，重送不會卡住離線佇列。
+ */
+function deletePlaceRecord(id, reassignTo) {
+  const placeId = String(id || '');
+  if (!PLACE_ID_PATTERN.test(placeId)) return false;
+  let target;
+  if (reassignTo === '') {
+    target = '';
+  } else if (reassignTo !== undefined && reassignTo !== null) {
+    target = requireMemberPlace(reassignTo);
+    if (target === placeId) throw new Error('要改放的地點不能是正在刪除的地點，請選另一個地點。');
+  }
+  const ss = openFamilySpreadsheet();
+  // 要改放的地點若是 plc_ ID，必須真的存在，否則包會指向一個不存在的地點（工程顧問）
+  if (target && PLACE_ID_PATTERN.test(target) && findPlaceRow(getPlacesSheet(ss).getDataRange().getValues(), target) < 1) {
+    throw new Error('要改放的地點已經不在了，請按「同步」看最新的地點清單後再刪一次。');
+  }
+  if (target !== undefined) {
+    const mSheet = getMembersSheet(ss, []);
+    const mData = mSheet.getDataRange().getValues();
+    for (let i = 1; i < mData.length; i++) {
+      if (String(mData[i][10] || '').trim() === placeId) mSheet.getRange(i + 1, 11).setValue(target);
+    }
+  }
+  deletePhotoChunks(ss, placeId, null);
+  const sheet = getPlacesSheet(ss);
+  const data = sheet.getDataRange().getValues();
+  for (let i = data.length - 1; i >= 1; i--) {
+    if (String(data[i][0]).trim() === placeId) {
+      sheet.deleteRow(i + 1);
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * 刪掉某個地點的照片段；keepVer 有值時保留那一版（換照片時先寫新的、再刪舊的）
+ */
+function deletePhotoChunks(ss, placeId, keepVer) {
+  const sheet = getPlacePhotosSheet(ss, true);
+  if (!sheet) return;
+  const data = sheet.getDataRange().getValues();
+  for (let i = data.length - 1; i >= 1; i--) {
+    if (String(data[i][0]).trim() === placeId && (keepVer === null || String(data[i][1]) !== keepVer)) {
+      sheet.deleteRow(i + 1);
+    }
+  }
+}
+
+function checkPhotoBase64(value) {
+  const b64 = String(value || '');
+  if (!b64) throw new Error('沒有收到照片，請再拍一次。');
+  if (b64.length > PHOTO_MAX_CHARS) throw new Error('照片太大了，這次沒有存。請重新整理 App 後再拍一次。');
+  // 只收 JPEG（base64 開頭 /9j/ 是 JPEG 的檔頭）
+  if (!/^[A-Za-z0-9+\/]+={0,2}$/.test(b64) || b64.indexOf('/9j/') !== 0) {
+    throw new Error('照片格式不正確，請再拍一次。');
+  }
+  return b64;
+}
+
+/**
+ * 換地點照片：先寫新的一版，再把地點指向新版，最後刪舊版。
+ * 讀取不持鎖，這個順序讓讀到的永遠是完整的舊版或新版。
+ */
+function setPlacePhotoRecord(placeId, photoBase64) {
+  const id = String(placeId || '');
+  if (!PLACE_ID_PATTERN.test(id)) throw new Error(PLACE_NOT_FOUND_MSG);
+  const b64 = checkPhotoBase64(photoBase64);
+  const ss = openFamilySpreadsheet();
+  const pSheet = getPlacesSheet(ss);
+  const row = findPlaceRow(pSheet.getDataRange().getValues(), id);
+  if (row < 1) throw new Error(PLACE_NOT_FOUND_MSG);
+
+  // 版本號要每次都不同，否則同一毫秒內連換兩次，刪舊版時會留下兩份同版本的段
+  const ver = new Date().getTime() + '-' + Utilities.getUuid().slice(0, 8);
+  const rows = [];
+  for (let i = 0, n = 0; i < b64.length; i += PHOTO_CHUNK_CHARS, n++) {
+    rows.push([id, ver, n, PHOTO_CHUNK_PREFIX + b64.slice(i, i + PHOTO_CHUNK_CHARS)]);
+  }
+  const photoSheet = getPlacePhotosSheet(ss);
+  const start = Math.max(photoSheet.getLastRow(), 1) + 1;
+  photoSheet.getRange(start, 1, rows.length, PHOTO_HEADERS.length).setValues(rows);
+
+  pSheet.getRange(row + 1, 5, 1, 3).setValues([[ver, rows.length, new Date().toISOString()]]);
+  deletePhotoChunks(ss, id, ver);
+  return ver;
+}
+
+function deletePlacePhotoRecord(placeId) {
+  const id = String(placeId || '');
+  if (!PLACE_ID_PATTERN.test(id)) return false;
+  const ss = openFamilySpreadsheet();
+  const pSheet = getPlacesSheet(ss);
+  const row = findPlaceRow(pSheet.getDataRange().getValues(), id);
+  if (row >= 1) pSheet.getRange(row + 1, 5, 1, 3).setValues([['', 0, new Date().toISOString()]]);
+  deletePhotoChunks(ss, id, null);
+  return true;
+}
+
+/**
+ * 讀地點照片（POST＋通行碼，不持鎖、不寫入）。
+ * 段數對不上（剛好在換照片）就回 PHOTO_NOT_READY，不回半張照片。
+ */
+function getPlacePhotoData(placeId) {
+  const id = String(placeId || '');
+  if (!PLACE_ID_PATTERN.test(id)) return { ok: false, code: 'PLACE_NOT_FOUND', error: PLACE_NOT_FOUND_MSG };
+  const ss = openFamilySpreadsheet();
+  const pSheet = getPlacesSheet(ss, true);
+  const pData = pSheet ? pSheet.getDataRange().getValues() : [];
+  const row = findPlaceRow(pData, id);
+  if (row < 1) return { ok: false, code: 'PLACE_NOT_FOUND', error: PLACE_NOT_FOUND_MSG };
+  const ver = String(pData[row][4] || '');
+  const count = Number(pData[row][5]) || 0;
+  if (!ver || count < 1) return { ok: true, placeId: id, photoVer: '', photoBase64: '', serverTime: new Date().toISOString() };
+
+  // 先只讀前三欄（地點 ID、版本、段序）找到第一段，避免每次都讀進全部照片（工程顧問，D-06）。
+  // 同一版的各段是一次寫入、連在一起的，所以從第一段起一次讀 count 列。
+  // 讀取不持鎖，兩次讀之間別人可能換照片或刪地點、讓列往上移，所以每一列都要再核對 ID、版本、段序，
+  // 對不上就回 PHOTO_NOT_READY，不回拼錯的照片（工程顧問）。
+  const notReady = { ok: false, code: 'PHOTO_NOT_READY', error: '照片正在更新，請過一下再看一次。' };
+  const photoSheet = getPlacePhotosSheet(ss, true);
+  const lastRow = photoSheet ? photoSheet.getLastRow() : 0;
+  const index = lastRow > 1 ? photoSheet.getRange(2, 1, lastRow - 1, 3).getValues() : [];
+  let first = -1;
+  for (let i = 0; i < index.length; i++) {
+    if (String(index[i][0]).trim() === id && String(index[i][1]) === ver && Number(index[i][2]) === 0) { first = i + 2; break; }
+  }
+  if (first < 0) return notReady;
+  const rows = photoSheet.getRange(first, 1, count, PHOTO_HEADERS.length).getValues();
+  const parts = [];
+  for (let n = 0; n < count; n++) {
+    const r = rows[n] || [];
+    if (String(r[0]).trim() !== id || String(r[1]) !== ver || Number(r[2]) !== n) return notReady;
+    parts.push(String(r[3] || '').slice(PHOTO_CHUNK_PREFIX.length));
+  }
+  return { ok: true, placeId: id, photoVer: ver, photoBase64: parts.join(''), serverTime: new Date().toISOString() };
 }
 
 // 示警快取（進度表 #16）：只快取成功且有筆數的結果，存 3 分鐘。

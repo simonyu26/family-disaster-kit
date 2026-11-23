@@ -445,6 +445,29 @@
       font-size: 0.85rem; font-weight: bold; text-align: center;
     }
     .toast.success { background: rgba(61, 90, 82, 0.96); }
+    .health-sync-note { font-size: 12px; line-height: 1.55; color: var(--text); margin: 4px 0 0 24px; }
+    .health-sync-note p { margin: 0 0 4px; }
+    /* #22 資料保存區塊：字色一律 --text，需要注意時用「無法確認」方框的左邊條（美術顧問） */
+    .data-keep-box { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; color: var(--text); font-size: 13px; line-height: 1.6; }
+    .data-keep-box.need-action { border-left: 4px solid var(--accent); }
+    .data-keep-title { font-weight: 800; margin-bottom: 4px; }
+    .data-keep-line { margin: 2px 0; }
+    .data-keep-line.is-lead { font-weight: 800; }
+    .data-keep-line.is-ok { color: var(--text-muted); }
+    .data-keep-steps { margin: 2px 0 2px 1.4em; padding: 0; }
+    .data-keep-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+    .data-keep-actions .btn { min-height: 48px; flex: 1; min-width: 120px; }
+    .data-keep-actions .btn[hidden], .data-keep-box [hidden] { display: none !important; }
+    /* #33 求救簡訊複製失敗時的唯讀文字框：4 行、收起鍵在下方（使用者、美術、災防顧問） */
+    .sos-copy-fallback { margin: 0 0 10px; }
+    .sos-copy-hint { font-size: 14px; line-height: 1.5; color: var(--text); margin-bottom: 6px; font-weight: 700; }
+    body.emergency-mode .sos-copy-hint { font-size: 16px; color: var(--em-text); }
+    .sos-copy-fallback[hidden] { display: none !important; }
+    .sos-copy-text { display: block; width: 100%; box-sizing: border-box; font-size: 16px; line-height: 1.5; padding: 6px 8px; border-radius: 8px; resize: none; background: var(--card-bg); color: var(--text); border: 1px solid var(--border); font-family: inherit; }
+    .sos-copy-close { display: block; width: 100%; min-height: 48px !important; margin-top: 6px; }
+    body.emergency-mode .sos-copy-text { background: var(--em-card); color: var(--em-text); border: 2px solid var(--em-text); }
+    body.emergency-mode .sos-copy-text:focus { outline: 2px solid var(--em-text); outline-offset: 2px; }
+    body.emergency-mode .sos-copy-close { min-height: 68px !important; font-size: 16px !important; background: var(--em-card) !important; color: var(--em-text) !important; border: 2px solid var(--em-line) !important; }
     .toast.warn { background: rgba(196, 106, 22, 0.96); }
     .toast.error { background: rgba(201, 68, 43, 0.96); }
     /* 「沒存到」提示要讀完幾行字：改用「無法確認」方框的配色（美術顧問 PR #27，對比 13.96:1） */
@@ -593,6 +616,14 @@
     .mood-bubble { font-size: 0.66rem; background: #FFF8E7; color: #8C5811; border: 1px solid #E9C46A; border-radius: 10px; padding: 1px 6px; margin-top: 3px; display: inline-block; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .daily-quest-box { margin: 8px 12px 4px; padding: 9px 12px; background: linear-gradient(135deg, #F4F9F4, #FFFDF7); border: 1.5px solid #B7D3C4; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 0.82rem; }
     #qr-modal-box { display: flex; justify-content: center; padding: 14px; background: #fff; border-radius: 12px; margin: 10px 0; }
+    /* QR 碼產生不出來時的白話說明（平安卡內容仍在下方文字摘要） */
+    .qr-fallback-msg { color: var(--text); font-size: 0.9rem; line-height: 1.5; text-align: left; }
+    body.emergency-mode .qr-fallback-msg { font-size: 16px; }
+    /* 平安卡文字摘要：QR 碼做不出來時，這段就是給救護人員看的內容 */
+    #qr-text-preview { font-size: 0.75rem; text-align: left; background: var(--bg); color: var(--text); padding: 8px; border-radius: 8px; max-height: 110px; overflow-y: auto; white-space: pre-wrap; }
+    #qr-modal.qr-failed #qr-text-preview { font-size: 0.9rem; max-height: 40vh; border: 1px solid var(--border); }
+    #qr-modal.qr-failed #qr-modal-sub { display: none; }
+    body.emergency-mode #qr-modal #qr-text-preview { font-size: 16px; line-height: 1.5; background: var(--em-card); color: var(--em-text); border: 1px solid var(--em-line); max-height: 40vh; }
     #plan-print-modal { display: none; position: fixed; inset: 0; background: #fff; z-index: 2100; overflow-y: auto; padding: 20px; color: #222; }
     @media print {
       body > *:not(#print-modal):not(#plan-print-modal) { display: none !important; }
@@ -1493,6 +1524,12 @@
           <div class="t-sub">家人血型過敏與 Plan A / B</div>
         </div>
       </div>
+      <!-- #33 複製失敗時才出現，放在四大鍵下方，不把「立即報案求救」推出畫面（使用者顧問）；只放簡訊原文，用 .value 填入（S-01） -->
+      <div id="sos-copy-fallback" class="sos-copy-fallback" hidden>
+        <div id="sos-copy-hint" class="sos-copy-hint"></div>
+        <textarea id="sos-copy-text" class="sos-copy-text" rows="4" readonly aria-label="求救簡訊全文"></textarea>
+        <button class="btn btn-muted sos-copy-close" onclick="hideSosCopyFallback()">收起簡訊</button>
+      </div>
 
 
       <!-- 專注面板 A：預設顯示「最近 3 台 AED ＋ 119/110/112 直撥」 -->
@@ -1905,8 +1942,17 @@
           <span id="camp-sandbox-sec-arrow" style="font-size:0.8rem; color:var(--text-muted);">▼</span>
         </div>
         <div class="section-body" id="camp-sandbox-sec">
+          <!-- #22 資料保存：一張卡最多一個 ⚠️，最急的一行放最上面（美術顧問） -->
+          <div id="data-keep-box" class="data-keep-box">
+            <div class="data-keep-title">資料保存</div>
+            <div id="data-keep-lines"></div>
+            <div class="data-keep-actions">
+              <button id="data-keep-export-btn" class="btn btn-primary" onclick="exportFamilyBackupJson()">現在匯出</button>
+              <button id="data-keep-install-btn" class="btn btn-muted" onclick="promptInstallApp()" hidden>加到主畫面</button>
+            </div>
+          </div>
           <div style="font-size:12px; color:var(--text-muted); margin-bottom:8px; line-height:1.55;">
-            提供給其他家庭或朋友直接使用：<strong>完全不需要建立或複製 Google 試算表</strong>，可一鍵載入預設家庭範本儲存在自己手機本機，並透過匯出／匯入加密 JSON 備份檔與家人快速同步。
+            提供給其他家庭或朋友直接使用：<strong>完全不需要建立或複製 Google 試算表</strong>，可一鍵載入預設家庭範本儲存在自己手機本機，並透過匯出／匯入備份檔與家人快速同步。
           </div>
           <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px;">
             <button class="btn btn-primary" style="font-size:12px; flex:1; min-width:140px;" onclick="initLocalFamilyTemplate('core3')">🏕️ 載入「三人小家庭」預設範本</button>
@@ -1960,8 +2006,14 @@
               <div class="form-group" style="background:#fffdf8; padding:8px 10px; border-radius:8px; border:1px solid #d8d4ce;">
                 <label style="display:flex; align-items:flex-start; gap:8px; cursor:pointer; font-size:0.82rem; font-weight:bold;">
                   <input type="checkbox" id="setting-sync-health" style="margin-top:3px;">
-                  <span>🔒 允許將健康個資（血型／過敏／用藥）加密後同步至試算表（預設僅存於本機）</span>
+                  <span>把健康資料（血型、過敏、用藥）同步到家人共用的試算表</span>
                 </label>
+                <!-- S-03：不是加密，寫清楚誰可能看得到（使用者顧問定稿，工程顧問確認事實） -->
+                <div class="health-sync-note">
+                  <p>沒有勾選時，這些資料只存在這支手機。</p>
+                  <p>勾選後，能打開這份試算表的人，或知道家庭通行碼的人，都可能看到。</p>
+                  <p>之後取消勾選：請在有網路時，把每位家人的成員資料各存一次，試算表上的健康資料才會清掉。Google 試算表的「版本記錄」裡，可能還留著舊資料。</p>
+                </div>
               </div>
               <div class="form-group" style="margin-bottom:0; padding-top:8px; border-top:1px dashed #d8d4ce;">
                 <label class="form-label">📷 Gemini API Key（選填・供拍物資標籤 AI 辨識，須先連接 GAS）</label>
@@ -2369,9 +2421,9 @@
   <div id="qr-modal" class="modal-backdrop">
     <div class="modal-card" style="text-align:center;">
       <h3 class="modal-title">📱 家庭離線平安卡 QR Code</h3>
-      <div style="font-size:0.78rem; color:var(--text-muted);">斷網時可用另一支手機相機掃描讀取文字摘要（含成員醫療重點、集合點與主要聯絡人）</div>
+      <div id="qr-modal-sub" style="font-size:0.78rem; color:var(--text-muted);">斷網時可用另一支手機相機掃描讀取文字摘要（含成員醫療重點、集合點與主要聯絡人）</div>
       <div id="qr-modal-box"></div>
-      <div id="qr-text-preview" style="font-size:0.74rem; text-align:left; background:#FAF6EC; padding:8px; border-radius:8px; max-height:110px; overflow-y:auto; white-space:pre-wrap;"></div>
+      <div id="qr-text-preview"></div>
       <div class="modal-actions" style="justify-content:center;">
         <button class="btn btn-primary" onclick="closeModal('qr-modal')">關閉</button>
       </div>
@@ -2421,7 +2473,10 @@
       MY_CHAR: 'camp_my_char',
       COLLAPSED: 'camp_collapsed_cats',
       LAST_SYNC: 'camp_last_sync',
-      LOCAL_NOTICE: 'camp_local_mode_notice_shown' // 本機模式的「還沒連接雲端」浮動提示只跳第一次（美術顧問 N2）
+      LOCAL_NOTICE: 'camp_local_mode_notice_shown', // 本機模式的「還沒連接雲端」浮動提示只跳第一次（美術顧問 N2）
+      LAST_BACKUP: 'camp_last_backup_at',        // 上次匯出備份成功的時間（毫秒）；匯入不算（工程顧問 #22）
+      BACKUP_NUDGE_DAY: 'camp_backup_nudge_day', // 上次跳備份提醒的時間（毫秒），7 天最多一次（使用者顧問 #22）
+      SAMPLE_SIG: 'camp_sample_sig'              // 剛載入範本時的資料指紋；資料沒改過就不提醒備份範例資料
     };
 
 
@@ -2440,7 +2495,9 @@
     function isHealthSyncEnabled() { return localStorage.getItem(STORAGE_KEYS.SYNC_HEALTH) === '1'; }
 
 
-    // 前端欄位輕量 XOR + Base64 加密（以家庭通行碼為金鑰，避免試算表直接明文暴露）
+    // 前端欄位用家庭通行碼做 XOR + Base64 編碼，只讓試算表不會一眼看到明文，這不是加密（S-03）：
+    // 沒設通行碼時金鑰是公開的固定字串，有設時也很容易反推，所以畫面上不寫「加密」。
+    // 函式名稱暫不改，避免牽動其他程式（W-09，工程顧問）。
     function encryptField(plain) {
       if (!plain) return '';
       const key = getGasPin() || 'ForestCamp2026';
@@ -2569,6 +2626,7 @@
         switchTab('inventory');
         showToast('已結束應變，回到平時模式。想緩一緩，可以到「營地」的營火靜心。', 'success');
         if (navigator.onLine && getGasUrl()) syncWithServer(false);
+        ensurePersist(); // 緊急模式中不要求保留資料，離開時補做（工程顧問 PR 49）
       }
     }
 
@@ -2651,6 +2709,7 @@
       }
 
 
+      initDataKeep();
       setupEmEndButton();
       if (isEmergencyMode) setEmStatus();
       if (!getGasUrl()) {
@@ -2691,6 +2750,7 @@
     function initEmojiPickers() {
       const avBox = document.getElementById('avatar-emoji-picker');
       const bdBox = document.getElementById('buddy-emoji-picker');
+      // 固定字串（內建 emoji 清單）
       avBox.innerHTML = AVATAR_EMOJIS.map(e => `<button type="button" class="emoji-opt" onclick="pickEmoji('avatar','${e}')">${e}</button>`).join('');
       bdBox.innerHTML = BUDDY_EMOJIS.map(e => `<button type="button" class="emoji-opt" onclick="pickEmoji('buddy','${e}')">${e}</button>`).join('');
     }
@@ -2737,9 +2797,9 @@
 
     function renderAvatarHTML(val, isBuddy = false) {
       if (val && val.startsWith('data:image/')) {
-        return `<img src="${val}" class="${isBuddy ? 'buddy-img' : 'avatar-img'}" alt="頭像">`;
+        return `<img src="${escapeHtml(val)}" class="${isBuddy ? 'buddy-img' : 'avatar-img'}" alt="頭像">`;
       }
-      return val || (isBuddy ? '🐾' : '🧑');
+      return val ? escapeHtml(val) : (isBuddy ? '🐾' : '🧑');
     }
 
 
@@ -2853,6 +2913,7 @@
         localStorage.setItem(STORAGE_KEYS.LOCATIONS, JSON.stringify(locationsData));
         localStorage.setItem(STORAGE_KEYS.CONTACTS, JSON.stringify(contactsData));
         localStorage.setItem(STORAGE_KEYS.LAST_SYNC, json.serverTime || new Date().toISOString());
+        ensurePersist();
 
 
         selectInitialCharacter();
@@ -3128,7 +3189,7 @@
       box.innerHTML = list.map((text, idx) => {
         const isDone = !!checks[idx];
         if (isDone) doneCount++;
-        return `<label class="tl-item ${isDone ? 'done' : ''}"><input type="checkbox" ${isDone ? 'checked' : ''} onchange="toggleTimelineStep(${idx})"><span>${text}</span></label>`;
+        return `<label class="tl-item ${isDone ? 'done' : ''}"><input type="checkbox" ${isDone ? 'checked' : ''} onchange="toggleTimelineStep(${idx})"><span>${text}</span></label>`; // 固定字串（TIMELINE_DATA）
       }).join('');
       const progEl = document.getElementById('tl-progress-text');
       if (progEl) progEl.innerText = `完成進度：${doneCount} / ${list.length}`;
@@ -3420,7 +3481,7 @@
         (err) => {
           disp.innerText = '還沒取得位置'; disp.classList.add('pending');
           meta.innerText = gpsErrorText(err);
-          if (!isEmergencyMode) showToast('⚠️ ' + gpsErrorText(err), 'warn'); // 緊急模式已在定位卡內顯示，不重複
+          // 定位卡內已顯示原因，平時模式也不再跳浮動提示，免得疊在文字框上（美術顧問 PR 49）
         },
         { enableHighAccuracy: true, timeout: 10000 }
       );
@@ -3430,20 +3491,38 @@
     // iPhone 的 Safari 只在「剛按下按鈕」時允許寫剪貼簿，所以一按就要呼叫剪貼簿（工程顧問 PR #22 必改）：
     // 需要重新定位時，用 ClipboardItem 先佔住剪貼簿、內容等定位後再給；不支援就先用現有座標複製，背景更新後請人再按一次
     let sosCopyBusy = false;
+    // #33 複製失敗的備援：不用 prompt()（單行、會擋住緊急頁），改在四大鍵下方顯示唯讀文字框
+    // 原本規劃放在定位卡內，但 360×640 實測會把「立即報案求救」推出畫面，所以移到四大鍵下方（使用者顧問）
+    const SOS_COPY_FAIL_MSG = '沒辦法自動複製。請長按下面的文字，選「全選」，再選「拷貝」或「複製」，然後貼到簡訊或 LINE。';
+    function showSosCopyFallback(text) {
+      const box = document.getElementById('sos-copy-fallback');
+      const ta = document.getElementById('sos-copy-text');
+      if (!box || !ta) return;
+      ta.value = text;
+      const hint = document.getElementById('sos-copy-hint');
+      if (hint) hint.textContent = SOS_COPY_FAIL_MSG; // 捲到文字框時狀態列已在畫面外，框上方再寫一次（災防顧問 PR 49）
+      box.hidden = false;
+      try {
+        ta.focus({ preventScroll: true });
+        ta.setSelectionRange(0, ta.value.length); // iPhone 的 select() 有時不反白（工程顧問）
+      } catch (e) {}
+      try { box.scrollIntoView({ block: 'nearest' }); } catch (e) {} // 不把頁面捲到頂（美術顧問）
+      if (isEmergencyMode) setEmStatus(SOS_COPY_FAIL_MSG, 'warn'); // 平時模式不再跳浮動提示，免得蓋住文字框（美術顧問 PR 49）
+    }
+    function hideSosCopyFallback() {
+      const box = document.getElementById('sos-copy-fallback');
+      if (box) box.hidden = true;
+    }
     function copySosCoord() {
       if (sosCopyBusy) return; // 等待定位中再按一次就略過
       const needRefresh = !userPos || !userPos.ts || Date.now() - userPos.ts > SOS_POS_REFRESH_MS;
       const okMsg = '📋 已複製求救簡訊，可以直接貼到簡訊或 LINE。可以在後面補上受傷情形和在幾樓。';
-      const fallback = (text) => {
-        // 說明放進彈窗標題，彈窗會蓋住狀態列（使用者顧問）
-        prompt('沒辦法自動複製。請長按下面的文字，選「拷貝」或「複製」。', text);
-        emNotify('沒辦法自動複製，請長按文字自己複製。', 'warn');
-      };
+      const fallback = (text) => showSosCopyFallback(text);
       const clip = navigator.clipboard;
       if (!needRefresh) {
         const text = buildSosText(Date.now());
         if (!clip || !clip.writeText) return fallback(text);
-        clip.writeText(text).then(() => emNotify(okMsg, 'success'), () => fallback(text));
+        clip.writeText(text).then(() => { hideSosCopyFallback(); emNotify(okMsg, 'success'); }, () => fallback(text));
         return;
       }
       sosCopyBusy = true;
@@ -3457,7 +3536,7 @@
         } catch (e) { item = null; }
         if (item) {
           clip.write([item])
-            .then(() => emNotify(okMsg, 'success'), () => textPromise.then(fallback))
+            .then(() => { hideSosCopyFallback(); emNotify(okMsg, 'success'); }, () => textPromise.then(fallback))
             .finally(done);
           return;
         }
@@ -3466,7 +3545,7 @@
       const nowText = buildSosText(Date.now());
       const beforeTs = userPos && userPos.ts;
       const copyNow = (clip && clip.writeText) ? clip.writeText(nowText) : Promise.reject();
-      copyNow.then(() => emNotify(okMsg, 'success'), () => fallback(nowText));
+      copyNow.then(() => { hideSosCopyFallback(); emNotify(okMsg, 'success'); }, () => fallback(nowText));
       textPromise.then(() => {
         if (userPos && userPos.ts && userPos.ts !== beforeTs) emNotify('位置已更新，請再按一次「複製求救簡訊」，簡訊會用新的位置。');
       }).finally(done);
@@ -3718,22 +3797,22 @@
       const mobLabels = { self: '🚶 自行行動', assist: '🤝 需攙扶', carry: '🦽 輪椅／抬送' };
       box.innerHTML = mainChars.map(name => {
         const m = getMemberVisual(name);
-        const bloodShow = m.blood ? maskText(m.blood) : '';
-        const medShow = m.medical ? maskText(m.medical) : '<span style="color:var(--text-muted);">未填寫</span>';
-        const noteShow = m.rallyNote ? maskText(m.rallyNote) : '<span style="color:var(--text-muted);">未填寫</span>';
+        const bloodShow = m.blood ? escapeHtml(maskText(m.blood)) : '';
+        const medShow = m.medical ? escapeHtml(maskText(m.medical)) : '<span style="color:var(--text-muted);">未填寫</span>';
+        const noteShow = m.rallyNote ? escapeHtml(maskText(m.rallyNote)) : '<span style="color:var(--text-muted);">未填寫</span>';
         return `
           <div class="id-card">
             <div class="id-card-header">
               <div style="display:flex; align-items:center; gap:6px; font-size:0.95rem; font-weight:800; color:var(--primary-dark); flex-wrap:wrap;">
                 <span>${renderAvatarHTML(m.avatar, false)}</span>
-                <span>${name}</span>
+                <span>${escapeHtml(name)}</span>
                 ${bloodShow ? `<span style="background:#F7E3DC; color:var(--danger); padding:1px 7px; border-radius:10px; font-size:0.74rem;">🩸 ${bloodShow}</span>` : ''}
                 <span class="badge-pill badge-mob">${mobLabels[m.mobility] || '🚶 自行行動'}</span>
                 ${(m.firstAidSkill || '').includes('cpr') ? '<span class="badge-pill badge-cpr">💓 會CPR</span>' : ''}${(m.firstAidSkill || '').includes('bousai') ? '<span class="badge-pill badge-mob">🦺 防災士</span>' : ''}
               </div>
               <div style="display:flex; gap:4px;">
-                <button class="btn btn-muted" style="padding:3px 7px; font-size:0.72rem;" onclick="openMemberModal('${name}')">✏️ 編輯</button>
-                <button class="btn btn-warn" style="padding:3px 7px; font-size:0.72rem;" onclick="hideFromIdCard('${name}')" title="標記為備用背包（保留物資紀錄但不列防災卡）">🚫 移出</button>
+                <button class="btn btn-muted" style="padding:3px 7px; font-size:0.72rem;" data-act="edit-member" data-name="${escapeHtml(name)}">✏️ 編輯</button>
+                <button class="btn btn-warn" style="padding:3px 7px; font-size:0.72rem;" data-act="hide-member" data-name="${escapeHtml(name)}" title="標記為備用背包（保留物資紀錄但不列防災卡）">🚫 移出</button>
               </div>
             </div>
             <div><strong>💊 過敏／常用藥：</strong>${medShow}</div>
@@ -3779,17 +3858,17 @@
           <div class="contact-group">
             <div class="contact-group-title"><span>${g.title}（${list.length}）</span></div>
             ${list.map(c => {
-              const cleanTel = (c.phone || '').replace(/[-\s]/g, '');
+              const cleanTel = (c.phone || '').replace(/[^\d+#*]/g, ''); // 撥號連結只留數字與 + # *
               return `
                 <div class="contact-card">
                   <div style="min-width:0; flex:1;">
-                    <div style="font-weight:800; font-size:0.9rem;">${c.name} <span class="badge-pill badge-pack">${c.relation || '親友'}</span>${c.region ? `<span style="font-size:0.74rem; color:var(--text-muted); margin-left:4px;">📍${c.region}</span>` : ''}</div>
-                    <div style="font-size:0.8rem; margin-top:2px;">📞 ${maskPhone(c.phone || '未填電話')}${c.note ? ` ・ <span style="color:var(--text-muted);">${c.note}</span>` : ''}</div>
+                    <div style="font-weight:800; font-size:0.9rem;">${escapeHtml(c.name)} <span class="badge-pill badge-pack">${escapeHtml(c.relation || '親友')}</span>${c.region ? `<span style="font-size:0.74rem; color:var(--text-muted); margin-left:4px;">📍${escapeHtml(c.region)}</span>` : ''}</div>
+                    <div style="font-size:0.8rem; margin-top:2px;">📞 ${escapeHtml(maskPhone(c.phone || '未填電話'))}${c.note ? ` ・ <span style="color:var(--text-muted);">${escapeHtml(c.note)}</span>` : ''}</div>
                   </div>
                   <div style="display:flex; gap:4px; flex-shrink:0;">
                     ${cleanTel ? `<a href="tel:${cleanTel}" class="btn btn-primary" style="text-decoration:none; padding:4px 8px; font-size:0.74rem;">📞 撥打</a>` : ''}
-                    <button class="btn btn-muted" style="padding:4px 7px; font-size:0.72rem;" onclick="openContactModal('${c.id}')">✏️</button>
-                    <button class="btn btn-danger" style="padding:4px 7px; font-size:0.72rem;" onclick="deleteContact('${c.id}')">🗑️</button>
+                    <button class="btn btn-muted" style="padding:4px 7px; font-size:0.72rem;" data-act="edit-contact" data-id="${escapeHtml(c.id)}">✏️</button>
+                    <button class="btn btn-danger" style="padding:4px 7px; font-size:0.72rem;" data-act="del-contact" data-id="${escapeHtml(c.id)}">🗑️</button>
                   </div>
                 </div>
               `;
@@ -3870,10 +3949,10 @@
         <div class="rally-card">
           <div style="display:flex; justify-content:space-between; align-items:center; gap:6px;">
             <div>
-              <strong>${loc.type}</strong>・<strong style="color:var(--primary-dark);">${loc.name}</strong>
-              ${loc.note ? `<div style="font-size:0.78rem; color:var(--text-muted); margin-top:2px;">備註：${loc.note}</div>` : ''}
+              <strong>${escapeHtml(loc.type)}</strong>・<strong style="color:var(--primary-dark);">${escapeHtml(loc.name)}</strong>
+              ${loc.note ? `<div style="font-size:0.78rem; color:var(--text-muted); margin-top:2px;">備註：${escapeHtml(loc.note)}</div>` : ''}
             </div>
-            <button class="btn btn-primary" style="padding:4px 8px; font-size:0.74rem; white-space:nowrap;" onclick="switchTab('map'); setTimeout(()=>{ if(mapInstance) mapInstance.setView([${loc.lat}, ${loc.lng}], 16); }, 150);">🧭 地圖查看</button>
+            <button class="btn btn-primary" style="padding:4px 8px; font-size:0.74rem; white-space:nowrap;" data-act="map-view" data-lat="${Number(loc.lat)}" data-lng="${Number(loc.lng)}">🧭 地圖查看</button>
           </div>
         </div>
       `).join('');
@@ -4022,19 +4101,19 @@
         card.innerHTML = `
           ${myBadgeHTML}
           <div class="char-avatar">${renderAvatarHTML(vis.avatar, false)}<span class="char-buddy">${renderAvatarHTML(vis.buddy, true)}</span></div>
-          <div style="font-weight:800; font-size:0.9rem; margin-top:3px;">${char}</div>
+          <div style="font-weight:800; font-size:0.9rem; margin-top:3px;">${escapeHtml(char)}</div>
           ${roleBadge}
           <div class="progress-track">
-            <div class="progress-fill" style="width:${prog.pct}%; background:${barColor};"></div>
+            <div class="progress-fill" style="width:${Number(prog.pct)}%; background:${barColor};"></div>
           </div>
-          <div style="font-size:12px; font-weight:bold; color:var(--primary-dark); margin-top:4px;">${prog.checked}/${prog.total} (${prog.pct}%)</div>
-          <div class="pack-updated-date">${getCharLastUpdatedText(char)}</div>
-          <div class="mood-bubble" id="mood-bubble-${char}">${getBuddyMoodText(char, prog.pct)}</div>
+          <div style="font-size:12px; font-weight:bold; color:var(--primary-dark); margin-top:4px;">${Number(prog.checked)}/${Number(prog.total)} (${Number(prog.pct)}%)</div>
+          <div class="pack-updated-date">${escapeHtml(getCharLastUpdatedText(char))}</div>
+          <div class="mood-bubble" id="mood-bubble-${escapeHtml(char)}">${getBuddyMoodText(char, prog.pct)}</div>
           <div class="bond-pill">${getBuddyBondLabel(char)}</div>
           <div class="buddy-react-row" onclick="event.stopPropagation();">
-            <button type="button" class="buddy-react-btn" onclick="interactWithBuddy('${char}', 'pat')">🐾 拍拍</button>
-            <button type="button" class="buddy-react-btn" onclick="interactWithBuddy('${char}', 'snack')">🍪 點心</button>
-            <button type="button" class="buddy-react-btn" onclick="interactWithBuddy('${char}', 'safe')">🌿 安心</button>
+            <button type="button" class="buddy-react-btn" data-act="buddy" data-char="${escapeHtml(char)}" data-kind="pat">🐾 拍拍</button>
+            <button type="button" class="buddy-react-btn" data-act="buddy" data-char="${escapeHtml(char)}" data-kind="snack">🍪 點心</button>
+            <button type="button" class="buddy-react-btn" data-act="buddy" data-char="${escapeHtml(char)}" data-kind="safe">🌿 安心</button>
           </div>
         `;
         container.appendChild(card);
@@ -4114,7 +4193,7 @@
         catEl.className = 'category-title';
         catEl.onclick = () => toggleCategory(cat);
         catEl.innerHTML = `
-          <span>${getCategoryIcon(cat)}${cat}</span>
+          <span>${getCategoryIcon(cat)}${escapeHtml(cat)}</span>
           <span class="cat-meta">${invSubMode === 'character' ? `${readyCount}/${list.length}` : `${list.length} 項`} ${isCollapsed ? '▶' : '▼'}</span>
         `;
         container.appendChild(catEl);
@@ -4141,60 +4220,61 @@
             const isExpRow = !!expandedItems[item.row];
             if (isExpRow) row.classList.add('expanded');
             const specLabel = getSpecHumanLabel(charData.spec, item);
-            const specPill = specLabel ? `<span class="meta-pill" style="background:#EEF6FA; color:#1D5273;">${specLabel}</span>` : '';
-            const qtyPill = charData.qty ? `<span class="meta-pill qty">×${charData.qty}</span>` : '';
+            const specPill = specLabel ? `<span class="meta-pill" style="background:#EEF6FA; color:#1D5273;">${escapeHtml(specLabel)}</span>` : '';
+            const qtyPill = charData.qty ? `<span class="meta-pill qty">×${escapeHtml(charData.qty)}</span>` : '';
             const expPill = charData.exp
-              ? `<span class="meta-pill ${expInfo.expired ? 'danger' : (expInfo.warn ? 'warn' : '')}">${expInfo.expired ? '⚠️過期 ' : (expInfo.warn ? '🍂快到期 ' : '')}${charData.exp}</span>`
+              ? `<span class="meta-pill ${expInfo.expired ? 'danger' : (expInfo.warn ? 'warn' : '')}">${expInfo.expired ? '⚠️過期 ' : (expInfo.warn ? '🍂快到期 ' : '')}${escapeHtml(charData.exp)}</span>`
               : '';
-            const notePill = charData.note ? `<span class="meta-pill">${charData.note.slice(0, 10)}${charData.note.length > 10 ? '…' : ''}</span>` : '';
+            const notePill = charData.note ? `<span class="meta-pill">${escapeHtml(String(charData.note).slice(0, 10))}${String(charData.note).length > 10 ? '…' : ''}</span>` : '';
 
 
             row.innerHTML = `
               <div class="item-header">
-                <div style="flex:1; min-width:0; cursor:pointer;" onclick="toggleItemExpand(${item.row})">
+                <div style="flex:1; min-width:0; cursor:pointer;" onclick="toggleItemExpand(${Number(item.row)})">
                   <div class="item-name-line" style="flex-wrap:wrap;">
-                    <span class="item-name">${item.name}</span>
+                    <span class="item-name">${escapeHtml(item.name)}</span>
                     <span class="item-summary-pills">${qtyPill}${specPill}${expPill}${notePill}</span>
                     <span class="expand-hint">${isExpRow ? '▲ 收合' : '▾ 數量/效期'}</span>
                   </div>
                   ${alertLabel}
                 </div>
                 <div style="display:flex; align-items:center; gap:6px;">
-                  <button class="btn-edit-item" onclick="openEditItemModal(${item.row})" title="編輯、移出或刪除物資">✏️</button>
+                  <button class="btn-edit-item" onclick="openEditItemModal(${Number(item.row)})" title="編輯、移出或刪除物資">✏️</button>
                   <label class="switch">
-                    <input type="checkbox" onchange="toggleItemReady(${item.row}, '${currentChar}', this.checked)" ${isChecked ? 'checked' : ''}>
+                    <input type="checkbox" data-chg="toggle-ready" data-row="${Number(item.row)}" data-char="${escapeHtml(currentChar)}" ${isChecked ? 'checked' : ''}>
                     <span class="slider"></span>
                   </label>
                 </div>
               </div>
               <div class="util-bar">
                 <div class="stepper">
-                  <button class="step-btn" onclick="stepQty(${item.row}, '${currentChar}', -1)">−</button>
-                  <input type="text" class="qty-input" placeholder="數量" value="${charData.qty}" onchange="updateField(${item.row}, '${currentChar}', 'qty', this.value, ${invRenderGen})">
-                  <button class="step-btn" onclick="stepQty(${item.row}, '${currentChar}', 1)">+</button>
+                  <button class="step-btn" data-act="step-qty" data-row="${Number(item.row)}" data-char="${escapeHtml(currentChar)}" data-delta="-1">−</button>
+                  <input type="text" class="qty-input" placeholder="數量" value="${escapeHtml(charData.qty)}" data-chg="update-field" data-row="${Number(item.row)}" data-char="${escapeHtml(currentChar)}" data-field="qty" data-gen="${Number(invRenderGen)}">
+                  <button class="step-btn" data-act="step-qty" data-row="${Number(item.row)}" data-char="${escapeHtml(currentChar)}" data-delta="1">+</button>
                 </div>
-                <input type="date" class="util-input exp-date-input ${expClass}" value="${charData.exp}" onchange="updateField(${item.row}, '${currentChar}', 'exp', this.value, ${invRenderGen})">
-                <button class="btn-cam-ocr" onclick="openOcrModal(${item.row})" title="拍照辨識有效期限與容量規格，或點選存放位置">📷 拍標籤/規格</button>
-                <input type="text" class="util-input note-input" placeholder="存放位置或備註..." value="${charData.note}" onchange="updateField(${item.row}, '${currentChar}', 'note', this.value, ${invRenderGen})">
-                <div class="item-updated-meta">🕒 最後更新：${charData.updatedAt || '尚未記錄'}</div>
+                <input type="date" class="util-input exp-date-input ${expClass}" value="${escapeHtml(charData.exp)}" data-chg="update-field" data-row="${Number(item.row)}" data-char="${escapeHtml(currentChar)}" data-field="exp" data-gen="${Number(invRenderGen)}">
+                <button class="btn-cam-ocr" onclick="openOcrModal(${Number(item.row)})" title="拍照辨識有效期限與容量規格，或點選存放位置">📷 拍標籤/規格</button>
+                <input type="text" class="util-input note-input" placeholder="存放位置或備註..." value="${escapeHtml(charData.note)}" data-chg="update-field" data-row="${Number(item.row)}" data-char="${escapeHtml(currentChar)}" data-field="note" data-gen="${Number(invRenderGen)}">
+                <div class="item-updated-meta">🕒 最後更新：${escapeHtml(charData.updatedAt || '尚未記錄')}</div>
               </div>
             `;
+            bindDataChange(row);
           } else {
             const chipsHTML = globalData.characters.map(char => {
               const st = item.status[char] || { state: 'na', qty: '', exp: '' };
-              const qtyText = (st.state === 'ready' && st.qty) ? ` (${st.qty})` : '';
+              const qtyText = (st.state === 'ready' && st.qty) ? ` (${escapeHtml(st.qty)})` : '';
               const icon = st.state === 'ready' ? '✔' : (st.state === 'missing' ? '✖' : '➖');
               const expInfo = getExpStatus(st.exp);
               const borderStyle = expInfo.expired ? 'border: 2px solid var(--danger);' : (expInfo.warn ? 'border: 2px solid var(--warning);' : '');
-              return `<div class="chip ${st.state}" style="${borderStyle}" onclick="cycleChipState(${item.row}, '${char}')">${char} ${icon}${qtyText}</div>`;
+              return `<div class="chip ${escapeHtml(st.state)}" style="${borderStyle}" data-act="cycle-chip" data-row="${Number(item.row)}" data-char="${escapeHtml(char)}">${escapeHtml(char)} ${icon}${qtyText}</div>`;
             }).join('');
 
 
             row.innerHTML = `
               <div class="item-header">
                 <div class="item-name-line">
-                  <span class="item-name">${item.name}</span>
-                  <button class="btn-edit-item" onclick="openEditItemModal(${item.row})" title="編輯或刪除物資">✏️</button>
+                  <span class="item-name">${escapeHtml(item.name)}</span>
+                  <button class="btn-edit-item" onclick="openEditItemModal(${Number(item.row)})" title="編輯或刪除物資">✏️</button>
                 </div>
               </div>
               <div class="chip-container">${chipsHTML}</div>
@@ -4297,7 +4377,7 @@
       const charsBox = document.getElementById('modal-chars-list');
       charsBox.innerHTML = '';
       globalData.characters.forEach(c => {
-        charsBox.innerHTML += `<label class="char-check-pill"><input type="checkbox" value="${c}" ${c === currentChar ? 'checked' : ''}> ${c}</label>`;
+        charsBox.innerHTML += `<label class="char-check-pill"><input type="checkbox" value="${escapeHtml(c)}" ${c === currentChar ? 'checked' : ''}> ${escapeHtml(c)}</label>`;
       });
       document.getElementById('item-modal').classList.add('open');
     }
@@ -4515,7 +4595,7 @@
       select.innerHTML = '<option value="">-- 不鎖定（顯示全部）--</option>';
       if (globalData && globalData.characters) {
         globalData.characters.forEach(c => {
-          select.innerHTML += `<option value="${c}" ${c === myChar ? 'selected' : ''}>${c}</option>`;
+          select.innerHTML += `<option value="${escapeHtml(c)}" ${c === myChar ? 'selected' : ''}>${escapeHtml(c)}</option>`;
         });
       }
 
@@ -4537,13 +4617,13 @@
             <span style="display:inline-flex; align-items:center; gap:4px; font-size:1.25rem;">
               ${renderAvatarHTML(vis.avatar, false)} ${renderAvatarHTML(vis.buddy, false)}
             </span>
-            <strong>${name}</strong>
+            <strong>${escapeHtml(name)}</strong>
             ${vis.memberType === 'light' ? '<span class="badge-pill badge-pack">⚡ 輕量隨身包</span>' : (vis.memberType === 'base' ? '<span class="badge-pill badge-mob">🏠 基地儲備</span>' : '<span class="badge-pill" style="background:#E6F0EC;color:#264A3E;">🎒 標準移動包</span>')}
             ${(vis.firstAidSkill || '').includes('cpr') ? '<span class="badge-pill badge-cpr">💓 會CPR</span>' : ''}${(vis.firstAidSkill || '').includes('bousai') ? '<span class="badge-pill badge-mob">🦺 防災士</span>' : ''}
           </div>
           <div style="display:flex; gap:6px;">
-            <button class="btn btn-muted" style="padding:4px 9px; font-size:0.78rem;" onclick="openMemberModal('${name}')">✏️ 編輯</button>
-            <button class="btn btn-danger" style="padding:4px 9px; font-size:0.78rem;" onclick="deleteMember('${name}')">🗑️ 刪除</button>
+            <button class="btn btn-muted" style="padding:4px 9px; font-size:0.78rem;" data-act="edit-member" data-name="${escapeHtml(name)}">✏️ 編輯</button>
+            <button class="btn btn-danger" style="padding:4px 9px; font-size:0.78rem;" data-act="del-member" data-name="${escapeHtml(name)}">🗑️ 刪除</button>
           </div>
         `;
         listEl.appendChild(row);
@@ -4626,7 +4706,7 @@
       localStorage.setItem(STORAGE_KEYS.LOCAL_HEALTH, JSON.stringify(localHealthMap));
 
 
-      // 若使用者同意加密雲端同步，才加密送往試算表
+      // 使用者勾選同步健康資料時，才把編碼後的內容送往試算表（編碼不是加密，見 encryptField 註解）
       const syncHealth = isHealthSyncEnabled();
       const cloudBlood = syncHealth ? encryptField(blood) : '';
       const cloudMed = syncHealth ? encryptField(medical) : '';
@@ -4644,7 +4724,7 @@
           localStorage.setItem(STORAGE_KEYS.DATA, JSON.stringify(globalData));
           localStorage.setItem(STORAGE_KEYS.MEMBERS, JSON.stringify(membersMap));
           renderParty(); renderInventory(); renderCampTab(); renderPlanTab();
-          showToast(syncHealth ? '✅ 已更新成員資料（健康欄位已加密同步）' : '✅ 已更新成員（健康欄位僅存本機）', 'success');
+          showToast(syncHealth ? '✅ 已更新成員資料（健康資料已同步到試算表）' : '✅ 已更新成員資料（健康資料只存在這支手機）', 'success');
         } else {
           showToast('📡 正在新增成員與試算表欄位...');
           const res = await postToGas({ action: 'addMember', name: newName, avatar, buddy, defaultState, blood: cloudBlood, medical: cloudMed, iceContact: '', rallyNote: cloudRally, memberType, mobility, firstAidSkill });
@@ -4706,7 +4786,7 @@
       const filterBox = document.getElementById('filter-partners');
       filterBox.innerHTML = '';
       globalData.characters.forEach(char => {
-        filterBox.innerHTML += `<label class="filter-checkbox"><input type="checkbox" checked value="${char}" onchange="filterPrintItems()"> ${char}</label>`;
+        filterBox.innerHTML += `<label class="filter-checkbox"><input type="checkbox" checked value="${escapeHtml(char)}" onchange="filterPrintItems()"> ${escapeHtml(char)}</label>`;
       });
       document.getElementById('print-modal').style.display = 'block';
       filterPrintItems();
@@ -4741,8 +4821,8 @@
           if (!missingItemsByCategory[item.category]) missingItemsByCategory[item.category] = [];
           missingItemsByCategory[item.category].push(`
             <div class="print-item">
-              <div style="font-weight:bold;">📦 ${item.name}</div>
-              <div style="font-size:0.85rem; color:#444; margin-top:2px;">對象：${needBuy.join('、')}</div>
+              <div style="font-weight:bold;">📦 ${escapeHtml(item.name)}</div>
+              <div style="font-size:0.85rem; color:#444; margin-top:2px;">對象：${escapeHtml(needBuy.join('、'))}</div>
             </div>
           `);
         }
@@ -4753,7 +4833,7 @@
         content.innerHTML = '<p style="font-weight:bold; color:var(--primary); padding:20px 0;">🎉 所有選取夥伴的裝備都已就緒！目前無須採買。</p>';
       } else {
         for (let cat in missingItemsByCategory) {
-          content.innerHTML += `<div class="print-cat">${getCategoryIcon(cat)}${cat}</div>`;
+          content.innerHTML += `<div class="print-cat">${getCategoryIcon(cat)}${escapeHtml(cat)}</div>`;
           content.innerHTML += missingItemsByCategory[cat].join('');
         }
       }
@@ -4813,7 +4893,7 @@
         box.style.display = 'block';
         box.innerHTML = matched.length === 0
           ? '<div class="map-search-item">🟠 離線模式：找不到符合的已存點位</div>'
-          : matched.map(l => `<div class="map-search-item" onclick="focusLocation(${l.lat},${l.lng})"><span>📌 ${l.name}</span><span>前往</span></div>`).join('');
+          : matched.map(l => `<div class="map-search-item" data-act="focus-loc" data-lat="${Number(l.lat)}" data-lng="${Number(l.lng)}"><span>📌 ${escapeHtml(l.name)}</span><span>前往</span></div>`).join('');
         return;
       }
 
@@ -4829,16 +4909,16 @@
         }
         box.innerHTML = '';
         items.forEach(place => {
-          const lat = parseFloat(place.lat), lng = parseFloat(place.lon);
-          const shortName = place.display_name.split(',')[0];
+          const lat = Number(parseFloat(place.lat)), lng = Number(parseFloat(place.lon));
+          const shortName = String(place.display_name || '').split(',')[0];
           const div = document.createElement('div');
           div.className = 'map-search-item';
           div.innerHTML = `
-            <div style="flex:1;" onclick="focusLocation(${lat},${lng})">
-              <strong>${shortName}</strong><br>
-              <span style="color:var(--text-muted); font-size:0.75rem;">${place.display_name}</span>
+            <div style="flex:1;" data-act="focus-loc" data-lat="${lat}" data-lng="${lng}">
+              <strong>${escapeHtml(shortName)}</strong><br>
+              <span style="color:var(--text-muted); font-size:0.75rem;">${escapeHtml(place.display_name)}</span>
             </div>
-            <button class="btn btn-muted" style="padding:4px 8px; font-size:0.75rem; white-space:nowrap;" onclick="prefillLocation('${shortName.replace(/'/g, '')}', ${lat}, ${lng})">➕ 存為點位</button>
+            <button class="btn btn-muted" style="padding:4px 8px; font-size:0.75rem; white-space:nowrap;" data-act="prefill-loc" data-name="${escapeHtml(shortName)}" data-lat="${lat}" data-lng="${lng}">➕ 存為點位</button>
           `;
           box.appendChild(div);
         });
@@ -4892,20 +4972,20 @@
         if (aedLayer) {
           L.marker([aed.lat, aed.lng], { icon: aedIcon })
             .addTo(aedLayer)
-            .bindPopup(`<b>❤️ ${aed.name}</b><br>${aed.place || ''}<br><small>${aed.addr || ''}</small>`);
+            .bindPopup(buildPopupEl([{ tag: 'b', text: `❤️ ${aed.name}` }, { text: aed.place || '' }, { tag: 'small', text: aed.addr || '' }]));
         }
         const refPos = srcLoc ? { lat: srcLoc.lat, lng: srcLoc.lng } : (userPos || (mapInstance ? mapInstance.getCenter() : { lat: 25.0330, lng: 121.5430 }));
         const d = Math.round(calcDistanceMeters(refPos.lat, refPos.lng, aed.lat, aed.lng));
         const bearing = calcBearingText(refPos.lat, refPos.lng, aed.lat, aed.lng);
         return `
           <div class="loc-card" style="border-color:#F7E3DC;">
-            <div style="flex:1; cursor:pointer;" onclick="focusLocation(${aed.lat}, ${aed.lng})">
-              <div style="font-weight:800; font-size:0.9rem; color:var(--danger);">❤️ ${aed.name}</div>
-              <div style="font-size:0.76rem; color:var(--text); margin-top:2px;">放置點：${aed.place || '詳見現場標示'}</div>
-              <div style="font-size:0.72rem; color:var(--text-muted);">${aed.addr || ''}</div>
+            <div style="flex:1; cursor:pointer;" data-act="focus-loc" data-lat="${Number(aed.lat)}" data-lng="${Number(aed.lng)}">
+              <div style="font-weight:800; font-size:0.9rem; color:var(--danger);">❤️ ${escapeHtml(aed.name)}</div>
+              <div style="font-size:0.76rem; color:var(--text); margin-top:2px;">放置點：${escapeHtml(aed.place || '詳見現場標示')}</div>
+              <div style="font-size:0.72rem; color:var(--text-muted);">${escapeHtml(aed.addr || '')}</div>
             </div>
             <div class="loc-dist">${bearing}<br>${d} 公尺</div>
-            <button class="btn btn-danger" style="padding:5px 8px; font-size:0.75rem;" onclick="planRouteTo(${aed.lat}, ${aed.lng}, '${aed.name.replace(/'/g, '')}')">🚶 路線</button>
+            <button class="btn btn-danger" style="padding:5px 8px; font-size:0.75rem;" data-act="route" data-lat="${Number(aed.lat)}" data-lng="${Number(aed.lng)}" data-name="${escapeHtml(aed.name)}">🚶 路線</button>
           </div>
         `;
       }).join('');
@@ -4974,7 +5054,7 @@
         return;
       }
       locationsData.forEach(loc => {
-        if (markersLayer) L.marker([loc.lat, loc.lng]).addTo(markersLayer).bindPopup(`<b>${loc.type} ${loc.name}</b><br>${loc.note || ''}`);
+        if (markersLayer) L.marker([loc.lat, loc.lng]).addTo(markersLayer).bindPopup(buildPopupEl([{ tag: 'b', text: `${loc.type} ${loc.name}` }, { text: loc.note || '' }]));
         let distHTML = '<span style="color:var(--text-muted); font-size:0.75rem;">未定位</span>';
         if (userPos) {
           const d = calcDistanceMeters(userPos.lat, userPos.lng, loc.lat, loc.lng);
@@ -4985,13 +5065,13 @@
         const card = document.createElement('div');
         card.className = 'loc-card';
         card.innerHTML = `
-          <div style="flex:1; cursor:pointer;" onclick="focusLocation(${loc.lat}, ${loc.lng})">
-            <div style="font-weight:800; font-size:0.95rem;">${loc.type} ${loc.name}</div>
-            <div style="font-size:0.78rem; color:var(--text-muted); margin-top:2px;">${loc.note || '無備註'}・(${loc.lat.toFixed(4)}, ${loc.lng.toFixed(4)})</div>
+          <div style="flex:1; cursor:pointer;" data-act="focus-loc" data-lat="${Number(loc.lat)}" data-lng="${Number(loc.lng)}">
+            <div style="font-weight:800; font-size:0.95rem;">${escapeHtml(loc.type)} ${escapeHtml(loc.name)}</div>
+            <div style="font-size:0.78rem; color:var(--text-muted); margin-top:2px;">${escapeHtml(loc.note || '無備註')}・(${Number(loc.lat).toFixed(4)}, ${Number(loc.lng).toFixed(4)})</div>
           </div>
           ${distHTML}
-          <button class="btn btn-primary" style="padding:5px 8px; font-size:0.76rem;" onclick="planRouteTo(${loc.lat}, ${loc.lng}, '${loc.name.replace(/'/g, '')}')">🚶 路線</button>
-          <button class="btn-edit-item" onclick="deleteLocation('${loc.id}', '${loc.name}')">🗑️</button>
+          <button class="btn btn-primary" style="padding:5px 8px; font-size:0.76rem;" data-act="route" data-lat="${Number(loc.lat)}" data-lng="${Number(loc.lng)}" data-name="${escapeHtml(loc.name)}">🚶 路線</button>
+          <button class="btn-edit-item" data-act="del-loc" data-id="${escapeHtml(loc.id)}" data-name="${escapeHtml(loc.name)}">🗑️</button>
         `;
         listEl.appendChild(card);
       });
@@ -5273,10 +5353,10 @@
       if (w.hourlyList && w.hourlyList.length) {
         hourlyHTML = `<div class="hourly-strip">` + w.hourlyList.map(h => `
           <div class="hourly-item">
-            <div style="font-weight:bold;">${h.hour}</div>
+            <div style="font-weight:bold;">${escapeHtml(h.hour)}</div>
             <div style="margin:2px 0;">${getWmoDesc(h.code).split(' ')[0]}</div>
             <div style="font-weight:800; color:var(--primary-dark);">${Math.round(h.temp)}°</div>
-            <div style="color:#2A6F97; font-size:0.68rem;">💧${h.pop}%</div>
+            <div style="color:#2A6F97; font-size:0.68rem;">💧${Number(h.pop)}%</div>
           </div>
         `).join('') + `</div>`;
       }
@@ -5294,10 +5374,10 @@
                 <tr><th>日期</th><th>天氣</th><th>氣溫</th><th>降雨率</th></tr>
                 ${w.dailyList.map(d => `
                   <tr>
-                    <td>${d.date.slice(5)}</td>
+                    <td>${escapeHtml(String(d.date).slice(5))}</td>
                     <td>${getWmoDesc(d.code)}</td>
                     <td><strong>${Math.round(d.min)}° ~ ${Math.round(d.max)}°C</strong></td>
-                    <td>💧 ${d.pop}%</td>
+                    <td>💧 ${Number(d.pop)}%</td>
                   </tr>
                 `).join('')}
               </table>
@@ -5309,10 +5389,10 @@
 
       box.innerHTML = `
         <div style="display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap;">
-          <div style="font-size:1.05rem; font-weight:800; color:var(--primary-dark);">📍 ${w.cityName}：${w.temp}°C ・ ${getWmoDesc(w.code)}</div>
-          <div style="font-size:0.74rem; color:var(--text-muted);">更新：${w.timeText}</div>
+          <div style="font-size:1.05rem; font-weight:800; color:var(--primary-dark);">📍 ${escapeHtml(w.cityName)}：${Number(w.temp)}°C ・ ${escapeHtml(getWmoDesc(w.code))}</div>
+          <div style="font-size:0.74rem; color:var(--text-muted);">更新：${escapeHtml(w.timeText)}</div>
         </div>
-        <div style="font-size:0.82rem; margin-top:3px;">濕度 ${w.humidity}% ・ 風速 ${w.wind} km/h ・ 目前降雨 ${w.precip} mm</div>
+        <div style="font-size:0.82rem; margin-top:3px;">濕度 ${Number(w.humidity)}% ・ 風速 ${Number(w.wind)} km/h ・ 目前降雨 ${Number(w.precip)} mm</div>
         ${hourlyHTML}
         ${weeklyHTML}
       `;
@@ -5500,6 +5580,65 @@
       return String(value == null ? '' : value).replace(/[&<>"']/g, ch => (
         { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]
       ));
+    }
+
+    // 使用者與外部資料不拼進 onclick（S-01，② #3）：按鈕只放 data-act 與 data-*（值用 escapeHtml），由這裡統一處理
+    const DATA_ACTIONS = {
+      'focus-loc': d => focusLocation(Number(d.lat), Number(d.lng)),
+      'route': d => planRouteTo(Number(d.lat), Number(d.lng), d.name || ''),
+      'prefill-loc': d => prefillLocation(d.name || '', Number(d.lat), Number(d.lng)),
+      'del-loc': d => deleteLocation(d.id || '', d.name || ''),
+      'map-view': d => { switchTab('map'); setTimeout(() => { if (mapInstance) mapInstance.setView([Number(d.lat), Number(d.lng)], 16); }, 150); },
+      'edit-member': d => openMemberModal(d.name || ''),
+      'hide-member': d => hideFromIdCard(d.name || ''),
+      'del-member': d => deleteMember(d.name || ''),
+      'edit-contact': d => openContactModal(d.id || ''),
+      'del-contact': d => deleteContact(d.id || ''),
+      'step-qty': d => stepQty(Number(d.row), d.char || '', Number(d.delta)),
+      'cycle-chip': d => cycleChipState(Number(d.row), d.char || ''),
+      'buddy': d => interactWithBuddy(d.char || '', d.kind || 'pat'),
+      'roll-stock': d => rollStockItem(Number(d.row), d.char || '', d.exp || '')
+    };
+    // 輸入框、勾選框的 change 也一樣：data-chg 指定動作
+    const CHANGE_ACTIONS = {
+      'toggle-ready': (d, el) => toggleItemReady(Number(d.row), d.char || '', el.checked),
+      'update-field': (d, el) => updateField(Number(d.row), d.char || '', d.field || '', el.value, Number(d.gen))
+    };
+    // 用捕獲階段，外層有 stopPropagation（例如夥伴互動列）也接得到
+    document.addEventListener('click', (e) => {
+      const el = e.target.closest && e.target.closest('[data-act]');
+      if (!el) return;
+      const fn = DATA_ACTIONS[el.dataset.act];
+      if (fn) fn(el.dataset);
+    }, true);
+    // change 綁在元素本身：重畫時輸入框已被移出畫面，change 仍要送得出去（工程顧問 PR #29 的情境）
+    function bindDataChange(root) {
+      root.querySelectorAll('[data-chg]').forEach(el => {
+        el.addEventListener('change', () => {
+          const fn = CHANGE_ACTIONS[el.dataset.chg];
+          if (fn) fn(el.dataset, el);
+        });
+      });
+    }
+    // Leaflet 彈出框會擋住點擊往外傳，所以用 DOM 元素建內容，文字一律 textContent
+    function buildPopupEl(lines, button) {
+      const box = document.createElement('div');
+      lines.forEach((ln, i) => {
+        if (!ln || !ln.text) return;
+        if (i > 0) box.appendChild(document.createElement('br'));
+        const el = document.createElement(ln.tag || 'span');
+        el.textContent = ln.text;
+        box.appendChild(el);
+      });
+      if (button) {
+        box.appendChild(document.createElement('br'));
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.textContent = button.label;
+        b.addEventListener('click', button.onClick);
+        box.appendChild(b);
+      }
+      return box;
     }
 
     function loadAlertsMeta() {
@@ -5750,7 +5889,7 @@
       sel.innerHTML = '<option value="current">📍 目前／畫面周邊 AED</option>';
       (locationsData || []).forEach(loc => {
         const cnt = (aedsByLocCache[loc.id] || []).length;
-        sel.innerHTML += `<option value="${loc.id}">📌 ${loc.name}（已存 ${cnt} 台）</option>`;
+        sel.innerHTML += `<option value="${escapeHtml(loc.id)}">📌 ${escapeHtml(loc.name)}（已存 ${Number(cnt)} 台）</option>`;
       });
       sel.value = [...sel.options].some(o => o.value === prev) ? prev : 'current';
     }
@@ -5876,7 +6015,7 @@
           return m.memberType === 'main' && (m.mobility === 'assist' || m.mobility === 'carry');
         });
         careBox.innerHTML = needCare.length > 0
-          ? `<div style="padding:6px 8px; background:#FFF8E7; border-radius:8px; border:1px solid #E9C46A;">⚠️ <strong>需協助避難成員：</strong>${needCare.join('、')}（請於下方明確約定誰負責攙扶或接送）</div>`
+          ? `<div style="padding:6px 8px; background:#FFF8E7; border-radius:8px; border:1px solid #E9C46A;">⚠️ <strong>需協助避難成員：</strong>${escapeHtml(needCare.join('、'))}（請於下方明確約定誰負責攙扶或接送）</div>`
           : '<div style="color:var(--primary-dark);">✅ 目前主要成員皆標記為可自行行動。</div>';
       }
     }
@@ -5912,7 +6051,7 @@
           : '🏠 <strong>豪雨／颱風建議【就地垂直避難】</strong>（位於 3 樓以上較不易受淹水波及，注意停電後加壓馬達停水與馬桶凝固劑備援）。')
         : '✅ <strong>豪雨／颱風建議【在宅避難為主】</strong>（周邊屬低風險區，留意停水停電備援即可）。';
       box.className = 'decision-result' + ((dec.struct === 'old' || (dec.hazard === 'flood' && dec.floor === 'low')) ? ' warn' : '');
-      box.innerHTML = `<div>${eqAdvice}</div><div style="margin-top:4px;">${floodAdvice}</div>`;
+      box.innerHTML = `<div>${eqAdvice}</div><div style="margin-top:4px;">${floodAdvice}</div>`; // 固定字串（程式內建議文字）
     }
 
 
@@ -6070,11 +6209,11 @@
       if (pBox) {
         pBox.innerHTML = `
           <div class="combo-card">
-            <div class="combo-title"><span>⚡ 1. 輕裝即走 (${lightPackName || '無輕量包'})</span><span class="combo-days">${dLight.minDays} 天</span></div>
+            <div class="combo-title"><span>⚡ 1. 輕裝即走 (${escapeHtml(lightPackName || '無輕量包')})</span><span class="combo-days">${dLight.minDays} 天</span></div>
             <div class="combo-sub">💧 飲水 ${dLight.waterDays} 天 (${dLight.drinkLiters}L)<br>🥫 糧食 ${dLight.foodDays} 天 (約 ${dLight.meals} 餐)</div>
           </div>
           <div class="combo-card highlight">
-            <div class="combo-title"><span>🎒 2. 標準移動 (${baseOwner})</span><span class="combo-days">${dMain.minDays} 天</span></div>
+            <div class="combo-title"><span>🎒 2. 標準移動 (${escapeHtml(baseOwner)})</span><span class="combo-days">${dMain.minDays} 天</span></div>
             <div class="combo-sub">💧 飲水 ${dMain.waterDays} 天 (${dMain.drinkLiters}L / 目標9L)<br>🥫 糧食 ${dMain.foodDays} 天 (約 ${dMain.meals} 餐 / 目標9餐)</div>
           </div>
           <div class="combo-card">
@@ -6115,11 +6254,11 @@
           rBox.style.display = 'none';
         } else {
           rBox.style.display = 'block';
-          rBox.innerHTML = `<div style="font-weight:800; color:#9C5211; margin-bottom:4px;">🍂 滾動式消耗輪替任務（${rollingItems.length} 項需消耗換新）：</div>` +
+          rBox.innerHTML = `<div style="font-weight:800; color:#9C5211; margin-bottom:4px;">🍂 滾動式消耗輪替任務（${Number(rollingItems.length)} 項需消耗換新）：</div>` +
             rollingItems.slice(0, 6).map(r => `
               <div class="rolling-row">
-                <span>${r.expired ? '☢️' : '⚠️'} <strong>${r.name}</strong>（${r.exp}）</span>
-                <button class="btn btn-primary" style="padding:2px 8px; font-size:0.72rem;" onclick="rollStockItem(${r.row}, '${r.charName}', '${r.exp}')">✅ 已換新(+1年)</button>
+                <span>${r.expired ? '☢️' : '⚠️'} <strong>${escapeHtml(r.name)}</strong>（${escapeHtml(r.exp)}）</span>
+                <button class="btn btn-primary" style="padding:2px 8px; font-size:0.72rem;" data-act="roll-stock" data-row="${Number(r.row)}" data-char="${escapeHtml(r.charName)}" data-exp="${escapeHtml(r.exp)}">✅ 已換新(+1年)</button>
               </div>
             `).join('');
         }
@@ -6302,7 +6441,7 @@
       const sumEl = document.getElementById('watch-city-summary');
       if (!pillsEl || !sumEl) return;
       pillsEl.innerHTML = WATCH_CANDIDATES.map(c =>
-        `<span class="watch-pill ${watchCities.includes(c) ? 'active' : ''}" onclick="toggleWatchCity('${c}')">${c}</span>`
+        `<span class="watch-pill ${watchCities.includes(c) ? 'active' : ''}" onclick="toggleWatchCity('${c}')">${c}</span>` // 固定字串（WATCH_CANDIDATES）
       ).join('');
       if (watchCities.length === 0) {
         sumEl.innerHTML = '<span style="color:var(--text-muted);">尚未釘選外地親友縣市</span>';
@@ -6341,7 +6480,7 @@
       const nextD = new Date(d); nextD.setMonth(nextD.getMonth() + 6);
       const daysSince = Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24));
       const overdue = daysSince >= 180;
-      box.innerHTML = `${overdue ? '🔔 <strong>已屆半年演練時間！</strong>' : '✅ <strong>演練進度正常</strong>'}<br>上次演練：<strong>${lastDrill}</strong>（已過 ${daysSince} 天）・下次建議：<strong>${nextD.toISOString().slice(0, 10)}</strong>`;
+      box.innerHTML = `${overdue ? '🔔 <strong>已屆半年演練時間！</strong>' : '✅ <strong>演練進度正常</strong>'}<br>上次演練：<strong>${escapeHtml(lastDrill)}</strong>（已過 ${Number(daysSince)} 天）・下次建議：<strong>${nextD.toISOString().slice(0, 10)}</strong>`;
     }
 
 
@@ -6353,11 +6492,12 @@
     }
 
 
+    const QR_FALLBACK_MSG = '⚠️ QR 碼做不出來，平安卡的內容都在下面的文字裡（往下捲可看到聯絡人和集合點）。需要時，把手機交給救護人員或幫忙的人直接看；也可以先截圖存起來，沒網路也看得到。';
     function openFamilyQrModal() {
       const mainChars = (globalData && globalData.characters) ? globalData.characters.filter(n => getMemberVisual(n).memberType !== 'pack') : [];
       const memberLines = mainChars.map(n => {
         const m = getMemberVisual(n);
-        return `${n}(${m.blood || '血型未填'}):${m.medical || '無過敏'}`;
+        return `${n}(${m.blood || '血型未填'}):${m.medical || '過敏未填'}`; // 沒填不等於沒有過敏（D-01，災防顧問）
       }).join('\n');
       const contactLines = (contactsData || []).slice(0, 3).map(c => `${c.name}(${c.relation}):${c.phone}`).join('\n');
       const rallyLines = (locationsData || []).slice(0, 2).map(l => `${l.type}:${l.name}`).join('\n');
@@ -6369,10 +6509,23 @@
       if (prev) prev.innerText = qrText;
       if (box) {
         box.innerHTML = '';
-        if (typeof QRCode !== 'undefined') {
-          new QRCode(box, { text: qrText.slice(0, 420), width: 200, height: 200, correctLevel: QRCode.CorrectLevel.M });
-        } else {
-          box.innerHTML = '<div style="color:var(--danger);">離線尚未快取 QR 套件，請檢視下方純文字摘要</div>';
+        let drawn = false;
+        // 套件遇到中文常算錯長度而丟錯（code length overflow）。失敗時視窗照開，文字摘要照樣看得到（D-05）
+        try {
+          if (typeof QRCode !== 'undefined') {
+            new QRCode(box, { text: qrText.slice(0, 420), width: 200, height: 200, correctLevel: QRCode.CorrectLevel.M });
+            drawn = true;
+          }
+        } catch (e) {
+          drawn = false;
+        }
+        document.getElementById('qr-modal').classList.toggle('qr-failed', !drawn);
+        if (!drawn) {
+          box.innerHTML = ''; // 清掉畫到一半的畫布
+          const msg = document.createElement('div');
+          msg.className = 'qr-fallback-msg';
+          msg.textContent = QR_FALLBACK_MSG;
+          box.appendChild(msg);
         }
       }
       document.getElementById('qr-modal').classList.add('open');
@@ -6394,19 +6547,19 @@
         ${mainChars.map(n => {
           const m = getMemberVisual(n);
           return `<div style="border:1px solid #ccc; padding:8px; border-radius:6px; margin-bottom:6px;">
-            <strong>${n}</strong>（血型：${m.blood || '未填'}｜行動：${m.mobility || 'self'}）<br>
-            過敏與用藥：${m.medical || '無'} ｜ 備註：${m.rallyNote || '無'}
+            <strong>${escapeHtml(n)}</strong>（血型：${escapeHtml(m.blood || '未填')}｜行動：${escapeHtml(m.mobility || 'self')}）<br>
+            過敏與用藥：${escapeHtml(m.medical || '無')} ｜ 備註：${escapeHtml(m.rallyNote || '無')}
           </div>`;
         }).join('')}
         <h3>2. 緊急聯絡網</h3>
-        ${(contactsData || []).map(c => `<div>・<strong>${c.name}</strong>（${c.relation}）📞 ${c.phone} ${c.region ? '📍' + c.region : ''} ${c.note || ''}</div>`).join('') || '<div>尚未設定</div>'}
+        ${(contactsData || []).map(c => `<div>・<strong>${escapeHtml(c.name)}</strong>（${escapeHtml(c.relation)}）📞 ${escapeHtml(c.phone)} ${c.region ? '📍' + escapeHtml(c.region) : ''} ${escapeHtml(c.note || '')}</div>`).join('') || '<div>尚未設定</div>'}
         <h3>3. 約定集合點（Plan A / B / C）</h3>
-        ${(locationsData || []).map(l => `<div>・<strong>${l.type}</strong>：${l.name}（${l.lat.toFixed(5)}, ${l.lng.toFixed(5)}）${l.note || ''}</div>`).join('') || '<div>尚未設定</div>'}
+        ${(locationsData || []).map(l => `<div>・<strong>${escapeHtml(l.type)}</strong>：${escapeHtml(l.name)}（${Number(l.lat).toFixed(5)}, ${Number(l.lng).toFixed(5)}）${escapeHtml(l.note || '')}</div>`).join('') || '<div>尚未設定</div>'}
         <h3>4. 歸宅困難與失聯匯合協議</h3>
-        <div>・0～1 小時：${reu.h1 || '各自安全待命並報平安'}</div>
-        <div>・1～6 小時：${reu.h6 || '視交通狀況徒步返家或暫留安全處'}</div>
-        <div>・6 小時以上：${reu.h24 || '前往約定集合點會合'}</div>
-        <div>・照顧分工：${reu.care || '無特別備註'}</div>
+        <div>・0～1 小時：${escapeHtml(reu.h1 || '各自安全待命並報平安')}</div>
+        <div>・1～6 小時：${escapeHtml(reu.h6 || '視交通狀況徒步返家或暫留安全處')}</div>
+        <div>・6 小時以上：${escapeHtml(reu.h24 || '前往約定集合點會合')}</div>
+        <div>・照顧分工：${escapeHtml(reu.care || '無特別備註')}</div>
       `;
       document.getElementById('plan-print-modal').style.display = 'block';
     }
@@ -6431,7 +6584,7 @@
           if (markersLayer) {
             L.circleMarker([el.lat, el.lon], { radius: 8, fillColor: '#2A6F97', color: '#fff', weight: 2, fillOpacity: 0.9 })
               .addTo(markersLayer)
-              .bindPopup(`<b>🛡️ ${name}</b><br><button onclick="prefillLocation('${name.replace(/'/g, '')}', ${el.lat}, ${el.lon})">➕ 存為集合點</button>`);
+              .bindPopup(buildPopupEl([{ tag: 'b', text: `🛡️ ${name}` }], { label: '➕ 存為集合點', onClick: () => prefillLocation(String(name), Number(el.lat), Number(el.lon)) }));
           }
         });
         showToast(`✅ 已於地圖標記周邊 ${items.length} 處公開避難設施`, 'success');
@@ -6652,7 +6805,7 @@
       const g = getGuidePersona();
       const el = document.getElementById('camp-guide-nudge-text');
       if (el) {
-        el.innerHTML = `${g.emoji} <strong>營地嚮導${g.name}</strong>：${GUIDE_TIPS[guideTipIdx % GUIDE_TIPS.length]}`;
+        el.innerHTML = `${g.emoji} <strong>營地嚮導${g.name}</strong>：${GUIDE_TIPS[guideTipIdx % GUIDE_TIPS.length]}`; // 固定字串（嚮導設定與提示）
       }
       const pfaTitle = document.getElementById('pfa-companion-title');
       if (pfaTitle) {
@@ -6762,6 +6915,143 @@
       renderParty(); renderInventory(); renderCampTab(); renderPlanTab();
       switchTab('inventory');
       showToast('🏕️ 已啟用獨立家庭本機範本！免開 Google 試算表即可直接使用', 'success');
+      try { localStorage.setItem(STORAGE_KEYS.SAMPLE_SIG, familyDataSig()); } catch (e) {}
+      ensurePersist();
+      renderDataKeep();
+    }
+
+
+    // ===== #22 避免手機自動清掉家庭資料（D-05）=====
+    // 三態：granted（手機同意保留）／denied（可能清掉）／unknown（不支援或還沒查到）；不寫「安全」（D-01）
+    let persistState = 'unknown';
+    let persistRequested = false;
+    let deferredInstallPrompt = null;
+    const BACKUP_REMIND_DAYS = 30;
+    const BACKUP_NUDGE_GAP_DAYS = 7;
+    function familyDataSig() {
+      const str = JSON.stringify([globalData, membersMap, locationsData, contactsData]);
+      let h = 5381;
+      for (let i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) | 0;
+      return str.length + ':' + (h >>> 0).toString(36);
+    }
+    function hasFamilyData() {
+      return Object.keys(membersMap || {}).length > 0 || (locationsData || []).length > 0;
+    }
+    // 範本原樣不算家人自己的資料，不提醒備份假資料（使用者顧問 #22）
+    function hasOwnFamilyData() {
+      if (!hasFamilyData()) return false;
+      let sig = null;
+      try { sig = localStorage.getItem(STORAGE_KEYS.SAMPLE_SIG); } catch (e) {}
+      return !sig || sig !== familyDataSig();
+    }
+    function getLastBackupAt() {
+      let v = NaN;
+      try { v = Number(localStorage.getItem(STORAGE_KEYS.LAST_BACKUP)); } catch (e) {}
+      // 讀到無效值（不是數字、未來時間）一律當成從沒匯出過（工程顧問）
+      if (!Number.isFinite(v) || v <= 0 || v > Date.now() + 86400000) return null;
+      return v;
+    }
+    function backupAgeDays(ts) { return Math.floor((Date.now() - ts) / 86400000); }
+    function isStandaloneApp() {
+      return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true;
+    }
+    function isIOSDevice() {
+      return /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    }
+    // 只在本機已有家庭資料時才要求；Firefox 會跳詢問，不能一開頁就擋住首屏（工程顧問、U-05）
+    function ensurePersist() {
+      if (isEmergencyMode) return; // Firefox 的權限詢問不可蓋住緊急頁（工程顧問 PR 49 必改）
+      if (persistRequested || persistState === 'granted') return;
+      if (!navigator.storage || typeof navigator.storage.persist !== 'function') return;
+      if (!hasFamilyData()) return;
+      persistRequested = true;
+      navigator.storage.persist()
+        .then(ok => { persistState = ok ? 'granted' : 'denied'; renderDataKeep(); })
+        .catch(() => {});
+    }
+    function initDataKeep() {
+      if (navigator.storage && typeof navigator.storage.persisted === 'function') {
+        navigator.storage.persisted()
+          .then(p => { persistState = p ? 'granted' : 'denied'; renderDataKeep(); ensurePersist(); })
+          .catch(() => { renderDataKeep(); });
+      }
+      window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredInstallPrompt = e; renderDataKeep(); });
+      window.addEventListener('appinstalled', () => { deferredInstallPrompt = null; persistRequested = false; ensurePersist(); renderDataKeep(); });
+      renderDataKeep();
+      maybeNudgeBackup();
+    }
+    function promptInstallApp() {
+      if (!deferredInstallPrompt) return;
+      const ev = deferredInstallPrompt;
+      deferredInstallPrompt = null;
+      try { ev.prompt(); } catch (e) {}
+      renderDataKeep();
+    }
+    function fmtMD(ts) { const d = new Date(ts); return `${d.getMonth() + 1}/${String(d.getDate()).padStart(2, '0')}`; }
+    function renderDataKeep() {
+      const wrap = document.getElementById('data-keep-lines');
+      const box = document.getElementById('data-keep-box');
+      if (!wrap || !box) return;
+      // 每一項：{ warn: 需要處理, text, steps? }；最急的一行才加 ⚠️
+      const items = [];
+      const own = hasOwnFamilyData();
+      const last = getLastBackupAt();
+      const exportBtn = document.getElementById('data-keep-export-btn');
+      if (exportBtn) exportBtn.hidden = !hasFamilyData();
+      if (own) {
+        if (last === null) items.push({ warn: true, text: '還沒有匯出過備份。' });
+        else if (backupAgeDays(last) > BACKUP_REMIND_DAYS) items.push({ warn: true, text: `已經 ${backupAgeDays(last)} 天沒有匯出備份（上次是 ${fmtMD(last)}）。` });
+        else items.push({ warn: false, ok: true, text: `上次匯出備份是 ${fmtMD(last)}。` });
+      }
+      if (persistState === 'granted') items.push({ warn: false, ok: true, text: '✅ 手機已同意保留這份資料，仍建議定期匯出備份。' });
+      else if (persistState === 'denied') items.push({ warn: true, text: '手機空間不夠時，可能會清掉這份資料。請把 App 加到主畫面，並且定期匯出備份。' });
+      else items.push({ warn: true, text: '不確定手機會不會保留這份資料。請把 App 加到主畫面，並且定期匯出備份。' });
+      const installBtn = document.getElementById('data-keep-install-btn');
+      if (installBtn) installBtn.hidden = !(deferredInstallPrompt && !isStandaloneApp());
+      if (!isStandaloneApp()) {
+        const why = '加到主畫面後，手機比較不會清掉資料，也比較快打開。';
+        if (isIOSDevice()) items.push({ warn: false, text: why + '如果是從 LINE 打開的，請先按右上角的「⋯」，選「用預設瀏覽器開啟」或「用 Safari 開啟」。', steps: [
+          '用 Safari 開啟這個網頁後，按螢幕下方的「分享」圖示（方框加向上箭頭）。',
+          '往下找，按「加入主畫面」。'
+        ] });
+        else if (deferredInstallPrompt) items.push({ warn: false, text: why + '請按下面的「加到主畫面」。' });
+        else items.push({ warn: false, text: why + '請按瀏覽器右上角的三個點，選「安裝應用程式」或「加到主畫面」。' });
+      }
+      wrap.textContent = '';
+      let leadDone = false;
+      items.forEach(it => {
+        const line = document.createElement('div');
+        line.className = 'data-keep-line';
+        if (it.warn && !leadDone) { line.classList.add('is-lead'); line.textContent = '⚠️ ' + it.text; leadDone = true; }
+        else { line.textContent = it.text; if (it.ok) line.classList.add('is-ok'); }
+        if (it.warn && line.classList.contains('is-lead')) wrap.insertBefore(line, wrap.firstChild); else wrap.appendChild(line);
+        if (it.steps) {
+          const ol = document.createElement('ol');
+          ol.className = 'data-keep-steps';
+          it.steps.forEach(t => { const li = document.createElement('li'); li.textContent = t; ol.appendChild(li); });
+          wrap.appendChild(ol);
+        }
+      });
+      box.classList.toggle('need-action', leadDone);
+    }
+    // 進 App 時的備份提醒：平時模式、家人自己的資料、超過 30 天或從沒匯出，7 天最多一次（使用者顧問）
+    function maybeNudgeBackup() {
+      if (isEmergencyMode || !hasOwnFamilyData()) return;
+      // 本機模式第一次開啟時會跳「還沒連接雲端」，浮動提示一次只留一則，備份提醒會被蓋掉看不到；
+      // 這次先不跳、也不記時間，下次開 App 再提醒（PR 49 與 PR 51 合併後的整合修正）
+      if (!getGasUrl()) {
+        let noticed = false;
+        try { noticed = localStorage.getItem(STORAGE_KEYS.LOCAL_NOTICE) === '1'; } catch (e) {}
+        if (!noticed) return;
+      }
+      const last = getLastBackupAt();
+      if (last !== null && backupAgeDays(last) <= BACKUP_REMIND_DAYS) return;
+      let lastNudge = NaN;
+      try { lastNudge = Number(localStorage.getItem(STORAGE_KEYS.BACKUP_NUDGE_DAY)); } catch (e) {}
+      if (Number.isFinite(lastNudge) && lastNudge > 0 && Date.now() - lastNudge < BACKUP_NUDGE_GAP_DAYS * 86400000) return;
+      try { localStorage.setItem(STORAGE_KEYS.BACKUP_NUDGE_DAY, String(Date.now())); } catch (e) {}
+      const msg = last === null ? '家庭資料還沒有備份，請到「營地」的「說明與系統」匯出。' : `家庭資料已經 ${backupAgeDays(last)} 天沒有備份，請到「營地」的「說明與系統」匯出。`;
+      showToast(msg); // 一般 .toast，例行提醒不用警示色（美術顧問）
     }
 
 
@@ -6780,7 +7070,10 @@
       a.href = URL.createObjectURL(blob);
       a.download = `family-camp-backup-${new Date().toISOString().slice(0,10)}.json`;
       a.click();
-      showToast('📥 已匯出家庭完整備份檔 (.json)', 'success');
+      try { localStorage.setItem(STORAGE_KEYS.LAST_BACKUP, String(Date.now())); } catch (e) {}
+      renderDataKeep();
+      // 匯出後告訴家人下一步（使用者顧問 #22）
+      showToast('✅ 已匯出備份檔。請把它傳到自己的 LINE 或存到雲端硬碟，換手機或資料不見時才找得回來。檔案裡有家人的健康資料，請只傳給自己或家人。', 'success', { sticky: true });
     }
 
 
@@ -6798,6 +7091,8 @@
           selectInitialCharacter();
           renderParty(); renderInventory(); renderCampTab(); renderPlanTab();
           showToast('✅ 已成功匯入家庭備份檔！', 'success');
+          ensurePersist();
+          renderDataKeep();
         } catch (err) {
           showToast('❌ 備份檔格式錯誤：' + err.message, 'error');
         }

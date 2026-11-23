@@ -282,17 +282,14 @@ function handleWriteAction(action, payload, auth) {
         updateContactRecord(act.contact);
       } else if (act.action === 'deleteContact') {
         deleteContactRecord(act.id);
-      } else if (act.action === 'setMemberPlace') {
-        if (!setMemberPlaceRecord(act.name, act.place)) {
+      } else if (PLACE_BATCH_ACTIONS.includes(act.action)) {
+        // 地點動作逐筆接住錯誤（工程顧問）：例如家人已刪掉這個地點，這一筆放進 skipped 就好，
+        // 不讓整批丟錯，否則離線佇列每次重送都會卡在同一筆
+        const placeResult = runPlaceBatchAction(act);
+        if (!placeResult.ok) {
           actOk = false;
-          skipped.push({ action: 'setMemberPlace', code: 'UNKNOWN_MEMBER', charName: String(act.name || '') });
+          skipped.push(placeResult.skip);
         }
-      } else if (act.action === 'addPlace') {
-        addPlaceRecord(act.place);
-      } else if (act.action === 'updatePlace') {
-        updatePlaceRecord(act.place);
-      } else if (act.action === 'deletePlace') {
-        deletePlaceRecord(act.id, act.reassignTo);
       }
       if (actOk && actReqId) rememberRequest(actReqId, REQ_DONE_MARK);
     });
@@ -1509,6 +1506,32 @@ function requireMemberPlace(value) {
   const v = validMemberPlace(value);
   if (v === null) throw new Error('存放地點的格式不正確，這次沒有存。請重新整理 App 後再選一次地點。');
   return v;
+}
+
+const PLACE_BATCH_ACTIONS = ['setMemberPlace', 'addPlace', 'updatePlace', 'deletePlace'];
+
+/**
+ * 批次裡的一筆地點動作；出錯時回 { ok:false, skip }，不往外丟。
+ */
+function runPlaceBatchAction(act) {
+  const base = { action: String(act.action) };
+  try {
+    if (act.action === 'setMemberPlace') {
+      if (!setMemberPlaceRecord(act.name, act.place)) {
+        return { ok: false, skip: Object.assign(base, { code: 'UNKNOWN_MEMBER', charName: String(act.name || '') }) };
+      }
+    } else if (act.action === 'addPlace') {
+      addPlaceRecord(act.place);
+    } else if (act.action === 'updatePlace') {
+      updatePlaceRecord(act.place);
+    } else if (act.action === 'deletePlace') {
+      deletePlaceRecord(act.id, act.reassignTo);
+    }
+    return { ok: true };
+  } catch (err) {
+    const placeName = act.place && act.place.name ? String(act.place.name).slice(0, PLACE_NAME_MAX) : '';
+    return { ok: false, skip: Object.assign(base, { code: 'PLACE_ACTION_FAILED', placeName: placeName, error: String(err && err.message || '') }) };
+  }
 }
 
 /**

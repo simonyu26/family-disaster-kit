@@ -3217,16 +3217,16 @@
     function isOtherSkipped(sk) {
       return !!sk && (Object.prototype.hasOwnProperty.call(OTHER_QUEUE_ACTIONS, sk.action) || sk.code === 'UNKNOWN_ACTION');
     }
-    // 名稱只當文字，交給 showToast（innerText）顯示（S-01）；沒有名稱時寫「1 筆聯絡人」這類說法
+    // 名稱只當文字，交給 showToast（innerText）顯示（S-01）；沒有名稱時寫「沒有名字的聯絡人 1 筆」
     function otherSkippedMessage(list) {
       const n = list.length;
       const label = sk => {
         const name = typeof sk.name === 'string' ? sk.name.trim() : '';
         const kind = OTHER_QUEUE_ACTIONS[sk.action] || '資料';
-        return name ? `「${name}」` : `1 筆${kind}`;
+        return name ? `「${name}」` : `沒有名字的${kind} 1 筆`;
       };
       const shown = list.slice(0, 3).map(label).join('、') + (n > 3 ? `…等 ${n} 筆` : '');
-      return `⚠️ 離線時改的避難點、聯絡人或新增的物資，有 ${n} 筆沒有存到雲端：${shown}。可能家人已經改過或刪掉。已重新同步，請確認後再改一次。`;
+      return `⚠️ 離線時改的資料，有 ${n} 筆沒有存到雲端：${shown}。可能是資料不完整，或家人已經改過、刪掉。已重新同步，請確認後再做一次。`; // 使用者顧問定稿
     }
     function enqueueAction(payload) {
       if (payload.action === 'updateItem') {

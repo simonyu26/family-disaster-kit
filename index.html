@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#52796F">
   <title>🏕️ 森林露營小隊・防災生存整備系統</title>
   <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
@@ -191,7 +191,7 @@
       background: #FFF; border: 2px solid var(--border); border-radius: 8px;
       padding: 5px 6px; font-size: 0.8rem; color: var(--text); outline: none;
     }
-    .exp-date-input { width: 118px; color-scheme: light; }
+    .exp-date-input { width: 9.5rem; color-scheme: light; } /* 輸入框改 16px 後，118px 放不下完整日期 */
     .note-input { flex: 1; min-width: 100px; }
 
 
@@ -1111,6 +1111,11 @@
     }
 
 
+    /* 允許兩指放大（字級工項第 1 步，工程、美術顧問）：
+       連點兩下不放大整頁，避免快速點數量、膠囊時畫面跳動；兩指放大照常可用。
+       iPhone 點到字小於 16px 的輸入框會自動放大且不縮回，所以輸入框一律至少 1rem（16px）。 */
+    html { touch-action: manipulation; }
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select:not([multiple]), textarea:not([hidden]) { font-size: 1rem; }
   </style>
 
 
@@ -1974,7 +1979,7 @@
               <div class="form-group" style="margin-bottom:0; padding-top:8px; border-top:1px dashed #d8d4ce;">
                 <label class="form-label">📷 Gemini API Key（選填・供拍物資標籤 AI 辨識，須先連接 GAS）</label>
                 <div style="display:flex; gap:6px;">
-                  <input type="password" id="setting-gemini-key" class="form-input" placeholder="貼上 AIzaSy...（安全存於 GAS 後端）" style="flex:1; font-size:0.82rem;">
+                  <input type="password" id="setting-gemini-key" class="form-input" placeholder="貼上 AIzaSy...（安全存於 GAS 後端）" style="flex:1;">
                   <button class="btn btn-muted" style="white-space:nowrap; font-size:0.78rem;" onclick="saveGeminiApiKey()">✅ 儲存金鑰</button>
                 </div>
               </div>
@@ -2515,7 +2520,7 @@
 
 
     // 版本號只寫這一處（② #29）：升版只改 APP_VERSION，畫面標籤、網頁標題與 Service Worker 快取名稱都從這裡來
-    const APP_VERSION = 'v2.9.16.1';
+    const APP_VERSION = 'v2.9.29';
     (function showAppVersion() {
       const pill = document.getElementById('app-version-pill');
       if (pill) pill.textContent = APP_VERSION;

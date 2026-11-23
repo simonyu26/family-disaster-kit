@@ -62,6 +62,9 @@
   * 換照片時先寫新的、再刪舊的，讀照片的人不會讀到半張。
   * 讀照片要用 `getPlacePhoto`，經 POST 帶通行碼。不能用 GET 讀，`getAll` 裡也不放照片，照片不進離線佇列。
   * 刪除只有 `deletePlacePhoto` 一個動作。
+  * 讀照片時先只讀前三欄找到要的段，再讀那幾段的資料，不會每次都讀進全部照片（工程顧問，D-06）。
+  * 每天的試算表備份（gas-backup）也會複製 PlacePhotos，所以刪掉的照片在備份裡最多還會留約 8 週。前端刪除時的說明要寫清楚。
+* **檢查**：建立者最多 30 字；刪地點時要改放的 `plc_` 地點必須存在。
 * **固定分頁名單**：多了 Places、PlacePhotos，不會被誤認成物資表。
 * 測試：`gas-places.js`。`gas-idempotency.js` 和 `gas-get-closed.js` 已改成可以接受新版本號。
 * `BACKEND_VERSION` 改為 `v1.9`。

@@ -1584,7 +1584,8 @@ function addPlaceRecord(place) {
   const ss = openFamilySpreadsheet();
   const sheet = getPlacesSheet(ss);
   if (findPlaceRow(sheet.getDataRange().getValues(), id) >= 1) return id;
-  sheet.appendRow(sanitizeRow([id, name, type, headcount, '', 0, new Date().toISOString(), String(p.creator || '')]));
+  const creator = String(p.creator || '').trim().slice(0, PLACE_NAME_MAX);
+  sheet.appendRow(sanitizeRow([id, name, type, headcount, '', 0, new Date().toISOString(), creator]));
   return id;
 }
 
@@ -1624,6 +1625,10 @@ function deletePlaceRecord(id, reassignTo) {
     if (target === placeId) throw new Error('要改放的地點不能是正在刪除的地點，請選另一個地點。');
   }
   const ss = openFamilySpreadsheet();
+  // 要改放的地點若是 plc_ ID，必須真的存在，否則包會指向一個不存在的地點（工程顧問）
+  if (target && PLACE_ID_PATTERN.test(target) && findPlaceRow(getPlacesSheet(ss).getDataRange().getValues(), target) < 1) {
+    throw new Error('要改放的地點已經不在了，請按「同步」看最新的地點清單後再刪一次。');
+  }
   if (target !== undefined) {
     const mSheet = getMembersSheet(ss, []);
     const mData = mSheet.getDataRange().getValues();
@@ -1723,12 +1728,15 @@ function getPlacePhotoData(placeId) {
   const count = Number(pData[row][5]) || 0;
   if (!ver || count < 1) return { ok: true, placeId: id, photoVer: '', photoBase64: '', serverTime: new Date().toISOString() };
 
+  // 先只讀前三欄（地點 ID、版本、段序）找到要的列，再逐列讀資料欄，避免每次都讀進全部照片（工程顧問，D-06）
   const photoSheet = getPlacePhotosSheet(ss, true);
-  const data = photoSheet ? photoSheet.getDataRange().getValues() : [];
+  const lastRow = photoSheet ? photoSheet.getLastRow() : 0;
+  const index = lastRow > 1 ? photoSheet.getRange(2, 1, lastRow - 1, 3).getValues() : [];
   const parts = [];
-  for (let i = 1; i < data.length; i++) {
-    if (String(data[i][0]).trim() === id && String(data[i][1]) === ver) {
-      parts[Number(data[i][2])] = String(data[i][3] || '').slice(PHOTO_CHUNK_PREFIX.length);
+  for (let i = 0; i < index.length; i++) {
+    if (String(index[i][0]).trim() === id && String(index[i][1]) === ver) {
+      const chunk = photoSheet.getRange(i + 2, 4).getValue();
+      parts[Number(index[i][2])] = String(chunk || '').slice(PHOTO_CHUNK_PREFIX.length);
     }
   }
   let complete = parts.length === count;

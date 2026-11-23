@@ -1130,7 +1130,7 @@
         <span id="net-status" class="status-badge online">🟢 連線檢查中...</span>
         <span>·</span>
         <span id="last-sync-text">尚未同步</span>
-        <span id="pending-badge" class="sync-pill" style="display:none;" onclick="flushOfflineQueue()">待同步 0 筆</span>
+        <span id="pending-badge" class="sync-pill" style="display:none;" onclick="flushOfflineQueue(true)">待同步 0 筆</span>
       </div>
     </div>
     <div style="display:flex; gap:6px; align-items:center;">
@@ -2507,7 +2507,7 @@
 
 
     // 版本號只寫這一處（② #29）：升版只改 APP_VERSION，畫面標籤、網頁標題與 Service Worker 快取名稱都從這裡來
-    const APP_VERSION = 'v2.9.26';
+    const APP_VERSION = 'v2.9.27';
     (function showAppVersion() {
       const pill = document.getElementById('app-version-pill');
       if (pill) pill.textContent = APP_VERSION;
@@ -2810,13 +2810,17 @@
       const url = getGasUrl();
       if (!url) { switchTab('camp'); return; }
       if (!navigator.onLine) { if (manual) showToast('🟠 目前無網路，無法連線至試算表', 'warn'); return; }
-      if (offlineQueue.length > 0) await flushOfflineQueue();
+      // 通行碼被拒絕過：自動同步先停，等使用者自己按「同步」或換通行碼（工程顧問）
+      if (!manual && isPinRejected()) return;
+      if (manual) clearPinRejected();
+      if (offlineQueue.length > 0) await flushOfflineQueue(manual);
 
 
       try {
         if (manual) showToast('🔄 正在從營地同步最新進度...');
         const json = await readFromGas('getAll');
         if (json.authRequired) {
+          markPinRejected();
           const inputPin = prompt('🔒 此家庭試算表已啟用通行碼保護，請輸入家庭通行碼：');
           if (inputPin !== null) {
             localStorage.setItem(STORAGE_KEYS.GAS_PIN, inputPin.trim());
@@ -2825,6 +2829,7 @@
           throw new Error(json.error || '需要家庭通行碼');
         }
         if (!json.ok) throw new Error(json.error || '回傳格式錯誤');
+        clearPinRejected();
 
 
         globalData = json.inventory;
@@ -2914,9 +2919,44 @@
       return payload;
     }
 
+    // 通行碼被雲端拒絕（工程顧問）：記下「這組通行碼不對」，在換通行碼或使用者自己按「同步」之前，
+    // 不再自動送出，避免每次開 App 自動補傳＋讀取都算猜錯，累積到上限把全家鎖住。
+    // 只存通行碼的簡短指紋，不另存一份通行碼本身。
+    const PIN_REJECTED_KEY = 'camp_gas_pin_rejected';
+    const PIN_WRONG_WRITE_MSG = '⚠️ 家庭通行碼不對，這次的修改先存在這支手機。請到「營地」更新通行碼，之後按「同步」就會送出。';
+    const PIN_REJECTED_ERR = '家庭通行碼不對，請到「營地」更新通行碼後，再按「同步」。';
+    function pinFingerprint(pin) {
+      let h = 5381;
+      for (let i = 0; i < pin.length; i++) h = ((h * 33) ^ pin.charCodeAt(i)) >>> 0;
+      return pin.length + ':' + h.toString(36);
+    }
+    function markPinRejected() { try { localStorage.setItem(PIN_REJECTED_KEY, pinFingerprint(getGasPin())); } catch (e) { /* 存不了就照舊 */ } }
+    function clearPinRejected() { try { localStorage.removeItem(PIN_REJECTED_KEY); } catch (e) { /* 同上 */ } }
+    function isPinRejected() {
+      try { const v = localStorage.getItem(PIN_REJECTED_KEY); return v !== null && v === pinFingerprint(getGasPin()); } catch (e) { return false; }
+    }
+    function isAuthFailure(json) { return !!(json && (json.authRequired || json.locked || json.pinNotSet)); }
+    // 寫入失敗的提示：通行碼類照實說，不說成「連線不穩」（U-03）；其他錯誤沿用原本的提示
+    function writeFailToast(err, fallbackMsg) {
+      if (err && err.code === 'AUTH') {
+        const d = err.data || {};
+        if (d.locked || d.pinNotSet) showToast('⚠️ ' + err.message + '。這次的修改先存在這支手機，之後會再送出。', 'warn', { sticky: true });
+        else showToast(PIN_WRONG_WRITE_MSG, 'warn', { sticky: true });
+        return;
+      }
+      if (fallbackMsg) showToast(fallbackMsg, 'warn');
+    }
+
     async function postToGas(payload) {
       const url = getGasUrl();
       if (!url) throw new Error('尚未設定 GAS API 網址');
+      // 這組通行碼已被拒絕：不送出，直接當作通行碼錯誤（改通行碼本身除外）
+      if (payload.action !== 'setFamilyPin' && isPinRejected()) {
+        const err = new Error(PIN_REJECTED_ERR);
+        err.code = 'AUTH';
+        err.data = { ok: false, authRequired: true, notSent: true };
+        throw err;
+      }
       ensureReqId(payload);
       const finalPayload = Object.assign({}, payload, { pin: getGasPin() });
       // 寫入不中止，只在久等時告訴使用者狀態（D-06）
@@ -2939,10 +2979,12 @@
       const json = await res.json();
       if (!json.ok) {
         const err = new Error(json.error || '寫入失敗');
-        err.code = json.code || '';
+        err.code = isAuthFailure(json) ? 'AUTH' : (json.code || '');
         err.data = json;
+        if (json.authRequired) markPinRejected();
         throw err;
       }
+      clearPinRejected();
       // 重送命中（後端 v1.7）：這次沒有寫入，回應也不附資料，在背景同步一次，讓畫面對齊雲端
       if (json.duplicate || json.needSync) setTimeout(() => syncWithServer(false), 0);
       return json;
@@ -3004,8 +3046,11 @@
     }
 
 
-    async function flushOfflineQueue() {
+    // manual：使用者自己按「同步」或「待同步」標籤。通行碼被拒絕過時，只有手動才會再試一次（工程顧問）。
+    async function flushOfflineQueue(manual = false) {
       if (offlineQueue.length === 0 || !navigator.onLine || !getGasUrl()) return;
+      if (manual) clearPinRejected();
+      else if (isPinRejected()) return;
       // 舊版留下、沒有編號的待傳資料，先補上並存起來，這次沒送成功下次也用同一個編號
       if (offlineQueue.some(q => !q.reqId)) {
         offlineQueue.forEach(ensureReqId);
@@ -3034,7 +3079,7 @@
         if (skippedMsg) showToast(skippedMsg, 'warn', { sticky: true });
         else showToast(`✅ 已補傳 ${toSend.length} 筆離線變更`, 'success');
       } catch (err) {
-        showToast('⚠️ 部分離線資料補傳失敗，稍後再試', 'warn');
+        writeFailToast(err, '⚠️ 部分離線資料補傳失敗，稍後再試');
       }
     }
 
@@ -3911,7 +3956,7 @@
         const res = await postToGas(payload);
         if (res.contacts) { contactsData = res.contacts; localStorage.setItem(STORAGE_KEYS.CONTACTS, JSON.stringify(contactsData)); renderContactsGraph(); }
         showToast('✅ 已同步家庭聯絡人', 'success');
-      } catch (e) { enqueueAction(payload); showToast('🟠 轉為離線暫存', 'warn'); }
+      } catch (e) { enqueueAction(payload); writeFailToast(e, '🟠 轉為離線暫存'); }
     }
 
 
@@ -3925,7 +3970,7 @@
       try {
         await postToGas(payload);
         showToast('✅ 已刪除聯絡人', 'success');
-      } catch (e) { enqueueAction(payload); }
+      } catch (e) { enqueueAction(payload); writeFailToast(e, ''); }
     }
 
 
@@ -4301,7 +4346,7 @@
           return;
         }
         enqueueAction(payload);
-        showToast('🟠 連線不穩，已轉為離線暫存', 'warn');
+        writeFailToast(err, '🟠 連線不穩，已轉為離線暫存');
       }
     }
 
@@ -5199,7 +5244,7 @@
       const payload = { action: 'addLocation', location: newLoc };
       if (!navigator.onLine || !getGasUrl()) { enqueueAction(payload); showToast('🟠 已離線儲存點位', 'warn'); return; }
       try { await postToGas(payload); showToast('✅ 已同步避難點位', 'success'); }
-      catch (err) { enqueueAction(payload); showToast('🟠 已轉入離線佇列', 'warn'); }
+      catch (err) { enqueueAction(payload); writeFailToast(err, '🟠 已轉入離線佇列'); }
     }
 
 
@@ -5211,7 +5256,7 @@
       const payload = { action: 'deleteLocation', id };
       if (!navigator.onLine || !getGasUrl()) { enqueueAction(payload); showToast('🟠 已於本機移除', 'warn'); return; }
       try { await postToGas(payload); showToast('🗑️ 已刪除點位', 'success'); }
-      catch (err) { enqueueAction(payload); }
+      catch (err) { enqueueAction(payload); writeFailToast(err, ''); }
     }
 
 

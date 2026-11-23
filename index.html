@@ -6691,6 +6691,7 @@
         if (res.members) { membersMap = res.members; localStorage.setItem(STORAGE_KEYS.MEMBERS, JSON.stringify(membersMap)); renderParty(); renderInventory(); }
         showToast(doneText, 'success');
       } catch (err) {
+        if (err && err.code === 'AUTH') { enqueueAction(payload); writeFailToast(err, ''); return; } // 同上：留在佇列，換碼同步後送出
         if (err && err.data) { showToast('⚠️ ' + friendlyServerMessage(err, '這次沒有存到雲端。請按「同步」後再選一次地點。'), 'warn'); return; }
         enqueueAction(payload);
         showToast(doneText.replace('✅', '🟠') + '雲端暫時連不上，先存在這支手機，之後會補傳。', 'warn');
@@ -6874,6 +6875,8 @@
         showToast(doneText, 'success');
         return true;
       } catch (err) {
+        // 通行碼被拒絕：畫面已改，要留在佇列，換好通行碼按「同步」才會送出，不會被雲端蓋回（工程顧問，與物資、聯絡人一致）
+        if (err && err.code === 'AUTH') { enqueueAction(payload); writeFailToast(err, ''); return true; }
         if (err && err.data) { showToast('⚠️ ' + friendlyServerMessage(err, '這次沒有存到雲端。請按「同步」看最新的地點清單後再試一次。'), 'warn'); return false; }
         enqueueAction(payload);
         showToast(doneText.replace('✅', '🟠') + '。雲端暫時連不上，先存在這支手機，之後會補傳。', 'warn');

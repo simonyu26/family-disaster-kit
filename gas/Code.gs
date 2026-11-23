@@ -282,6 +282,11 @@ function handleWriteAction(action, payload, auth) {
         updateContactRecord(act.contact);
       } else if (act.action === 'deleteContact') {
         deleteContactRecord(act.id);
+      } else if (act.action === 'setMemberPlace') {
+        if (!setMemberPlaceRecord(act.name, act.place)) {
+          actOk = false;
+          skipped.push({ action: 'setMemberPlace', code: 'UNKNOWN_MEMBER', charName: String(act.name || '') });
+        }
       } else if (act.action === 'addPlace') {
         addPlaceRecord(act.place);
       } else if (act.action === 'updatePlace') {
@@ -386,6 +391,14 @@ function handleWriteAction(action, payload, auth) {
   }
 
   // 存放地點與地點照片（v1.9）
+  if (action === 'setMemberPlace') {
+    if (!setMemberPlaceRecord(payload.name, payload.place)) {
+      return { ok: false, code: 'UNKNOWN_MEMBER', error: '營地的成員名單裡找不到「' + String(payload.name || '') + '」，這次沒有存。請按「同步」後再選一次地點。' };
+    }
+    const inv = getInventoryData();
+    return { ok: true, members: getMembersData(inv.characters), serverTime: new Date().toISOString() };
+  }
+
   if (action === 'addPlace') {
     const id = addPlaceRecord(payload.place);
     return { ok: true, id: id, places: getPlacesData(), serverTime: new Date().toISOString() };
@@ -1498,6 +1511,26 @@ function requireMemberPlace(value) {
   return v;
 }
 
+/**
+ * 只改一個包的存放地點（可離線補傳；不像 updateMember 會在找不到時新增一列）。
+ * 找不到這個包就回 false，由呼叫端回 UNKNOWN_MEMBER。
+ */
+function setMemberPlaceRecord(name, place) {
+  const cleanName = String(name || '').trim();
+  const cleanPlace = requireMemberPlace(place);
+  if (!cleanName) return false;
+  const ss = openFamilySpreadsheet();
+  const sheet = getMembersSheet(ss, []);
+  const data = sheet.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]).trim() === cleanName) {
+      sheet.getRange(i + 1, 11).setValue(cleanPlace);
+      return true;
+    }
+  }
+  return false;
+}
+
 function getPlacesSheet(ss, readOnly) {
   let sheet = ss.getSheetByName('Places');
   if (!sheet && !readOnly) {
@@ -1728,20 +1761,26 @@ function getPlacePhotoData(placeId) {
   const count = Number(pData[row][5]) || 0;
   if (!ver || count < 1) return { ok: true, placeId: id, photoVer: '', photoBase64: '', serverTime: new Date().toISOString() };
 
-  // 先只讀前三欄（地點 ID、版本、段序）找到要的列，再逐列讀資料欄，避免每次都讀進全部照片（工程顧問，D-06）
+  // 先只讀前三欄（地點 ID、版本、段序）找到第一段，避免每次都讀進全部照片（工程顧問，D-06）。
+  // 同一版的各段是一次寫入、連在一起的，所以從第一段起一次讀 count 列。
+  // 讀取不持鎖，兩次讀之間別人可能換照片或刪地點、讓列往上移，所以每一列都要再核對 ID、版本、段序，
+  // 對不上就回 PHOTO_NOT_READY，不回拼錯的照片（工程顧問）。
+  const notReady = { ok: false, code: 'PHOTO_NOT_READY', error: '照片正在更新，請過一下再看一次。' };
   const photoSheet = getPlacePhotosSheet(ss, true);
   const lastRow = photoSheet ? photoSheet.getLastRow() : 0;
   const index = lastRow > 1 ? photoSheet.getRange(2, 1, lastRow - 1, 3).getValues() : [];
-  const parts = [];
+  let first = -1;
   for (let i = 0; i < index.length; i++) {
-    if (String(index[i][0]).trim() === id && String(index[i][1]) === ver) {
-      const chunk = photoSheet.getRange(i + 2, 4).getValue();
-      parts[Number(index[i][2])] = String(chunk || '').slice(PHOTO_CHUNK_PREFIX.length);
-    }
+    if (String(index[i][0]).trim() === id && String(index[i][1]) === ver && Number(index[i][2]) === 0) { first = i + 2; break; }
   }
-  let complete = parts.length === count;
-  for (let n = 0; n < count && complete; n++) if (typeof parts[n] !== 'string') complete = false;
-  if (!complete) return { ok: false, code: 'PHOTO_NOT_READY', error: '照片正在更新，請過一下再看一次。' };
+  if (first < 0) return notReady;
+  const rows = photoSheet.getRange(first, 1, count, PHOTO_HEADERS.length).getValues();
+  const parts = [];
+  for (let n = 0; n < count; n++) {
+    const r = rows[n] || [];
+    if (String(r[0]).trim() !== id || String(r[1]) !== ver || Number(r[2]) !== n) return notReady;
+    parts.push(String(r[3] || '').slice(PHOTO_CHUNK_PREFIX.length));
+  }
   return { ok: true, placeId: id, photoVer: ver, photoBase64: parts.join(''), serverTime: new Date().toISOString() };
 }
 

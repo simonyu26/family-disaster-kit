@@ -1213,7 +1213,7 @@
         <span id="net-status" class="status-badge online">🟢 連線檢查中...</span>
         <span>·</span>
         <span id="last-sync-text">尚未同步</span>
-        <span id="pending-badge" class="sync-pill" style="display:none;" onclick="flushOfflineQueue()">待同步 0 筆</span>
+        <span id="pending-badge" class="sync-pill" style="display:none;" onclick="flushOfflineQueue(true)">待同步 0 筆</span>
       </div>
     </div>
     <div style="display:flex; gap:6px; align-items:center;">
@@ -2983,15 +2983,17 @@
       const url = getGasUrl();
       if (!url) { switchTab('camp'); return; }
       if (!navigator.onLine) { if (manual) showToast('🟠 目前無網路，無法連線至試算表', 'warn'); return; }
-      if (offlineQueue.length > 0) await flushOfflineQueue();
+      // 通行碼被拒絕過：自動同步先停，等使用者自己按「同步」或換通行碼（工程顧問）
+      if (!manual && isPinRejected()) return;
+      if (manual) clearPinRejected();
+      if (offlineQueue.length > 0) await flushOfflineQueue(manual);
 
 
       try {
         if (manual) showToast('🔄 正在從營地同步最新進度...');
-        const pinParam = getGasPin() ? `&pin=${encodeURIComponent(getGasPin())}` : '';
-        const res = await fetch(`${url}?action=getAll${pinParam}&_t=${Date.now()}`);
-        const json = await res.json();
+        const json = await readFromGas('getAll');
         if (json.authRequired) {
+          markPinRejected();
           const inputPin = prompt('🔒 此家庭試算表已啟用通行碼保護，請輸入家庭通行碼：');
           if (inputPin !== null) {
             localStorage.setItem(STORAGE_KEYS.GAS_PIN, inputPin.trim());
@@ -3000,6 +3002,7 @@
           throw new Error(json.error || '需要家庭通行碼');
         }
         if (!json.ok) throw new Error(json.error || '回傳格式錯誤');
+        clearPinRejected();
 
 
         globalData = json.inventory;
@@ -3029,22 +3032,137 @@
     }
 
 
+    // 呼叫 GAS 的逾時（D-06，工程顧問）
+    // 讀取：6 秒中止，改用本機資料。寫入：不中止（GAS 可能已經在寫，中止後重送會重複新增），只顯示白話狀態。
+    const GAS_READ_TIMEOUT_MS = 6000;
+    const GAS_WRITE_SLOW_MS = 6000;
+    const GAS_WRITE_UNSURE_MS = 30000;
+    const GAS_READ_TIMEOUT_MSG = '雲端回應太慢，先用這支手機上的資料。請稍後再按「同步」。';
+    const GAS_WRITE_SLOW_MSG = '⏳ 雲端還在處理，請稍等，不用重按。';
+    // 不寫「資料還在這支手機上」：頁面若在等待中被關掉，這筆不會進離線佇列，下次同步可能被雲端資料蓋掉（D-01）
+    const GAS_WRITE_UNSURE_MSG = '⚠️ 雲端很久沒有回應，不確定剛才的資料有沒有存到。請稍後按「同步」，確認雲端有沒有收到；沒有的話請再改一次。';
+
+    async function fetchGasWithTimeout(input, init) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), GAS_READ_TIMEOUT_MS);
+      try {
+        return await fetch(input, Object.assign({}, init || {}, { signal: controller.signal }));
+      } catch (e) {
+        if (e && e.name === 'AbortError') {
+          const err = new Error(GAS_READ_TIMEOUT_MSG);
+          err.code = 'TIMEOUT';
+          throw err;
+        }
+        throw e;
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
+    // 讀取家庭資料改用 POST，通行碼放在本文、不放網址（② #23，S-04）。
+    // 不沿用 postToGas：讀取時 authRequired／locked 也是 ok:false，要原樣交回給呼叫端判斷（工程顧問）
+    // extra：讀取要帶的參數（例如 getPlacePhoto 的 placeId），不會蓋掉 action 和 pin
+    async function readFromGas(action, extra) {
+      const url = getGasUrl();
+      if (!url) throw new Error('尚未設定 GAS API 網址');
+      const res = await fetchGasWithTimeout(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(Object.assign({}, extra || {}, { action: action, pin: getGasPin() }))
+      });
+      const text = await res.text();
+      try {
+        return JSON.parse(text);
+      } catch (e) {
+        // 不顯示英文的解析錯誤原文（U-03）
+        throw new Error('雲端傳回的資料不正確。請稍後再試。一直失敗的話，請管理試算表的家人，到「營地」確認雲端網址有沒有貼對。');
+      }
+    }
+
+    // 重送防重複（後端 v1.7）：每個寫入帶一個請求編號 reqId。
+    // 同一個動作重送（轉入離線佇列再補傳）沿用同一個編號，後端認得就不會再寫一次。
+    // batchSync 由裡面每一筆各自帶編號；辨識標籤不寫入；改通行碼另外處理，都不帶。
+    const NO_REQ_ID_ACTIONS = ['batchSync', 'recognizeLabel', 'setFamilyPin'];
+    function newReqId() {
+      try { if (window.crypto && crypto.randomUUID) return crypto.randomUUID(); } catch (e) { /* 改用下面的方式 */ }
+      const b = new Uint8Array(16);
+      crypto.getRandomValues(b);
+      return Array.from(b, x => x.toString(16).padStart(2, '0')).join('');
+    }
+    // 直接寫回呼叫端的 payload：送失敗轉入離線佇列時，佇列裡是同一個物件、同一個編號
+    function ensureReqId(payload) {
+      if (payload && !payload.reqId && !NO_REQ_ID_ACTIONS.includes(payload.action)) payload.reqId = newReqId();
+      return payload;
+    }
+
+    // 通行碼被雲端拒絕（工程顧問）：記下「這組通行碼不對」，在換通行碼或使用者自己按「同步」之前，
+    // 不再自動送出，避免每次開 App 自動補傳＋讀取都算猜錯，累積到上限把全家鎖住。
+    // 只存通行碼的簡短指紋，不另存一份通行碼本身。
+    const PIN_REJECTED_KEY = 'camp_gas_pin_rejected';
+    const PIN_WRONG_WRITE_MSG = '⚠️ 家庭通行碼不對，這次的修改先存在這支手機。可能是家人換過通行碼了。請向家人問新的通行碼，到「營地」改好，再按「同步」，就會送出。';
+    const PIN_REJECTED_ERR = '家庭通行碼不對，請到「營地」更新通行碼後，再按「同步」。';
+    function pinFingerprint(pin) {
+      let h = 5381;
+      for (let i = 0; i < pin.length; i++) h = ((h * 33) ^ pin.charCodeAt(i)) >>> 0;
+      return pin.length + ':' + h.toString(36);
+    }
+    function markPinRejected() { try { localStorage.setItem(PIN_REJECTED_KEY, pinFingerprint(getGasPin())); } catch (e) { /* 存不了就照舊 */ } }
+    function clearPinRejected() { try { localStorage.removeItem(PIN_REJECTED_KEY); } catch (e) { /* 同上 */ } }
+    function isPinRejected() {
+      try { const v = localStorage.getItem(PIN_REJECTED_KEY); return v !== null && v === pinFingerprint(getGasPin()); } catch (e) { return false; }
+    }
+    function isAuthFailure(json) { return !!(json && (json.authRequired || json.locked || json.pinNotSet)); }
+    // 寫入失敗的提示：通行碼類照實說，不說成「連線不穩」（U-03）；其他錯誤沿用原本的提示
+    function writeFailToast(err, fallbackMsg) {
+      if (err && err.code === 'AUTH') {
+        const d = err.data || {};
+        if (d.locked || d.pinNotSet) showToast('⚠️ ' + err.message + '。這次的修改先存在這支手機，等雲端可以用了，按「同步」才會送出。', 'warn', { sticky: true });
+        else showToast(PIN_WRONG_WRITE_MSG, 'warn', { sticky: true });
+        return;
+      }
+      if (fallbackMsg) showToast(fallbackMsg, 'warn');
+    }
+
     async function postToGas(payload) {
       const url = getGasUrl();
       if (!url) throw new Error('尚未設定 GAS API 網址');
+      // 這組通行碼已被拒絕：不送出，直接當作通行碼錯誤（改通行碼本身除外）
+      if (payload.action !== 'setFamilyPin' && isPinRejected()) {
+        const err = new Error(PIN_REJECTED_ERR);
+        err.code = 'AUTH';
+        err.data = { ok: false, authRequired: true, notSent: true };
+        throw err;
+      }
+      ensureReqId(payload);
       const finalPayload = Object.assign({}, payload, { pin: getGasPin() });
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify(finalPayload)
-      });
+      // 寫入不中止，只在久等時告訴使用者狀態（D-06）
+      let unsureShown = false;
+      const slowTimer = setTimeout(() => showToast(GAS_WRITE_SLOW_MSG), GAS_WRITE_SLOW_MS);
+      const unsureTimer = setTimeout(() => { unsureShown = true; showToast(GAS_WRITE_UNSURE_MSG, 'warn', { sticky: true }); }, GAS_WRITE_UNSURE_MS);
+      let res;
+      try {
+        res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(finalPayload)
+        });
+      } finally {
+        clearTimeout(slowTimer);
+        clearTimeout(unsureTimer);
+        // 最後有回應了，就收起「不確定有沒有存到」
+        if (unsureShown) document.querySelectorAll('#toast-container .toast-sticky').forEach(t => { if (t.textContent.startsWith(GAS_WRITE_UNSURE_MSG)) t.remove(); });
+      }
       const json = await res.json();
       if (!json.ok) {
         const err = new Error(json.error || '寫入失敗');
-        err.code = json.code || '';
+        err.code = isAuthFailure(json) ? 'AUTH' : (json.code || '');
         err.data = json;
+        if (json.authRequired) markPinRejected();
         throw err;
       }
+      clearPinRejected();
+      // 重送命中（後端 v1.7）：這次沒有寫入，回應也不附資料，在背景同步一次，讓畫面對齊雲端
+      if (json.duplicate || json.needSync) setTimeout(() => syncWithServer(false), 0);
       return json;
     }
 
@@ -3099,14 +3217,22 @@
         const key = q => (q.itemId ? 'id:' + q.itemId : 'row:' + q.row) + '|' + q.charName;
         offlineQueue = offlineQueue.filter(q => !(q.action === 'updateItem' && key(q) === key(payload)));
       }
-      offlineQueue.push(payload);
+      offlineQueue.push(ensureReqId(payload));
       localStorage.setItem(STORAGE_KEYS.QUEUE, JSON.stringify(offlineQueue));
       updatePendingBadge();
     }
 
 
-    async function flushOfflineQueue() {
+    // manual：使用者自己按「同步」或「待同步」標籤。通行碼被拒絕過時，只有手動才會再試一次（工程顧問）。
+    async function flushOfflineQueue(manual = false) {
       if (offlineQueue.length === 0 || !navigator.onLine || !getGasUrl()) return;
+      if (manual) clearPinRejected();
+      else if (isPinRejected()) return;
+      // 舊版留下、沒有編號的待傳資料，先補上並存起來，這次沒送成功下次也用同一個編號
+      if (offlineQueue.some(q => !q.reqId)) {
+        offlineQueue.forEach(ensureReqId);
+        localStorage.setItem(STORAGE_KEYS.QUEUE, JSON.stringify(offlineQueue));
+      }
       const toSend = [...offlineQueue];
       try {
         const res = await postToGas({ action: 'batchSync', actions: toSend });
@@ -3135,7 +3261,7 @@
         if (skippedMsg) showToast(skippedMsg, 'warn', { sticky: true });
         else showToast(`✅ 已補傳 ${toSend.length} 筆離線變更`, 'success');
       } catch (err) {
-        showToast('⚠️ 部分離線資料補傳失敗，稍後再試', 'warn');
+        writeFailToast(err, '⚠️ 部分離線資料補傳失敗，稍後再試');
       }
     }
 
@@ -4006,12 +4132,13 @@
       localStorage.setItem(STORAGE_KEYS.CONTACTS, JSON.stringify(contactsData));
       renderContactsGraph();
       const action = id ? 'updateContact' : 'addContact';
-      if (!navigator.onLine || !getGasUrl()) { enqueueAction({ action, contact }); showToast('🟠 已離線儲存聯絡人', 'warn'); return; }
+      const payload = { action, contact };
+      if (!navigator.onLine || !getGasUrl()) { enqueueAction(payload); showToast('🟠 已離線儲存聯絡人', 'warn'); return; }
       try {
-        const res = await postToGas({ action, contact });
+        const res = await postToGas(payload);
         if (res.contacts) { contactsData = res.contacts; localStorage.setItem(STORAGE_KEYS.CONTACTS, JSON.stringify(contactsData)); renderContactsGraph(); }
         showToast('✅ 已同步家庭聯絡人', 'success');
-      } catch (e) { enqueueAction({ action, contact }); showToast('🟠 轉為離線暫存', 'warn'); }
+      } catch (e) { enqueueAction(payload); writeFailToast(e, '🟠 轉為離線暫存'); }
     }
 
 
@@ -4020,11 +4147,12 @@
       contactsData = contactsData.filter(x => x.id !== id);
       localStorage.setItem(STORAGE_KEYS.CONTACTS, JSON.stringify(contactsData));
       renderContactsGraph();
-      if (!navigator.onLine || !getGasUrl()) { enqueueAction({ action: 'deleteContact', id }); showToast('🟠 已離線刪除', 'warn'); return; }
+      const payload = { action: 'deleteContact', id };
+      if (!navigator.onLine || !getGasUrl()) { enqueueAction(payload); showToast('🟠 已離線刪除', 'warn'); return; }
       try {
-        await postToGas({ action: 'deleteContact', id });
+        await postToGas(payload);
         showToast('✅ 已刪除聯絡人', 'success');
-      } catch (e) { enqueueAction({ action: 'deleteContact', id }); }
+      } catch (e) { enqueueAction(payload); writeFailToast(e, ''); }
     }
 
 
@@ -4403,7 +4531,7 @@
           return;
         }
         enqueueAction(payload);
-        showToast('🟠 連線不穩，已轉為離線暫存', 'warn');
+        writeFailToast(err, '🟠 連線不穩，已轉為離線暫存');
       }
     }
 
@@ -4538,7 +4666,7 @@
         try {
           showToast('📡 正在新增物資...');
           const res = await postToGas(payload);
-          globalData = res.inventory;
+          if (res.inventory) globalData = res.inventory; // 重送命中時可能沒附資料，改由背景同步補上
           localStorage.setItem(STORAGE_KEYS.DATA, JSON.stringify(globalData));
           renderParty(); renderInventory();
           showToast('✅ 已新增物資：' + name, 'success');
@@ -4552,7 +4680,7 @@
           showToast('📡 正在更新物資資訊...');
           // itemName 送改名前的舊名，後端用舊名比對（工程顧問）
           const res = await postToGas({ action: 'editItem', row: item.row, ...itemRefFields(item), newName: name, newCategory: cat });
-          globalData = res.inventory;
+          if (res.inventory) globalData = res.inventory; // 重送命中時可能沒附資料，改由背景同步補上
           localStorage.setItem(STORAGE_KEYS.DATA, JSON.stringify(globalData));
           renderParty(); renderInventory();
           showToast('✅ 已更新物資', 'success');
@@ -4662,7 +4790,7 @@
       try {
         showToast('🗑️ 正在永久刪除...');
         const res = await postToGas({ action: 'deleteItem', row: item.row, ...itemRefFields(item) });
-        globalData = res.inventory;
+        if (res.inventory) globalData = res.inventory; // 重送命中時可能沒附資料，改由背景同步補上
         localStorage.setItem(STORAGE_KEYS.DATA, JSON.stringify(globalData));
         renderParty(); renderInventory();
         showToast('✅ 已永久刪除物資', 'success');
@@ -4723,16 +4851,21 @@
     }
 
 
+    // 家庭通行碼只能換成新的，不能清空（② #14）：雲端本來就不接受空值，畫面也不再提供清空的選項
+    const GAS_PIN_MIN_LENGTH = 6; // 和後端 PIN_MIN_LENGTH 相同
     async function saveGasServerPin() {
       const newPin = document.getElementById('setting-gas-pin').value.trim();
       const oldPin = getGasPin();
+      if (newPin.length < GAS_PIN_MIN_LENGTH) {
+        showToast(`🟠 新的家庭通行碼至少要 ${GAS_PIN_MIN_LENGTH} 碼。家庭通行碼只能換成新的，不能留空。`, 'warn');
+        return;
+      }
       if (!navigator.onLine || !getGasUrl()) { showToast('🟠 變更雲端通行碼需於連線狀態執行', 'warn'); return; }
       try {
         showToast('🔒 正在更新 GAS 雲端家庭通行碼...');
         await postToGas({ action: 'setFamilyPin', oldPin, newPin });
-        if (newPin) localStorage.setItem(STORAGE_KEYS.GAS_PIN, newPin);
-        else localStorage.removeItem(STORAGE_KEYS.GAS_PIN);
-        showToast(newPin ? '✅ 已啟用雲端家庭通行碼保護' : '🔓 已解除雲端通行碼', 'success');
+        localStorage.setItem(STORAGE_KEYS.GAS_PIN, newPin);
+        showToast('✅ 已換成新的家庭通行碼。請告訴其他家人，在他們的手機上也改成新的通行碼；家人的手機改好之前，修改送不到雲端。', 'success');
       } catch (e) { showToast('❌ 更新失敗：' + e.message, 'error'); }
     }
 
@@ -4827,7 +4960,7 @@
         } else {
           showToast('📡 正在新增成員與試算表欄位...');
           const res = await postToGas({ action: 'addMember', name: newName, avatar, buddy, defaultState, blood: cloudBlood, medical: cloudMed, iceContact: '', rallyNote: cloudRally, memberType, mobility, firstAidSkill, place });
-          globalData = res.inventory;
+          if (res.inventory) globalData = res.inventory; // 重送命中時可能沒附資料，改由背景同步補上
           membersMap = res.members || membersMap;
           localStorage.setItem(STORAGE_KEYS.DATA, JSON.stringify(globalData));
           localStorage.setItem(STORAGE_KEYS.MEMBERS, JSON.stringify(membersMap));
@@ -4844,7 +4977,7 @@
       try {
         showToast('🗑️ 正在移除成員...');
         const res = await postToGas({ action: 'deleteMember', name });
-        globalData = res.inventory;
+        if (res.inventory) globalData = res.inventory; // 重送命中時可能沒附資料，改由背景同步補上
         membersMap = res.members || membersMap;
         localStorage.setItem(STORAGE_KEYS.DATA, JSON.stringify(globalData));
         localStorage.setItem(STORAGE_KEYS.MEMBERS, JSON.stringify(membersMap));
@@ -4857,12 +4990,14 @@
 
 
     // 只接受 Google Apps Script 網頁應用程式網址，避免同步到其他網站
-    const GAS_URL_PATTERN = /^https:\/\/script\.google\.com\/(a\/[^\/?#]+\/)?macros\/s\/[A-Za-z0-9_-]+\/(exec|dev)$/;
+    // 一般帳號：https://script.google.com/macros/s/ID/exec
+    // 公司或學校（Workspace）帳號：https://script.google.com/a/macros/網域/s/ID/exec（② #14：原本誤寫成 /a/網域/macros/s/）
+    const GAS_URL_PATTERN = /^https:\/\/script\.google\.com\/(a\/macros\/[^\/?#]+\/|macros\/)s\/[A-Za-z0-9_-]+\/(exec|dev)$/;
 
     function saveSettings() {
       const url = document.getElementById('setting-gas-url').value.trim();
       if (url && !GAS_URL_PATTERN.test(url)) {
-        showToast('🟠 雲端網址格式不正確。請貼上 GAS「部署」後取得的網址，開頭是 https://script.google.com/macros/s/，結尾是 /exec', 'warn');
+        showToast('🟠 雲端網址格式不正確。請貼上 GAS「部署」後取得的網址，開頭是 https://script.google.com/macros/s/（公司或學校帳號是 https://script.google.com/a/macros/網域/s/），結尾是 /exec', 'warn');
         return;
       }
       const gasPin = document.getElementById('setting-gas-pin').value.trim();
@@ -5105,7 +5240,7 @@
       const url = getGasUrl();
       if (url) {
         try {
-          const res = await fetch(`${url}?action=getAeds&lat=${center.lat}&lng=${center.lng}&_t=${Date.now()}`);
+          const res = await fetchGasWithTimeout(`${url}?action=getAeds&lat=${center.lat}&lng=${center.lng}&_t=${Date.now()}`); // 逾時就改查 OSM（D-06）
           const json = await res.json();
           if (json.ok && Array.isArray(json.aeds) && json.aeds.length > 0) {
             aedsData = json.aeds;
@@ -5308,7 +5443,7 @@
       const payload = { action: 'addLocation', location: newLoc };
       if (!navigator.onLine || !getGasUrl()) { enqueueAction(payload); showToast('🟠 已離線儲存點位', 'warn'); return; }
       try { await postToGas(payload); showToast('✅ 已同步避難點位', 'success'); }
-      catch (err) { enqueueAction(payload); showToast('🟠 已轉入離線佇列', 'warn'); }
+      catch (err) { enqueueAction(payload); writeFailToast(err, '🟠 已轉入離線佇列'); }
     }
 
 
@@ -5320,7 +5455,7 @@
       const payload = { action: 'deleteLocation', id };
       if (!navigator.onLine || !getGasUrl()) { enqueueAction(payload); showToast('🟠 已於本機移除', 'warn'); return; }
       try { await postToGas(payload); showToast('🗑️ 已刪除點位', 'success'); }
-      catch (err) { enqueueAction(payload); }
+      catch (err) { enqueueAction(payload); writeFailToast(err, ''); }
     }
 
 
@@ -6018,7 +6153,7 @@
       const url = getGasUrl();
       if (url) {
         try {
-          const res = await fetch(`${url}?action=getAeds&lat=${lat}&lng=${lng}&_t=${Date.now()}`);
+          const res = await fetchGasWithTimeout(`${url}?action=getAeds&lat=${lat}&lng=${lng}&_t=${Date.now()}`); // 逾時就改查 OSM（D-06）
           const json = await res.json();
           if (json.ok && Array.isArray(json.aeds) && json.aeds.length > 0) return json.aeds;
         } catch (e) {}
@@ -6876,9 +7011,11 @@
       refreshSharedPlacePhotos();
     }
     // 家人上傳的照片：版本不同才重抓（POST＋通行碼，後端 getPlacePhoto）；這支手機上還沒分享的照片優先保留
+    // 讀照片走 readFromGas：6 秒逾時、不帶 reqId、不跳「不確定有沒有存到」（工程顧問 PR 67 必改 1）
+    // 這組通行碼被拒絕過就不自動抓；抓的時候被拒絕就記下來並停下，避免每次開 App 連續猜錯把全家鎖住（必改 2）
     let placePhotoFetching = false;
     async function refreshSharedPlacePhotos() {
-      if (placePhotoFetching || !navigator.onLine || !getGasUrl()) return;
+      if (placePhotoFetching || !navigator.onLine || !getGasUrl() || isPinRejected()) return;
       placePhotoFetching = true;
       try {
         for (const p of placesData.slice()) {
@@ -6889,13 +7026,17 @@
             continue;
           }
           if (mem && mem.ver === p.photoVer) continue;
+          let res;
           try {
-            const res = await postToGas({ action: 'getPlacePhoto', placeId: p.id });
-            if (res.photoBase64 && String(res.photoBase64).indexOf('/9j/') === 0) {
-              placePhotoMem[p.id] = { b64: res.photoBase64, ver: String(res.photoVer || p.photoVer), shared: true };
-              await photoDbPut(p.id, placePhotoMem[p.id]).catch(() => {});
-            }
-          } catch (e) { /* 讀不到就先不顯示，下次同步再試 */ }
+            res = await readFromGas('getPlacePhoto', { placeId: p.id });
+          } catch (e) { break; } // 逾時或連不上：這次先不抓其他張，下次同步再試
+          if (res && res.authRequired) { markPinRejected(); break; }
+          if (res && (res.locked || res.pinNotSet)) break;
+          if (res && res.ok && res.photoBase64 && String(res.photoBase64).indexOf('/9j/') === 0) {
+            placePhotoMem[p.id] = { b64: res.photoBase64, ver: String(res.photoVer || p.photoVer), shared: true };
+            await photoDbPut(p.id, placePhotoMem[p.id]).catch(() => {});
+          }
+          // 其他情況（照片還沒傳完、地點不見了）先不顯示，下次同步再試
         }
       } finally {
         placePhotoFetching = false;

@@ -4672,7 +4672,7 @@
       const newPin = document.getElementById('setting-gas-pin').value.trim();
       const oldPin = getGasPin();
       if (newPin.length < GAS_PIN_MIN_LENGTH) {
-        showToast(`🟠 新的家庭通行碼至少要 ${GAS_PIN_MIN_LENGTH} 碼。家庭通行碼只能換成新的，不能清空。`, 'warn');
+        showToast(`🟠 新的家庭通行碼至少要 ${GAS_PIN_MIN_LENGTH} 碼。家庭通行碼只能換成新的，不能留空。`, 'warn');
         return;
       }
       if (!navigator.onLine || !getGasUrl()) { showToast('🟠 變更雲端通行碼需於連線狀態執行', 'warn'); return; }
@@ -4680,7 +4680,7 @@
         showToast('🔒 正在更新 GAS 雲端家庭通行碼...');
         await postToGas({ action: 'setFamilyPin', oldPin, newPin });
         localStorage.setItem(STORAGE_KEYS.GAS_PIN, newPin);
-        showToast('✅ 已換成新的家庭通行碼。請告訴其他家人，在他們的手機上也改成新的通行碼。', 'success');
+        showToast('✅ 已換成新的家庭通行碼。請告訴其他家人，在他們的手機上也改成新的通行碼；家人的手機改好之前，修改送不到雲端。', 'success');
       } catch (e) { showToast('❌ 更新失敗：' + e.message, 'error'); }
     }
 

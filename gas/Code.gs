@@ -22,7 +22,7 @@ function openFamilySpreadsheet() {
 }
 
 // 後端版本號（WP-06）：每次請擁有者重貼 Code.gs 都要加一，並寫進 CHANGELOG 的 [gas] 標題
-const BACKEND_VERSION = 'v1.9';
+const BACKEND_VERSION = 'v1.10';
 
 const PIN_MIN_LENGTH = 6;
 const PIN_MAX_FAILURES = 10;           // 10 分鐘內猜錯 10 次就鎖定（#14：全域計數可被外人故意鎖住，放寬門檻）
@@ -269,26 +269,15 @@ function handleWriteAction(action, payload, auth) {
             itemId: act.itemId ? String(act.itemId) : '', itemName: result.itemName || (act.itemName ? String(act.itemName) : '')
           });
         }
-      } else if (act.action === 'addItem') {
-        const res = addNewItem(act.category, act.itemName, act.requiredChars || []);
-        added.push({ itemName: String(act.itemName || '').trim(), category: String(act.category || '').trim(), id: res.id, tempRow: act.row || null });
-      } else if (act.action === 'addLocation') {
-        addLocationRecord(act.location);
-      } else if (act.action === 'deleteLocation') {
-        deleteLocationRecord(act.id);
-      } else if (act.action === 'addContact') {
-        addContactRecord(act.contact);
-      } else if (act.action === 'updateContact') {
-        updateContactRecord(act.contact);
-      } else if (act.action === 'deleteContact') {
-        deleteContactRecord(act.id);
-      } else if (PLACE_BATCH_ACTIONS.includes(act.action)) {
-        // 地點動作逐筆接住錯誤（工程顧問）：例如家人已刪掉這個地點，這一筆放進 skipped 就好，
-        // 不讓整批丟錯，否則離線佇列每次重送都會卡在同一筆
-        const placeResult = runPlaceBatchAction(act);
-        if (!placeResult.ok) {
+      } else {
+        // 其他動作逐筆處理（v1.10，工項 57）：資料有問題的那筆放進 skipped，不讓整批卡住離線佇列；
+        // 暫時性錯誤會從這裡丟出去，整批回 ok:false，前面成功的已記 reqId，重送不會重複
+        const r = PLACE_BATCH_ACTIONS.includes(act.action) ? runPlaceBatchAction(act) : runOtherBatchAction(act);
+        if (!r.ok) {
           actOk = false;
-          skipped.push(placeResult.skip);
+          skipped.push(r.skip);
+        } else if (r.added) {
+          added.push(r.added);
         }
       }
       if (actOk && actReqId) rememberRequest(actReqId, REQ_DONE_MARK);
@@ -467,6 +456,17 @@ const REQ_DONE_MARK = '1';
 const IDEMPOTENT_SKIP_ACTIONS = ['batchSync', 'recognizeLabel'];
 
 /** reqId 格式不對就當沒帶（回空字串），照一般寫入處理，不擋請求。 */
+/**
+ * 「資料本身有問題」的錯誤（v1.10，工程顧問 工項 57）：批次補傳時只有這種會被略過並放進 skipped；
+ * 試算表逾時、呼叫次數上限等暫時性錯誤照樣丟出去，讓整批失敗、前端保留佇列稍後重送，不會悄悄遺失。
+ * 丟這種錯誤一定要在第一次寫入試算表之前，重試才不會多寫一筆。
+ */
+function batchSkipError(message) {
+  const e = new Error(message);
+  e.batchSkip = true;
+  return e;
+}
+
 function validReqId(value) {
   const id = typeof value === 'string' ? value : '';
   return REQ_ID_PATTERN.test(id) ? id : '';
@@ -1365,7 +1365,7 @@ function getContactsData(readOnly) {
 }
 
 function addContactRecord(contact) {
-  if (!contact || !contact.name) throw new Error('聯絡人姓名不可為空');
+  if (!contact || !contact.name) throw batchSkipError('聯絡人姓名不可為空');
   const ss = openFamilySpreadsheet();
   const sheet = getContactsSheet(ss);
   const id = contact.id || ('cnt_' + new Date().getTime());
@@ -1382,7 +1382,7 @@ function addContactRecord(contact) {
 }
 
 function updateContactRecord(contact) {
-  if (!contact || !contact.id) throw new Error('無效的聯絡人編號');
+  if (!contact || !contact.id) throw batchSkipError('無效的聯絡人編號');
   const ss = openFamilySpreadsheet();
   const sheet = getContactsSheet(ss);
   const data = sheet.getDataRange().getValues();
@@ -1449,6 +1449,12 @@ function getLocationsData(readOnly) {
 }
 
 function addLocationRecord(loc) {
+  // 先檢查再寫：沒有資料、沒有名稱或座標不是數字時不寫（避免寫進 NaN，工項 57）
+  if (!loc || typeof loc !== 'object') throw batchSkipError('沒有收到點位資料，這次沒有存。');
+  if (!String(loc.name === undefined || loc.name === null ? '' : loc.name).trim()) throw batchSkipError('點位名稱不可為空。');
+  if (!isFinite(Number(loc.lat)) || !isFinite(Number(loc.lng)) || loc.lat === '' || loc.lng === '' || loc.lat === null || loc.lng === null) {
+    throw batchSkipError('點位的座標不正確，這次沒有存。');
+  }
   const ss = openFamilySpreadsheet();
   const sheet = getLocationsSheet(ss);
   const id = loc.id || ('loc_' + new Date().getTime());
@@ -1504,7 +1510,7 @@ function validMemberPlace(value) {
 
 function requireMemberPlace(value) {
   const v = validMemberPlace(value);
-  if (v === null) throw new Error('存放地點的格式不正確，這次沒有存。請重新整理 App 後再選一次地點。');
+  if (v === null) throw batchSkipError('存放地點的格式不正確，這次沒有存。請重新整理 App 後再選一次地點。');
   return v;
 }
 
@@ -1529,8 +1535,49 @@ function runPlaceBatchAction(act) {
     }
     return { ok: true };
   } catch (err) {
+    if (!(err && err.batchSkip)) throw err; // 暫時性錯誤：整批失敗、前端保留佇列（v1.10）
     const placeName = act.place && act.place.name ? String(act.place.name).slice(0, PLACE_NAME_MAX) : '';
     return { ok: false, skip: Object.assign(base, { code: 'PLACE_ACTION_FAILED', placeName: placeName, error: String(err && err.message || '') }) };
+  }
+}
+
+const OTHER_BATCH_ACTIONS = ['addItem', 'addLocation', 'deleteLocation', 'addContact', 'updateContact', 'deleteContact'];
+const BATCH_SKIP_NAME_MAX = 30;
+
+/** 批次裡要顯示給使用者看的名稱（物資名、點位名、聯絡人姓名），只取前 30 字 */
+function batchActName(act) {
+  const src = act.action === 'addItem' ? act.itemName
+    : (act.action === 'addLocation' ? (act.location && act.location.name)
+      : ((act.action === 'addContact' || act.action === 'updateContact') ? (act.contact && act.contact.name) : ''));
+  return typeof src === 'string' ? src.trim().slice(0, BATCH_SKIP_NAME_MAX) : '';
+}
+
+/**
+ * 物資新增、點位、聯絡人的批次動作（v1.10，工項 57）。
+ * 資料有問題回 { ok:false, skip }，不回後端原文（前端也不顯示，U-03）；暫時性錯誤照樣丟出去。
+ * 不認得的動作放進 skipped（UNKNOWN_ACTION），不當成成功。
+ */
+function runOtherBatchAction(act) {
+  const a = act && typeof act === 'object' ? act : {};
+  const action = String(a.action || '');
+  const skip = code => ({ ok: false, skip: { action: action, code: code, name: batchActName(a) } });
+  if (!OTHER_BATCH_ACTIONS.includes(action)) return skip('UNKNOWN_ACTION');
+  try {
+    if (action === 'addItem') {
+      // 先檢查再寫：itemName 不是字串時 addNewItem 會丟出英文的 TypeError（工程顧問）
+      if (typeof a.itemName !== 'string' || !a.itemName.trim()) throw batchSkipError('物資名稱不可為空');
+      const res = addNewItem(a.category, a.itemName, a.requiredChars || []);
+      return { ok: true, added: { itemName: a.itemName.trim(), category: String(a.category || '').trim(), id: res.id, tempRow: a.row || null } };
+    }
+    if (action === 'addLocation') addLocationRecord(a.location);
+    else if (action === 'deleteLocation') deleteLocationRecord(a.id);
+    else if (action === 'addContact') addContactRecord(a.contact);
+    else if (action === 'updateContact') updateContactRecord(a.contact);
+    else if (action === 'deleteContact') deleteContactRecord(a.id);
+    return { ok: true };
+  } catch (err) {
+    if (!(err && err.batchSkip)) throw err;
+    return skip('ACTION_FAILED');
   }
 }
 
@@ -1609,14 +1656,14 @@ function cleanHeadcount(value) {
 
 function cleanPlaceName(value) {
   const name = String(value === undefined || value === null ? '' : value).trim();
-  if (!name) throw new Error('請幫這個存放地點取個名字，例如「家裡」或「爸爸的車」。');
-  if (name.length > PLACE_NAME_MAX) throw new Error('存放地點的名字請在 ' + PLACE_NAME_MAX + ' 個字以內。');
+  if (!name) throw batchSkipError('請幫這個存放地點取個名字，例如「家裡」或「爸爸的車」。');
+  if (name.length > PLACE_NAME_MAX) throw batchSkipError('存放地點的名字請在 ' + PLACE_NAME_MAX + ' 個字以內。');
   return name;
 }
 
 function cleanPlaceType(value) {
   const type = String(value || '').trim();
-  if (!PLACE_TYPES.includes(type)) throw new Error('存放地點的類型不正確，這次沒有存。請重新整理 App 後再試一次。');
+  if (!PLACE_TYPES.includes(type)) throw batchSkipError('存放地點的類型不正確，這次沒有存。請重新整理 App 後再試一次。');
   return type;
 }
 
@@ -1648,11 +1695,11 @@ function addPlaceRecord(place) {
 function updatePlaceRecord(place) {
   const p = place || {};
   const id = String(p.id || '');
-  if (!PLACE_ID_PATTERN.test(id)) throw new Error(PLACE_NOT_FOUND_MSG);
+  if (!PLACE_ID_PATTERN.test(id)) throw batchSkipError(PLACE_NOT_FOUND_MSG);
   const ss = openFamilySpreadsheet();
   const sheet = getPlacesSheet(ss);
   const row = findPlaceRow(sheet.getDataRange().getValues(), id);
-  if (row < 1) throw new Error(PLACE_NOT_FOUND_MSG);
+  if (row < 1) throw batchSkipError(PLACE_NOT_FOUND_MSG);
   // 先全部檢查完再寫，避免改到一半
   const name = p.name !== undefined ? cleanPlaceName(p.name) : undefined;
   const type = p.type !== undefined ? cleanPlaceType(p.type) : undefined;
@@ -1678,12 +1725,12 @@ function deletePlaceRecord(id, reassignTo) {
     target = '';
   } else if (reassignTo !== undefined && reassignTo !== null) {
     target = requireMemberPlace(reassignTo);
-    if (target === placeId) throw new Error('要改放的地點不能是正在刪除的地點，請選另一個地點。');
+    if (target === placeId) throw batchSkipError('要改放的地點不能是正在刪除的地點，請選另一個地點。');
   }
   const ss = openFamilySpreadsheet();
   // 要改放的地點若是 plc_ ID，必須真的存在，否則包會指向一個不存在的地點（工程顧問）
   if (target && PLACE_ID_PATTERN.test(target) && findPlaceRow(getPlacesSheet(ss).getDataRange().getValues(), target) < 1) {
-    throw new Error('要改放的地點已經不在了，請按「同步」看最新的地點清單後再刪一次。');
+    throw batchSkipError('要改放的地點已經不在了，請按「同步」看最新的地點清單後再刪一次。');
   }
   if (target !== undefined) {
     const mSheet = getMembersSheet(ss, []);
@@ -1720,11 +1767,11 @@ function deletePhotoChunks(ss, placeId, keepVer) {
 
 function checkPhotoBase64(value) {
   const b64 = String(value || '');
-  if (!b64) throw new Error('沒有收到照片，請再拍一次。');
-  if (b64.length > PHOTO_MAX_CHARS) throw new Error('照片太大了，這次沒有存。請重新整理 App 後再拍一次。');
+  if (!b64) throw batchSkipError('沒有收到照片，請再拍一次。');
+  if (b64.length > PHOTO_MAX_CHARS) throw batchSkipError('照片太大了，這次沒有存。請重新整理 App 後再拍一次。');
   // 只收 JPEG（base64 開頭 /9j/ 是 JPEG 的檔頭）
   if (!/^[A-Za-z0-9+\/]+={0,2}$/.test(b64) || b64.indexOf('/9j/') !== 0) {
-    throw new Error('照片格式不正確，請再拍一次。');
+    throw batchSkipError('照片格式不正確，請再拍一次。');
   }
   return b64;
 }
@@ -1735,12 +1782,12 @@ function checkPhotoBase64(value) {
  */
 function setPlacePhotoRecord(placeId, photoBase64) {
   const id = String(placeId || '');
-  if (!PLACE_ID_PATTERN.test(id)) throw new Error(PLACE_NOT_FOUND_MSG);
+  if (!PLACE_ID_PATTERN.test(id)) throw batchSkipError(PLACE_NOT_FOUND_MSG);
   const b64 = checkPhotoBase64(photoBase64);
   const ss = openFamilySpreadsheet();
   const pSheet = getPlacesSheet(ss);
   const row = findPlaceRow(pSheet.getDataRange().getValues(), id);
-  if (row < 1) throw new Error(PLACE_NOT_FOUND_MSG);
+  if (row < 1) throw batchSkipError(PLACE_NOT_FOUND_MSG);
 
   // 版本號要每次都不同，否則同一毫秒內連換兩次，刪舊版時會留下兩份同版本的段
   const ver = new Date().getTime() + '-' + Utilities.getUuid().slice(0, 8);

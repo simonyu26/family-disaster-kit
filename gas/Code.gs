@@ -1450,10 +1450,10 @@ function getLocationsData(readOnly) {
 
 function addLocationRecord(loc) {
   // 先檢查再寫：沒有資料、沒有名稱或座標不是數字時不寫（避免寫進 NaN，工項 57）
-  if (!loc || typeof loc !== 'object') throw batchSkipError('沒有收到點位資料，這次沒有存。');
-  if (!String(loc.name === undefined || loc.name === null ? '' : loc.name).trim()) throw batchSkipError('點位名稱不可為空。');
+  if (!loc || typeof loc !== 'object') throw batchSkipError('沒有收到這個避難點的資料，這次沒有存。請再新增一次。');
+  if (!String(loc.name === undefined || loc.name === null ? '' : loc.name).trim()) throw batchSkipError('請幫這個避難點取個名字。');
   if (!isFinite(Number(loc.lat)) || !isFinite(Number(loc.lng)) || loc.lat === '' || loc.lng === '' || loc.lat === null || loc.lng === null) {
-    throw batchSkipError('點位的座標不正確，這次沒有存。');
+    throw batchSkipError('這個避難點的位置不正確，這次沒有存。請重新選一次位置。');
   }
   const ss = openFamilySpreadsheet();
   const sheet = getLocationsSheet(ss);

@@ -1117,74 +1117,75 @@
     html { touch-action: manipulation; }
     input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select:not([multiple]), textarea:not([hidden]) { font-size: 1rem; }
     /* v2.9.30 存放地點（美術顧問樣稿 proposals/multi-location/mock，A-16；只用既有色彩變數） */
-    .ml-q { font-size: 16px; font-weight: 800; color: var(--text); margin: 0 0 4px; line-height: 1.45; }
-    .ml-hint { font-size: 13px; color: var(--text-muted); margin: 0 0 8px; line-height: 1.55; }
+    .ml-q { font-size: 1rem; font-weight: 800; color: var(--text); margin: 0 0 4px; line-height: 1.45; }
+    .ml-hint { font-size: 0.8125rem; color: var(--text-muted); margin: 0 0 8px; line-height: 1.55; }
     .ml-radio { display: flex; flex-direction: column; gap: 8px; }
-    .ml-opt { display: flex; align-items: center; gap: 10px; min-height: 56px; width: 100%; padding: 8px 12px; border: 2px solid var(--border); border-radius: 12px; background: var(--card-bg); box-sizing: border-box; font-size: 15px; font-weight: 700; color: var(--text); text-align: left; cursor: pointer; font-family: inherit; }
-    .ml-opt .ml-ic { font-size: 22px; width: 28px; text-align: center; flex: 0 0 28px; }
-    .ml-opt .ml-type { font-size: 13px; font-weight: 400; color: var(--text-muted); display: block; }
-    .ml-opt .ml-check { margin-left: auto; font-size: 13px; font-weight: 800; color: var(--primary); white-space: nowrap; }
+    .ml-opt { display: flex; align-items: center; gap: 10px; min-height: 56px; width: 100%; padding: 8px 12px; border: 2px solid var(--border); border-radius: 12px; background: var(--card-bg); box-sizing: border-box; font-size: 0.9375rem; font-weight: 700; color: var(--text); text-align: left; cursor: pointer; font-family: inherit; }
+    .ml-opt .ml-ic { font-size: 1.375rem; width: 28px; text-align: center; flex: 0 0 28px; }
+    .ml-opt .ml-type { font-size: 0.8125rem; font-weight: 400; color: var(--text-muted); display: block; }
+    .ml-opt .ml-check { margin-left: auto; font-size: 0.8125rem; font-weight: 800; color: var(--primary); white-space: nowrap; }
     .ml-opt.on { border-color: var(--primary); background: var(--primary-light); }
     .ml-opt.add { border-style: dashed; color: var(--primary); justify-content: center; }
-    .ml-result { margin-top: 10px; font-size: 14px; line-height: 1.55; color: var(--text); }
-    .ml-note { background: var(--bg); border-left: 4px solid var(--accent); border-radius: 8px; padding: 10px 12px; font-size: 14px; line-height: 1.55; color: var(--text); margin-top: 8px; }
-    .ml-note .btn { min-height: 48px; margin-top: 8px; width: 100%; font-size: 15px; }
+    .ml-result { margin-top: 10px; font-size: 0.875rem; line-height: 1.55; color: var(--text); }
+    .ml-note { background: var(--bg); border-left: 4px solid var(--accent); border-radius: 8px; padding: 10px 12px; font-size: 0.875rem; line-height: 1.55; color: var(--text); margin-top: 8px; }
+    .ml-note .btn { min-height: 48px; margin-top: 8px; width: 100%; font-size: 0.9375rem; }
     .ml-days { margin-top: 8px; }
-    .ml-home { font-size: 17px; font-weight: 800; color: var(--text); }
-    .ml-home .d { font-size: 22px; }
-    .ml-sub { font-size: 13px; color: var(--text-muted); line-height: 1.55; margin-top: 2px; }
-    .ml-sec { font-size: 14px; font-weight: 800; color: var(--text); margin: 14px 0 4px; }
-    .ml-row { display: flex; align-items: center; gap: 8px; min-height: 48px; border-top: 1px solid var(--border); font-size: 14px; color: var(--text); line-height: 1.5; padding: 6px 0; }
-    .ml-more { margin-left: auto; font-size: 13px; color: var(--primary); font-weight: 700; white-space: nowrap; background: none; border: none; min-height: 48px; padding: 0 4px; cursor: pointer; font-family: inherit; }
-    .ml-list { margin: 0 0 6px 30px; padding: 0; list-style: none; font-size: 14px; line-height: 1.7; }
-    .ml-st { display: inline-block; font-size: 12px; font-weight: 700; border-radius: 999px; padding: 1px 8px; border: 1px solid var(--border); color: var(--text); background: var(--card-bg); margin-left: 4px; }
+    .ml-home { font-size: 1.0625rem; font-weight: 800; color: var(--text); }
+    .ml-home .d { font-size: 1.375rem; }
+    .ml-sub { font-size: 0.8125rem; color: var(--text-muted); line-height: 1.55; margin-top: 2px; }
+    .ml-sec { font-size: 0.875rem; font-weight: 800; color: var(--text); margin: 14px 0 4px; }
+    .ml-row { display: flex; align-items: center; gap: 8px; min-height: 48px; border-top: 1px solid var(--border); font-size: 0.875rem; color: var(--text); line-height: 1.5; padding: 6px 0; }
+    .ml-more { margin-left: auto; font-size: 0.8125rem; color: var(--primary); font-weight: 700; white-space: nowrap; background: none; border: none; min-height: 48px; padding: 0 4px; cursor: pointer; font-family: inherit; }
+    .ml-list { margin: 0 0 6px 30px; padding: 0; list-style: none; font-size: 0.875rem; line-height: 1.7; }
+    .ml-st { display: inline-block; font-size: 0.75rem; font-weight: 700; border-radius: 999px; padding: 1px 8px; border: 1px solid var(--border); color: var(--text); background: var(--card-bg); margin-left: 4px; }
     .ml-st.no { border-style: dashed; }
     .ml-personal { margin-top: 12px; }
-    .ml-personal summary { min-height: 48px; display: flex; align-items: center; font-size: 14px; font-weight: 700; color: var(--primary); cursor: pointer; }
+    .ml-personal summary { min-height: 48px; display: flex; align-items: center; font-size: 0.875rem; font-weight: 700; color: var(--primary); cursor: pointer; }
     .ml-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 2px 0 6px; }
-    .ml-chip { min-height: 48px; padding: 0 16px; display: inline-flex; align-items: center; border-radius: 999px; font-size: 15px; font-weight: 700; font-family: inherit; }
-    .ml-where { font-size: 14px; color: var(--text); margin-bottom: 8px; line-height: 1.55; }
-    .ml-loc { display: inline-block; font-size: 12px; font-weight: 700; padding: 1px 7px; border-radius: 99px; border: 1px solid var(--border); background: var(--card-bg); color: var(--text); margin-top: 3px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; box-sizing: border-box; }
+    .ml-chip { min-height: 48px; padding: 0 16px; display: inline-flex; align-items: center; border-radius: 999px; font-size: 0.9375rem; font-weight: 700; font-family: inherit; }
+    .ml-where { font-size: 0.875rem; color: var(--text); margin-bottom: 8px; line-height: 1.55; }
+    .ml-loc { display: inline-block; font-size: 0.75rem; font-weight: 700; padding: 1px 7px; border-radius: 99px; border: 1px solid var(--border); background: var(--card-bg); color: var(--text); margin-top: 3px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; box-sizing: border-box; }
     .ml-loc.none { border-style: dashed; background: var(--bg); }
     .ml-here { display: flex; gap: 12px; align-items: center; margin: 8px 0; padding: 10px 12px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; min-height: 48px; flex-wrap: wrap; }
-    .ml-here-text { flex: 1; min-width: 140px; font-size: 15px; color: var(--text); }
+    .ml-here-text { flex: 1; min-width: 140px; font-size: 0.9375rem; color: var(--text); }
     .ml-here-photo { padding: 0; border: none; background: none; cursor: pointer; min-height: 56px; }
     .ml-here-photo img { width: 56px; height: 56px; border-radius: 10px; object-fit: cover; border: 1px solid var(--border); display: block; }
-    .ml-here-btn { min-height: 48px; font-size: 15px; }
+    .ml-here-btn { min-height: 48px; font-size: 0.9375rem; }
     .ml-panel { background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px; padding: 12px; margin: 8px 0; }
-    .ml-panel-title { font-size: 16px; font-weight: 800; color: var(--text); }
+    .ml-panel-title { font-size: 1rem; font-weight: 800; color: var(--text); }
     .ml-empty { padding: 8px 0; }
     .ml-place { display: flex; gap: 12px; align-items: flex-start; padding: 10px 0; border-top: 1px solid var(--border); }
     .ml-place-text { flex: 1; min-width: 0; }
     .ml-thumb { width: 64px; height: 64px; flex: 0 0 64px; border-radius: 12px; border: 1px solid var(--border); object-fit: cover; box-sizing: border-box; display: block; }
-    .ml-thumb.empty { background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 20px; line-height: 1.1; text-align: center; color: var(--text); }
-    .ml-thumb.empty span { font-size: 12px; color: var(--text); margin-top: 3px; font-weight: 700; }
+    .ml-thumb.empty { background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 1.25rem; line-height: 1.1; text-align: center; color: var(--text); }
+    .ml-thumb.empty span { font-size: 0.75rem; color: var(--text); margin-top: 3px; font-weight: 700; }
     .ml-thumb-btn { padding: 0; border: none; background: none; cursor: pointer; font-family: inherit; }
     .ml-thumb-btn.ml-thumb.empty { border: 1px solid var(--border); }
-    .ml-pname { font-size: 15px; font-weight: 800; color: var(--text); overflow-wrap: anywhere; }
-    .ml-ptype { font-size: 13px; color: var(--text); margin-top: 1px; }
-    .ml-pmeta { font-size: 13px; color: var(--text-muted); margin-top: 1px; }
-    .ml-share { display: inline-block; font-size: 12px; font-weight: 700; border-radius: 999px; padding: 1px 8px; margin-top: 4px; border: 1px solid var(--border); color: var(--text); background: var(--card-bg); }
+    .ml-pname { font-size: 0.9375rem; font-weight: 800; color: var(--text); overflow-wrap: anywhere; }
+    .ml-ptype { font-size: 0.8125rem; color: var(--text); margin-top: 1px; }
+    .ml-pmeta { font-size: 0.8125rem; color: var(--text-muted); margin-top: 1px; }
+    .ml-share { display: inline-block; font-size: 0.75rem; font-weight: 700; border-radius: 999px; padding: 1px 8px; margin-top: 4px; border: 1px solid var(--border); color: var(--text); background: var(--card-bg); }
     .ml-share.fam { background: var(--primary-light); color: var(--primary); border-color: var(--primary-light); }
-    .ml-edit-btn { min-height: 48px; font-size: 14px; flex: 0 0 auto; }
-    .ml-actions .btn { min-height: 48px; font-size: 15px; }
-    .ml-wide { width: 100%; min-height: 48px; margin-top: 8px; font-size: 15px; }
+    .ml-edit-btn { min-height: 48px; font-size: 0.875rem; flex: 0 0 auto; }
+    .ml-actions .btn { min-height: 48px; font-size: 0.9375rem; }
+    .ml-wide { width: 100%; min-height: 48px; margin-top: 8px; font-size: 0.9375rem; }
     .ml-types { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .ml-types .ml-opt { min-height: 52px; font-size: 14px; padding: 6px 10px; }
+    .ml-types .ml-opt { min-height: 52px; font-size: 0.875rem; padding: 6px 10px; }
     .ml-step { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-    .ml-step .btn { min-width: 48px; min-height: 48px; font-size: 20px; }
-    .ml-step .n { font-size: 18px; font-weight: 800; min-width: 24px; text-align: center; }
+    .ml-step .btn { min-width: 48px; min-height: 48px; font-size: 1.25rem; }
+    .ml-step .n { font-size: 1.125rem; font-weight: 800; min-width: 24px; text-align: center; }
     .ml-photo-box { display: flex; gap: 12px; align-items: center; }
-    .ml-photo-pick { min-height: 48px; display: inline-flex; align-items: center; justify-content: center; flex: 1; font-size: 15px; cursor: pointer; }
-    .ml-warnline { font-size: 14px; color: var(--text); line-height: 1.55; margin: 0 0 8px; }
+    .ml-photo-pick { min-height: 48px; display: inline-flex; align-items: center; justify-content: center; flex: 1; font-size: 0.9375rem; cursor: pointer; }
+    .ml-warnline { font-size: 0.875rem; color: var(--text); line-height: 1.55; margin: 0 0 8px; }
     .ml-sharebox { border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; margin-top: 12px; background: var(--card-bg); }
-    .ml-sharebox-title { font-size: 15px; font-weight: 800; color: var(--text); }
+    .ml-sharebox-title { font-size: 0.9375rem; font-weight: 800; color: var(--text); }
+    .ml-short { font-size: 0.875rem; font-weight: 700; color: var(--text); }
     .ml-delete-zone { margin-top: 16px; border-top: 1px solid var(--border); padding-top: 8px; }
-    .ml-textbtn { background: none; border: none; color: var(--text); text-decoration: underline; font-size: 14px; min-height: 48px; padding: 0 4px; font-weight: 700; cursor: pointer; font-family: inherit; }
+    .ml-textbtn { background: none; border: none; color: var(--text); text-decoration: underline; font-size: 0.875rem; min-height: 48px; padding: 0 4px; font-weight: 700; cursor: pointer; font-family: inherit; }
     .ml-2btn { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .ml-viewer-img { max-width: 90vw; width: 100%; border-radius: 12px; display: block; margin: 0 auto 10px; }
     .ml-vbtns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
-    .ml-vbtns .btn { min-height: 48px; font-size: 15px; }
+    .ml-vbtns .btn { min-height: 48px; font-size: 0.9375rem; }
   </style>
 
 
@@ -1940,9 +1941,9 @@
             <ul style="margin:4px 0 0 0; padding-left:18px;">
               <li><strong>三層裝備定位</strong>：分為「⚡ 輕量隨身包（放玄關抓了就走）」、「🎒 標準移動包（主力 3 日包）」與「🏠 家庭基地儲備（在宅留守水糧）」。</li>
               <li><strong>真實天數與木桶短板</strong>：水以每人每天 3 公升計（喝水和煮食用水，內政部消防署），糧食以每人每天 2100 大卡計；自動排除已過期物資與非飲用水（生活雜用水桶、馬桶凝固劑獨立計算），取水與糧較低者作為可撐天數。家裡至少備 3 天份（內政部消防署〈居家防災食物準備指引〉），能多備更好。</li>
-              <li><strong>存放地點</strong>：每個包都要選放在哪裡（家裡、車上、公司或學校、其他）。「全家基地」的天數只算放在家裡的包；車上、公司或學校看檢查清單，建議各備 1 天份。還沒選地點的包不算進任何地點。地點可以在「⛺ 物資總覽」的存放地點清單新增、改名、放照片。</li>
+              <li><strong>存放地點</strong>：每個包都要選放在哪裡（家裡、車上、公司或學校、其他）。「全家基地」的天數只算放在家裡的包；車上、公司或學校看檢查清單，建議各備 1 天份。還沒選地點的包不算進任何地點。地點可以在「⛺ 物資總覽」的存放地點清單新增、改名、放照片。本機模式新增的地點只存在這支手機，改成連到家庭的雲端試算表後，會換成雲端上的地點清單，請在雲端重新新增一次。</li>
               <li><strong>地點照片</strong>：照片會先縮小，並拿掉照片裡的拍攝位置等資料，預設只存在這支手機；按「上傳給家人」後，家人的手機才看得到。照片不會放進平安 QR、求救簡訊和避難卡。拍照時避免拍到門牌、車牌、證件與家人的臉。</li>
-              <li><strong>完全清除雲端照片（選用）</strong>：在 App 刪掉照片後，雲端試算表的版本記錄和每日備份裡可能還留著舊照片，只有試算表擁有者看得到，備份約 8 週後會自動清掉。要馬上完全清除，請試算表擁有者把試算表複製一份，到 GAS「專案設定 ＞ 指令碼屬性」把 SPREADSHEET_ID 改成新的那份，確認同步正常後，再永久刪除舊的試算表。App 不會自動做這件事。</li>
+              <li><strong>完全清除雲端照片（選用）</strong>：在 App 刪掉照片後，雲端試算表的「版本記錄」裡可能還留著舊照片，能編輯這份試算表的人看得到，不會自動清掉。想完全清除，請試算表擁有者把試算表複製一份，到 GAS「專案設定 ＞ 指令碼屬性」把 SPREADSHEET_ID 改成新的那份，確認同步正常後，再永久刪除舊的試算表。App 不會自動做這件事。有設定每日自動備份的話，備份檔裡也會有這張照片：備份資料夾只有擁有者看得到，舊備份要等保留期過了（最多約 8 週）才移到垃圾桶，垃圾桶再留 30 天；想提早清掉，請擁有者到雲端硬碟「每日自動備份」資料夾，刪掉刪照片那天以前的試算表備份。</li>
               <li><strong>📷 AI 拍標籤與位置快選</strong>：點開物資列按「拍標籤/規格」，拍照即可辨識效期與容量，並用晶片標註放在包裡的哪個位置（例如玄關櫃、後車廂），停電摸黑免翻找。晶片會依包的存放地點顯示。</li>
             </ul>
           </div>
@@ -2273,7 +2274,7 @@
   <!-- v2.9.30 快速選地點（天數卡「去選」、選中的包那一列；本機模式、離線也能改） -->
   <div id="pack-place-modal" class="modal-backdrop">
     <div class="modal-card">
-      <h3 class="modal-title">📍 選這個包放在哪裡</h3>
+      <h3 class="modal-title">選這個包放在哪裡</h3>
       <input type="hidden" id="pack-place-modal-name" value="">
       <div class="form-group" id="quick-place-picker"></div>
       <div class="modal-actions ml-actions">
@@ -2330,7 +2331,7 @@
         <div id="place-delete-confirm" class="ml-note" hidden>
           <span id="place-delete-text"></span>
           <div class="ml-2btn">
-            <button type="button" class="btn btn-danger" onclick="confirmDeletePlace()">刪除</button>
+            <button type="button" class="btn btn-muted" onclick="confirmDeletePlace()">刪除</button>
             <button type="button" class="btn btn-muted" onclick="cancelDeletePlace()">不要刪</button>
           </div>
         </div>
@@ -4038,7 +4039,7 @@
         <div class="rally-card">
           <div style="display:flex; justify-content:space-between; align-items:center; gap:6px;">
             <div>
-              <strong>${escapeHtml(loc.type)}</strong>・<strong style="color:var(--primary-dark);">${escapeHtml(loc.name)}</strong>
+              <strong>${escapeHtml(locTypeLabel(loc.type))}</strong>・<strong style="color:var(--primary-dark);">${escapeHtml(loc.name)}</strong>
               ${loc.note ? `<div style="font-size:0.78rem; color:var(--text-muted); margin-top:2px;">備註：${escapeHtml(loc.note)}</div>` : ''}
             </div>
             <button class="btn btn-primary" style="padding:4px 8px; font-size:0.74rem; white-space:nowrap;" data-act="map-view" data-lat="${Number(loc.lat)}" data-lng="${Number(loc.lng)}">🧭 地圖查看</button>
@@ -5152,7 +5153,7 @@
         return;
       }
       locationsData.forEach(loc => {
-        if (markersLayer) L.marker([loc.lat, loc.lng]).addTo(markersLayer).bindPopup(buildPopupEl([{ tag: 'b', text: `${loc.type} ${loc.name}` }, { text: loc.note || '' }]));
+        if (markersLayer) L.marker([loc.lat, loc.lng]).addTo(markersLayer).bindPopup(buildPopupEl([{ tag: 'b', text: `${locTypeLabel(loc.type)} ${loc.name}` }, { text: loc.note || '' }]));
         let distHTML = '<span style="color:var(--text-muted); font-size:0.75rem;">未定位</span>';
         if (userPos) {
           const d = calcDistanceMeters(userPos.lat, userPos.lng, loc.lat, loc.lng);
@@ -5164,7 +5165,7 @@
         card.className = 'loc-card';
         card.innerHTML = `
           <div style="flex:1; cursor:pointer;" data-act="focus-loc" data-lat="${Number(loc.lat)}" data-lng="${Number(loc.lng)}">
-            <div style="font-weight:800; font-size:0.95rem;">${escapeHtml(loc.type)} ${escapeHtml(loc.name)}</div>
+            <div style="font-weight:800; font-size:0.95rem;">${escapeHtml(locTypeLabel(loc.type))} ${escapeHtml(loc.name)}</div>
             <div style="font-size:0.78rem; color:var(--text-muted); margin-top:2px;">${escapeHtml(loc.note || '無備註')}・(${Number(loc.lat).toFixed(4)}, ${Number(loc.lng).toFixed(4)})</div>
           </div>
           ${distHTML}
@@ -6317,7 +6318,7 @@
       work: [PLACE_CHECK_WATER, PLACE_CHECK_FOOD, { label: '好走的鞋', kws: ['鞋'] }, PLACE_CHECK_LIGHT, { label: '口罩', kws: ['口罩'] }, PLACE_CHECK_MEDS],
       other: [PLACE_CHECK_WATER, PLACE_CHECK_FOOD, PLACE_CHECK_LIGHT, PLACE_CHECK_FIRSTAID, PLACE_CHECK_MEDS]
     };
-    const PLACE_DELETED_PHOTO_MSG = '照片已從 App 刪除，家人看不到了。雲端試算表的版本記錄和每日備份裡可能還留著舊照片，只有試算表擁有者看得到；備份約 8 週後會自動清掉。要完全清除，請看使用說明。';
+    const PLACE_DELETED_PHOTO_MSG = '照片已從 App 刪除，家人的手機也看不到了。但雲端試算表的「版本記錄」裡可能還留著舊照片，能編輯這份試算表的人看得到，不會自動清掉。有設定每日自動備份的話，備份檔裡也還有。想完全清除，請看使用說明。（點一下這則可以收起）'; // 災防顧問 PR 67 定稿＋每日備份（gas-backup，選用）事實補充
 
     let placesData = [];
     try { placesData = JSON.parse(localStorage.getItem(STORAGE_KEYS.PLACES) || '[]'); } catch (e) { placesData = []; }
@@ -6424,6 +6425,11 @@
       if (/[\u4e00-\u9fff]/.test(msg) && !/[A-Za-z]{6,}/.test(msg)) return msg;
       return fallback;
     }
+    // 舊資料的 Plan C 點位還存著退役的 🚗，顯示時改成 🧭（🚗 現在專指「車上存放」，工程顧問 PR 67 建議）
+    function locTypeLabel(t) {
+      const s = String(t || '');
+      return s.startsWith('🚗 Plan C') ? '🧭' + s.slice(2) : s;
+    }
     function photoSrcOf(id) {
       const p = placePhotoMem[id];
       return p && p.b64 ? 'data:image/jpeg;base64,' + p.b64 : '';
@@ -6434,7 +6440,7 @@
       const hc = placeHeadcount(g);
       const d = formatDaysFromTotals(calcPackSupplyTotals(g.packs), hc);
       const title = g.place ? `🏠 全家基地（${escapeHtml(g.name)}）` : '🏠 全家基地';
-      return `<div class="ml-home">${title}：<span class="d">${escapeHtml(d.minDays)}</span> 天</div>
+      return `<div class="ml-home">${title}：<span class="d">${escapeHtml(d.minDays)}</span> 天${Number(d.minDays) < 3 ? ' <span class="ml-short">⚠️ 還不到 3 天</span>' : ''}</div>
         <div class="ml-sub">只算放在家裡的包・以 ${Number(hc)} 人計算<br>至少 3 天，能多備更好・水以每人每天 3 公升計（喝水和煮食用水）<br>💧 飲水 ${escapeHtml(d.waterDays)} 天（${escapeHtml(d.drinkLiters)} 公升）・🥫 糧食 ${escapeHtml(d.foodDays)} 天</div>`;
     }
     function placeNoticeHTML(hasHome, unset, missing) {
@@ -6472,7 +6478,7 @@
     function placePickerOptions() {
       const opts = placesData.map(p => ({ value: p.id, icon: PLACE_TYPE_META[placeTypeOf(p)].icon, name: p.name, sub: PLACE_TYPE_META[placeTypeOf(p)].label, type: placeTypeOf(p) }));
       PLACE_TYPES.forEach(t => {
-        if (!placesData.some(p => placeTypeOf(p) === t)) opts.push({ value: t, icon: PLACE_TYPE_META[t].icon, name: PLACE_TYPE_META[t].label, sub: '還沒有自訂名稱', type: t });
+        if (!placesData.some(p => placeTypeOf(p) === t)) opts.push({ value: t, icon: PLACE_TYPE_META[t].icon, name: PLACE_TYPE_META[t].label, sub: `選了就用「${PLACE_TYPE_META[t].label}」當名稱`, type: t });
       });
       return opts;
     }
@@ -6531,12 +6537,9 @@
     async function savePackPlaceModal() {
       const name = document.getElementById('pack-place-modal-name').value;
       const st = placePickerState['quick-place-picker'];
-      if (!st || !validPlaceValue(st.value)) { showToast('請先選一個地點，再按「儲存」。', 'warn'); return; }
+      if (!st || !validPlaceValue(st.value)) { showToast('請先選一個地點，再按「儲存」。'); return; }
       closeModal('pack-place-modal');
-      await savePackPlace(name, st.value);
-      const left = groupPacksByPlace();
-      const n = left.unset.length + left.missing.length;
-      if (n) setTimeout(() => showToast(`還有 ${n} 個包沒有選放在哪裡，可以在天數卡按「去選」。`, 'warn'), 1800);
+      await savePackPlace(name, st.value); // 還沒選的包改由天數卡的「去選」提示，不再另跳浮動提示（美術顧問 PR 67）
     }
     async function savePackPlace(name, value) {
       if (!validPlaceValue(value)) return;
@@ -7255,7 +7258,7 @@
         return `${n}(${m.blood || '血型未填'}):${m.medical || '過敏未填'}`; // 沒填不等於沒有過敏（D-01，災防顧問）
       }).join('\n');
       const contactLines = (contactsData || []).slice(0, 3).map(c => `${c.name}(${c.relation}):${c.phone}`).join('\n');
-      const rallyLines = (locationsData || []).slice(0, 2).map(l => `${l.type}:${l.name}`).join('\n');
+      const rallyLines = (locationsData || []).slice(0, 2).map(l => `${locTypeLabel(l.type)}:${l.name}`).join('\n');
       const qrText = `[森林露營小隊・家庭平安卡]\n${memberLines}\n[聯絡人]\n${contactLines || '未設定'}\n[集合點]\n${rallyLines || '未設定'}`;
 
 
@@ -7309,7 +7312,7 @@
         <h3>2. 緊急聯絡網</h3>
         ${(contactsData || []).map(c => `<div>・<strong>${escapeHtml(c.name)}</strong>（${escapeHtml(c.relation)}）📞 ${escapeHtml(c.phone)} ${c.region ? '📍' + escapeHtml(c.region) : ''} ${escapeHtml(c.note || '')}</div>`).join('') || '<div>尚未設定</div>'}
         <h3>3. 約定集合點（Plan A / B / C）</h3>
-        ${(locationsData || []).map(l => `<div>・<strong>${escapeHtml(l.type)}</strong>：${escapeHtml(l.name)}（${Number(l.lat).toFixed(5)}, ${Number(l.lng).toFixed(5)}）${escapeHtml(l.note || '')}</div>`).join('') || '<div>尚未設定</div>'}
+        ${(locationsData || []).map(l => `<div>・<strong>${escapeHtml(locTypeLabel(l.type))}</strong>：${escapeHtml(l.name)}（${Number(l.lat).toFixed(5)}, ${Number(l.lng).toFixed(5)}）${escapeHtml(l.note || '')}</div>`).join('') || '<div>尚未設定</div>'}
         <h3>4. 歸宅困難與失聯匯合協議</h3>
         <div>・0～1 小時：${escapeHtml(reu.h1 || '各自安全待命並報平安')}</div>
         <div>・1～6 小時：${escapeHtml(reu.h6 || '視交通狀況徒步返家或暫留安全處')}</div>

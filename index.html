@@ -2473,6 +2473,7 @@
       MY_CHAR: 'camp_my_char',
       COLLAPSED: 'camp_collapsed_cats',
       LAST_SYNC: 'camp_last_sync',
+      LOCAL_NOTICE: 'camp_local_mode_notice_shown', // 本機模式的「還沒連接雲端」浮動提示只跳第一次（美術顧問 N2）
       LAST_BACKUP: 'camp_last_backup_at',        // 上次匯出備份成功的時間（毫秒）；匯入不算（工程顧問 #22）
       BACKUP_NUDGE_DAY: 'camp_backup_nudge_day', // 上次跳備份提醒的時間（毫秒），7 天最多一次（使用者顧問 #22）
       SAMPLE_SIG: 'camp_sample_sig'              // 剛載入範本時的資料指紋；資料沒改過就不提醒備份範例資料
@@ -2564,7 +2565,7 @@
 
 
     // 版本號只寫這一處（② #29）：升版只改 APP_VERSION，畫面標籤、網頁標題與 Service Worker 快取名稱都從這裡來
-    const APP_VERSION = 'v2.9.18';
+    const APP_VERSION = 'v2.9.19';
     (function showAppVersion() {
       const pill = document.getElementById('app-version-pill');
       if (pill) pill.textContent = APP_VERSION;
@@ -2714,7 +2715,16 @@
       if (!getGasUrl()) {
         // 緊急模式優先：沒設雲端也要留在緊急頁（D-05），不跳到營地、不提示設定
         if (isEmergencyMode) { switchTab('guide'); setGuideSubMode('sop'); }
-        else { switchTab('camp'); showToast('還沒連接雲端，資料只存在這支手機。想和家人同步，請在「營地」設定雲端網址。', 'warn'); }
+        else {
+          switchTab('camp');
+          // 只在第一次開啟時跳；示警區的「尚未連接雲端」狀態照常每次顯示（D-02）
+          let noticed = false;
+          try { noticed = localStorage.getItem(STORAGE_KEYS.LOCAL_NOTICE) === '1'; } catch (e) {}
+          if (!noticed) {
+            showToast('還沒連接雲端，資料只存在這支手機。想和家人同步，請在「營地」設定雲端網址。', 'warn');
+            try { localStorage.setItem(STORAGE_KEYS.LOCAL_NOTICE, '1'); } catch (e) {}
+          }
+        }
       } else {
         if (isEmergencyMode) {
           switchTab('guide');
@@ -2851,6 +2861,8 @@
       const container = document.getElementById('toast-container');
       const toast = document.createElement('div');
       toast.className = `toast ${type}`;
+      // 畫面上最多 1 則 sticky 加 1 則一般提示（美術顧問 PR 49、工程顧問）：新的一般提示只取代舊的一般提示
+      container.querySelectorAll('.toast:not(.toast-sticky)').forEach(t => t.remove());
       if (opts.sticky) {
         container.querySelectorAll('.toast-sticky').forEach(t => t.remove()); // 只留最新一張，避免疊滿畫面（使用者顧問複審）
         toast.classList.add('toast-sticky');
@@ -7025,6 +7037,13 @@
     // 進 App 時的備份提醒：平時模式、家人自己的資料、超過 30 天或從沒匯出，7 天最多一次（使用者顧問）
     function maybeNudgeBackup() {
       if (isEmergencyMode || !hasOwnFamilyData()) return;
+      // 本機模式第一次開啟時會跳「還沒連接雲端」，浮動提示一次只留一則，備份提醒會被蓋掉看不到；
+      // 這次先不跳、也不記時間，下次開 App 再提醒（PR 49 與 PR 51 合併後的整合修正）
+      if (!getGasUrl()) {
+        let noticed = false;
+        try { noticed = localStorage.getItem(STORAGE_KEYS.LOCAL_NOTICE) === '1'; } catch (e) {}
+        if (!noticed) return;
+      }
       const last = getLastBackupAt();
       if (last !== null && backupAgeDays(last) <= BACKUP_REMIND_DAYS) return;
       let lastNudge = NaN;

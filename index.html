@@ -3164,6 +3164,13 @@
     };
     let currentTlKey = 'eq';
     let tlState = JSON.parse(localStorage.getItem('camp_timeline_checks') || '{}');
+    // 舊震災第 6 步是「撥 1991 報平安」，1991 已停用，勾過的人其實沒報到平安；新第 6 步改成傳簡訊報平安，所以一次性清掉舊勾選，不顯示錯誤的「已完成」（D-01，工程顧問）
+    try {
+      if (localStorage.getItem('camp_timeline_1991_cleared') !== '1') {
+        if (tlState.eq && tlState.eq[5]) { delete tlState.eq[5]; localStorage.setItem('camp_timeline_checks', JSON.stringify(tlState)); }
+        localStorage.setItem('camp_timeline_1991_cleared', '1');
+      }
+    } catch (e) {}
 
 
     function setTimelineScenario(key) {

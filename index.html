@@ -2,6 +2,7 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="utf-8">
+  <script>/* 預設字級 115%（Simon 11/24）：平時模式才放大，緊急模式第一個畫面就維持 100%，不跳動（D-05） */try{if(localStorage.getItem('camp_emergency_mode')!=='1')document.documentElement.classList.add('fs-up');}catch(e){document.documentElement.classList.add('fs-up');}</script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#52796F">
   <title>🏕️ 森林露營小隊・防災生存整備系統</title>
@@ -209,7 +210,7 @@
 
     /* 地圖面板與搜尋／路線 */
     #map { width: 100%; height: 310px; border-radius: 14px; border: 2px solid #D1BF9A; z-index: 1; background: #E5E0D5; }
-    .map-unavailable { display: flex; align-items: center; justify-content: center; height: 100%; padding: 16px; text-align: center; color: var(--text); font-size: 14px; line-height: 1.6; }
+    .map-unavailable { display: flex; align-items: center; justify-content: center; height: 100%; padding: 16px; text-align: center; color: var(--text); font-size: 0.875rem; line-height: 1.6; }
     body.emergency-mode .map-unavailable { font-size: 16px; }
     .map-search-bar { display: flex; gap: 6px; margin-bottom: 8px; }
     .map-search-results {
@@ -289,7 +290,7 @@
     /* 分類標籤：中性樣式，只說「是哪一類」；紅色只代表「這是示警」（美術、使用者顧問，工項 20） */
     .alert-type-badge {
       display: inline-block; background: var(--bg); color: var(--text); border: 1px solid var(--border);
-      font-size: 12px; font-weight: bold; padding: 1px 8px; border-radius: 999px; margin-right: 4px;
+      font-size: 0.75rem; font-weight: bold; padding: 1px 8px; border-radius: 999px; margin-right: 4px;
     }
     .city-chips { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-bottom: 8px; }
     .city-chip {
@@ -416,7 +417,7 @@
     .fab-container { position: fixed; bottom: 74px; right: 16px; display: flex; flex-direction: column; gap: 8px; z-index: 900; }
     .fab {
       background: var(--primary); color: #FFF; width: 48px; height: 48px; border-radius: 50%;
-      display: flex; justify-content: center; align-items: center; font-size: 18px;
+      display: flex; justify-content: center; align-items: center; font-size: 1.125rem;
       box-shadow: 0 4px 10px rgba(82,121,111,0.35); cursor: pointer; border: 2px solid #FFF;
     }
     .fab.secondary { background: var(--accent); }
@@ -445,10 +446,10 @@
       font-size: 0.85rem; font-weight: bold; text-align: center;
     }
     .toast.success { background: rgba(61, 90, 82, 0.96); }
-    .health-sync-note { font-size: 12px; line-height: 1.55; color: var(--text); margin: 4px 0 0 24px; }
+    .health-sync-note { font-size: 0.75rem; line-height: 1.55; color: var(--text); margin: 4px 0 0 24px; }
     .health-sync-note p { margin: 0 0 4px; }
     /* #22 資料保存區塊：字色一律 --text，需要注意時用「無法確認」方框的左邊條（美術顧問） */
-    .data-keep-box { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; color: var(--text); font-size: 13px; line-height: 1.6; }
+    .data-keep-box { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; color: var(--text); font-size: 0.8125rem; line-height: 1.6; }
     .data-keep-box.need-action { border-left: 4px solid var(--accent); }
     .data-keep-title { font-weight: 800; margin-bottom: 4px; }
     .data-keep-line { margin: 2px 0; }
@@ -460,10 +461,10 @@
     .data-keep-actions .btn[hidden], .data-keep-box [hidden] { display: none !important; }
     /* #33 求救簡訊複製失敗時的唯讀文字框：4 行、收起鍵在下方（使用者、美術、災防顧問） */
     .sos-copy-fallback { margin: 0 0 10px; }
-    .sos-copy-hint { font-size: 14px; line-height: 1.5; color: var(--text); margin-bottom: 6px; font-weight: 700; }
+    .sos-copy-hint { font-size: 0.875rem; line-height: 1.5; color: var(--text); margin-bottom: 6px; font-weight: 700; }
     body.emergency-mode .sos-copy-hint { font-size: 16px; color: var(--em-text); }
     .sos-copy-fallback[hidden] { display: none !important; }
-    .sos-copy-text { display: block; width: 100%; box-sizing: border-box; font-size: 16px; line-height: 1.5; padding: 6px 8px; border-radius: 8px; resize: none; background: var(--card-bg); color: var(--text); border: 1px solid var(--border); font-family: inherit; }
+    .sos-copy-text { display: block; width: 100%; box-sizing: border-box; font-size: 1rem; line-height: 1.5; padding: 6px 8px; border-radius: 8px; resize: none; background: var(--card-bg); color: var(--text); border: 1px solid var(--border); font-family: inherit; }
     .sos-copy-close { display: block; width: 100%; min-height: 48px !important; margin-top: 6px; }
     body.emergency-mode .sos-copy-text { background: var(--em-card); color: var(--em-text); border: 2px solid var(--em-text); }
     body.emergency-mode .sos-copy-text:focus { outline: 2px solid var(--em-text); outline-offset: 2px; }
@@ -479,11 +480,11 @@
     }
     /* 年度盤點紀錄卡（② #15，美術顧問樣稿 reviews/yearly-snapshot-art.md） */
     .snapshot-card { margin-top: 14px; }
-    .snapshot-title { font-size: 15px; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-    .snapshot-pill { font-size: 12px; font-weight: 800; border-radius: 999px; padding: 2px 10px; background: var(--primary-light); color: var(--primary); }
-    .snapshot-desc { font-size: 14px; color: var(--text-muted); line-height: 1.6; margin: 6px 0 10px; }
-    .snapshot-btn { width: 100%; min-height: 48px; font-size: 15px; font-weight: 800; }
-    .snapshot-reason { font-size: 13px; color: var(--text-muted); line-height: 1.55; margin-top: 6px; }
+    .snapshot-title { font-size: 0.9375rem; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .snapshot-pill { font-size: 0.75rem; font-weight: 800; border-radius: 999px; padding: 2px 10px; background: var(--primary-light); color: var(--primary); }
+    .snapshot-desc { font-size: 0.875rem; color: var(--text-muted); line-height: 1.6; margin: 6px 0 10px; }
+    .snapshot-btn { width: 100%; min-height: 48px; font-size: 0.9375rem; font-weight: 800; }
+    .snapshot-reason { font-size: 0.8125rem; color: var(--text-muted); line-height: 1.55; margin-top: 6px; }
 
 
     .modal-backdrop {
@@ -959,17 +960,17 @@
       --shadow-sm: 0 2px 6px rgba(47, 42, 38, 0.04);
     }
     body {
-      background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5;
+      background: var(--bg); color: var(--text); font-size: 0.875rem; line-height: 1.5;
     }
     /* 字級下限 12px，顯示用標籤去框 6px 圓角 */
     .ver-pill, .pack-role-badge, .mood-bubble, .meta-pill {
-      font-size: 12px !important; border-radius: 6px !important;
+      font-size: 0.75rem !important; border-radius: 6px !important;
       background: var(--kinari) !important; color: var(--text) !important; border: none !important;
       padding: 2px 8px !important;
     }
     .pack-role-badge.main { background: var(--primary-light) !important; color: var(--primary) !important; }
     .meta-pill.warn, .meta-pill.danger { background: #f5ebd9 !important; color: #7a4b12 !important; border: 1px dashed var(--hinoki) !important; }
-    .sustain-hours-badge { background: var(--primary-light) !important; color: var(--primary) !important; border-radius: 6px !important; font-size: 12px !important; }
+    .sustain-hours-badge { background: var(--primary-light) !important; color: var(--primary) !important; border-radius: 6px !important; font-size: 0.75rem !important; }
     .btn-primary { background: var(--primary); color: #fff; }
     .btn-warn { background: var(--kinari); color: var(--text); border: 1px solid var(--hinoki); }
     .btn-muted { background: var(--kinari); color: var(--text); border: 1px solid var(--border); }
@@ -979,8 +980,8 @@
     .filter-toggle-btn.active { background: var(--primary-light); color: var(--primary); border-color: var(--primary); }
     .slider { background-color: #d8d4ce; border-color: #b8b2a9; }
     input:checked + .slider { background-color: var(--primary); border-color: var(--primary-dark); }
-    .item-updated-meta { font-size: 12px; color: var(--text-muted); margin-top: 6px; width: 100%; text-align: right; font-variant-numeric: tabular-nums; }
-    .pack-updated-date { font-size: 12px; color: var(--text-muted); margin-top: 2px; font-variant-numeric: tabular-nums; }
+    .item-updated-meta { font-size: 0.75rem; color: var(--text-muted); margin-top: 6px; width: 100%; text-align: right; font-variant-numeric: tabular-nums; }
+    .pack-updated-date { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; font-variant-numeric: tabular-nums; }
 
 
     /* 專有名詞 ? 小幫手按鈕（確保易點擊） */
@@ -988,7 +989,7 @@
       display: inline-flex; align-items: center; justify-content: center;
       width: 22px; height: 22px; border-radius: 999px;
       background: var(--kinari); border: 1px solid var(--hinoki);
-      color: var(--text); font-size: 12px; font-weight: 800; cursor: pointer;
+      color: var(--text); font-size: 0.75rem; font-weight: 800; cursor: pointer;
       margin-left: 4px; vertical-align: middle; position: relative;
     }
     .help-q-btn::after { content: ''; position: absolute; inset: -10px; } /* 擴張隱形點擊熱區至 42px+ */
@@ -1074,7 +1075,7 @@
       border: 1px solid #d8d4ce;
       border-radius: 999px;
       padding: 2px 7px;
-      font-size: 12px;
+      font-size: 0.75rem;
       color: #2f2a26;
       cursor: pointer;
       font-weight: 700;
@@ -1084,7 +1085,7 @@
       display: inline-block;
       background: #e5efe0;
       color: #2f5a3a;
-      font-size: 12px;
+      font-size: 0.75rem;
       font-weight: 800;
       padding: 1px 7px;
       border-radius: 999px;
@@ -1134,6 +1135,19 @@
     }
 
 
+    /* ===== 預設字級 115%（Simon 11/24：「先改字形大小，版面再下一步討論」） =====
+       平時模式在 html 加 .fs-up，rem 一起放大；緊急模式（body.emergency-mode、.em-*、.sos-*）維持 px、固定 100%（工程顧問） */
+    html.fs-up { font-size: 115%; }
+    @media print { html.fs-up { font-size: 100%; } } /* 列印維持原大小，計畫書與避難卡頁數不變 */
+    /* 最小避讓 1：頂部列放不下時換成兩排（站名一排、按鈕一排），不把按鈕擠成直排 */
+    .top-bar { flex-wrap: wrap; row-gap: 6px; }
+    .top-bar .brand-col { flex: 1 1 auto; min-width: 0; }
+    /* 最小避讓 2：底部導覽高度跟著字長高，不寫死 */
+    .bottom-nav { height: auto; min-height: 64px; }
+    .nav-item { height: auto; min-height: 54px; }
+    /* 最小避讓 3：物資分類膠囊放不下時整顆換到下一排，不擠成三行字 */
+    .layer-chips { flex-wrap: wrap; overflow-x: visible; }
+    .layer-chips .city-chip { flex: 0 0 auto; }
   </style>
 
 
@@ -1195,7 +1209,7 @@
     <div id="tab-onboarding-box"></div>
     <div class="guide-capsule" id="camp-guide-nudge-bar">
       <div id="camp-guide-nudge-text">🦉 <strong>營地嚮導森森</strong>：「歡迎回到營地！點選下方夥伴卡片可以巡視背包，或拍下瓶罐標籤自動算天數喔。」</div>
-      <button class="btn btn-muted" style="padding:4px 9px; font-size:12px; white-space:nowrap;" onclick="cycleGuideTip()">💬 換一句叮嚀</button>
+      <button class="btn btn-muted" style="padding:4px 9px; font-size:0.75rem; white-space:nowrap;" onclick="cycleGuideTip()">💬 換一句叮嚀</button>
     </div>
 
 
@@ -1297,7 +1311,7 @@
       </div>
       <div class="loc-list-head" style="margin-top:10px; font-weight:800; color:var(--primary-dark); display:flex; justify-content:space-between; align-items:center;">
         <span>📌 避難處所與集合點（點擊規劃步行路線）</span>
-        <span id="tile-cache-count" style="font-size:12px; color:var(--text-muted);">計算快取中...</span>
+        <span id="tile-cache-count" style="font-size:0.75rem; color:var(--text-muted);">計算快取中...</span>
       </div>
       <div id="locations-list"></div>
       <div style="margin-top:14px; font-weight:800; color:var(--danger); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
@@ -1306,7 +1320,7 @@
           <select id="aed-loc-select" class="city-select" onchange="onSelectAedSource(this.value)">
             <option value="current">📍 目前／畫面周邊 AED</option>
           </select>
-          <span id="aed-cache-count" style="font-size:12px; color:var(--text-muted);">尚未快取</span>
+          <span id="aed-cache-count" style="font-size:0.75rem; color:var(--text-muted);">尚未快取</span>
         </div>
       </div>
       <div id="aed-list"></div>
@@ -1317,7 +1331,7 @@
     <div id="map-prep-pane" style="display:none;">
       <div class="section-card" style="padding:10px 12px; margin-bottom:8px;">
         <div style="font-weight:800; font-size:0.88rem; color:var(--primary-dark); margin-bottom:6px;">🛠️ 平時據點釘選與離線圖資預載工具</div>
-        <div style="font-size:12px; color:var(--text-muted); margin-bottom:8px;">建議在平時有 Wi-Fi 時，先釘選 Plan A / B / C 集合點並點擊「一鍵預載全點位離線包」，斷網時仍可離線導航與查閱周邊 AED。</div>
+        <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:8px;">建議在平時有 Wi-Fi 時，先釘選 Plan A / B / C 集合點並點擊「一鍵預載全點位離線包」，斷網時仍可離線導航與查閱周邊 AED。</div>
         <div class="map-controls" style="margin-top:0;">
           <button class="map-btn secondary" id="btn-pin-drop" onclick="togglePinDropMode()">📌 點擊地圖放圖釘</button>
           <button class="map-btn secondary" onclick="openAddLocationModal()">➕ 手動輸入點位</button>
@@ -1458,9 +1472,9 @@
             <span class="city-chip active" data-tl="eq" onclick="setTimelineScenario('eq')">🧱 地震應變</span>
             <span class="city-chip" data-tl="ty" onclick="setTimelineScenario('ty')">🌦️ 颱風停水停電</span>
             <span class="city-chip" data-tl="ev" onclick="setTimelineScenario('ev')">🎒 個人移動</span>
-            <button class="btn btn-muted" style="padding:3px 8px; font-size:12px; margin-left:auto;" onclick="resetTimelineScenario()">🔁 重置</button>
+            <button class="btn btn-muted" style="padding:3px 8px; font-size:0.75rem; margin-left:auto;" onclick="resetTimelineScenario()">🔁 重置</button>
           </div>
-          <div id="tl-progress-text" style="font-size:12px; font-weight:bold; color:var(--primary-dark); margin-bottom:4px;"></div>
+          <div id="tl-progress-text" style="font-size:0.75rem; font-weight:bold; color:var(--primary-dark); margin-bottom:4px;"></div>
           <div id="tl-checklist-box"></div>
         </div>
       </div>
@@ -1470,7 +1484,7 @@
       <div class="section-card" style="background:#fff5f4; border-color:#e8b9b0; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
         <div>
           <div style="font-weight:800; color:var(--danger); font-size:0.9rem;">🆘 發生危急狀況或有人受傷？</div>
-          <div style="font-size:12px; color:var(--text-muted);">一鍵切換純黑省電戰術畫面（119 報案、止血/CPR 節拍、3000Hz 求救哨與最近 AED）</div>
+          <div style="font-size:0.75rem; color:var(--text-muted);">一鍵切換純黑省電戰術畫面（119 報案、止血/CPR 節拍、3000Hz 求救哨與最近 AED）</div>
         </div>
         <button class="btn btn-danger" onclick="toggleEmergencyMode()">🆘 進入緊急應變</button>
       </div>
@@ -1795,7 +1809,7 @@
           <div style="font-weight:800; color:#2f5a3a; margin-bottom:2px;" id="pfa-companion-title">🦉 營地總嚮導・森森（安心陪伴模式）</div>
           <div id="pfa-companion-quote" style="font-size:0.84rem; color:#2f2a26;">「如果在停電或餘震等待時覺得心跳很快，先坐下來喝一小口水，跟著下面的營火吸氣 4 秒、屏息 4 秒、慢吐 6 秒，我陪你們一起等消息。」</div>
         </div>
-        <button class="btn btn-muted" style="font-size:12px; padding:4px 9px; white-space:nowrap;" onclick="nextPfaCompanionQuote()">💬 陪我說話</button>
+        <button class="btn btn-muted" style="font-size:0.75rem; padding:4px 9px; white-space:nowrap;" onclick="nextPfaCompanionQuote()">💬 陪我說話</button>
       </div>
 
 
@@ -1811,14 +1825,14 @@
             <div id="breath-instruction" style="font-weight:800; font-size:0.95rem; color:var(--primary-dark); margin-top:16px;">
               點擊下方按鈕，跟著營火做 4-4-6 減壓呼吸
             </div>
-            <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">
+            <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">
               吸氣 4 秒 ➔ 屏息 4 秒 ➔ 緩慢吐氣 6 秒（穩定自律神經）
             </div>
             <div style="display:flex; gap:8px; margin-top:10px; width:100%; justify-content:center; flex-wrap:wrap;">
               <button id="btn-breath-toggle" class="btn btn-primary" onclick="toggleBreathingGuide()">🌿 開始 4-4-6 呼吸引導</button>
               <button id="btn-noise-toggle" class="btn btn-muted" onclick="toggleForestWhiteNoise()">🌧️ 播放離線森林細雨聲</button>
             </div>
-            <label style="font-size:12px; color:var(--text-muted); margin-top:8px; display:flex; align-items:center; gap:4px; cursor:pointer;">
+            <label style="font-size:0.75rem; color:var(--text-muted); margin-top:8px; display:flex; align-items:center; gap:4px; cursor:pointer;">
               <input type="checkbox" id="chk-breath-speech"> 🔊 同時啟用離線語音引導吸吐節奏
             </label>
           </div>
@@ -1827,11 +1841,11 @@
           <div class="riddle-box">
             <div style="display:flex; justify-content:space-between; align-items:center;">
               <strong style="color:#9C5211;">🏕️ 營地親子安定小謎題／安心語錄</strong>
-              <button class="btn btn-muted" style="padding:2px 8px; font-size:12px;" onclick="nextCalmCard()">🔁 換一則</button>
+              <button class="btn btn-muted" style="padding:2px 8px; font-size:0.75rem;" onclick="nextCalmCard()">🔁 換一則</button>
             </div>
             <div id="calm-card-question" style="margin-top:5px; font-weight:bold;"></div>
             <div id="calm-card-answer" style="margin-top:4px; color:var(--primary-dark); display:none; font-weight:800;"></div>
-            <button id="btn-show-calm-ans" class="btn btn-muted" style="margin-top:6px; padding:3px 10px; font-size:12px;" onclick="revealCalmAnswer()">💡 看答案／安心小叮嚀</button>
+            <button id="btn-show-calm-ans" class="btn btn-muted" style="margin-top:6px; padding:3px 10px; font-size:0.75rem;" onclick="revealCalmAnswer()">💡 看答案／安心小叮嚀</button>
           </div>
         </div>
       </div>
@@ -1925,11 +1939,11 @@
             </ul>
           </div>
           <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:8px;">
-            <button class="btn btn-muted" style="font-size:12px; padding:4px 9px;" onclick="showTermHelp('barrel')">❓ 什麼是木桶短板</button>
-            <button class="btn btn-muted" style="font-size:12px; padding:4px 9px;" onclick="showTermHelp('wash')">❓ 什麼是 WASH 斷水衛生</button>
-            <button class="btn btn-muted" style="font-size:12px; padding:4px 9px;" onclick="showTermHelp('shelter')">❓ 在宅留守 vs 避難所</button>
-            <button class="btn btn-muted" style="font-size:12px; padding:4px 9px;" onclick="showTermHelp('1991')">❓ 1991 報平安怎麼用</button>
-            <button class="btn btn-muted" style="font-size:12px; padding:4px 9px;" onclick="showTermHelp('march')">❓ MARCH 止血原則</button>
+            <button class="btn btn-muted" style="font-size:0.75rem; padding:4px 9px;" onclick="showTermHelp('barrel')">❓ 什麼是木桶短板</button>
+            <button class="btn btn-muted" style="font-size:0.75rem; padding:4px 9px;" onclick="showTermHelp('wash')">❓ 什麼是 WASH 斷水衛生</button>
+            <button class="btn btn-muted" style="font-size:0.75rem; padding:4px 9px;" onclick="showTermHelp('shelter')">❓ 在宅留守 vs 避難所</button>
+            <button class="btn btn-muted" style="font-size:0.75rem; padding:4px 9px;" onclick="showTermHelp('1991')">❓ 1991 報平安怎麼用</button>
+            <button class="btn btn-muted" style="font-size:0.75rem; padding:4px 9px;" onclick="showTermHelp('march')">❓ MARCH 止血原則</button>
           </div>
         </div>
       </div>
@@ -1951,16 +1965,16 @@
               <button id="data-keep-install-btn" class="btn btn-muted" onclick="promptInstallApp()" hidden>加到主畫面</button>
             </div>
           </div>
-          <div style="font-size:12px; color:var(--text-muted); margin-bottom:8px; line-height:1.55;">
+          <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:8px; line-height:1.55;">
             提供給其他家庭或朋友直接使用：<strong>完全不需要建立或複製 Google 試算表</strong>，可一鍵載入預設家庭範本儲存在自己手機本機，並透過匯出／匯入備份檔與家人快速同步。
           </div>
           <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px;">
-            <button class="btn btn-primary" style="font-size:12px; flex:1; min-width:140px;" onclick="initLocalFamilyTemplate('core3')">🏕️ 載入「三人小家庭」預設範本</button>
-            <button class="btn btn-muted" style="font-size:12px; flex:1; min-width:140px;" onclick="initLocalFamilyTemplate('elder')">🏡 載入「含長輩／毛孩家庭」範本</button>
+            <button class="btn btn-primary" style="font-size:0.75rem; flex:1; min-width:140px;" onclick="initLocalFamilyTemplate('core3')">🏕️ 載入「三人小家庭」預設範本</button>
+            <button class="btn btn-muted" style="font-size:0.75rem; flex:1; min-width:140px;" onclick="initLocalFamilyTemplate('elder')">🏡 載入「含長輩／毛孩家庭」範本</button>
           </div>
           <div style="display:flex; gap:6px; flex-wrap:wrap;">
-            <button class="btn btn-muted" style="font-size:12px; flex:1;" onclick="exportFamilyBackupJson()">📥 匯出家庭完整備份檔 (.json)</button>
-            <label class="btn btn-muted" style="font-size:12px; flex:1; text-align:center; cursor:pointer;">
+            <button class="btn btn-muted" style="font-size:0.75rem; flex:1;" onclick="exportFamilyBackupJson()">📥 匯出家庭完整備份檔 (.json)</button>
+            <label class="btn btn-muted" style="font-size:0.75rem; flex:1; text-align:center; cursor:pointer;">
               📤 匯入家人分享備份檔
               <input type="file" accept=".json,application/json" style="display:none;" onchange="importFamilyBackupJson(event)">
             </label>
@@ -2564,7 +2578,7 @@
 
 
     // 版本號只寫這一處（② #29）：升版只改 APP_VERSION，畫面標籤、網頁標題與 Service Worker 快取名稱都從這裡來
-    const APP_VERSION = 'v2.9.18';
+    const APP_VERSION = 'v2.9.33';
     (function showAppVersion() {
       const pill = document.getElementById('app-version-pill');
       if (pill) pill.textContent = APP_VERSION;
@@ -2602,6 +2616,7 @@
     function applyEmergencyModeUI( navigateNow = false ) {
       const btn = document.getElementById('btn-emergency-mode');
       document.body.classList.toggle('emergency-mode', isEmergencyMode);
+      document.documentElement.classList.toggle('fs-up', !isEmergencyMode); // 預設字級 115% 只用在平時模式
       if (btn) {
         btn.classList.toggle('active', isEmergencyMode);
         btn.innerText = isEmergencyMode ? '✖ 結束應變' : '🆘 緊急應變';
@@ -4094,7 +4109,7 @@
           <div class="progress-track">
             <div class="progress-fill" style="width:${Number(prog.pct)}%; background:${barColor};"></div>
           </div>
-          <div style="font-size:12px; font-weight:bold; color:var(--primary-dark); margin-top:4px;">${Number(prog.checked)}/${Number(prog.total)} (${Number(prog.pct)}%)</div>
+          <div style="font-size:0.75rem; font-weight:bold; color:var(--primary-dark); margin-top:4px;">${Number(prog.checked)}/${Number(prog.total)} (${Number(prog.pct)}%)</div>
           <div class="pack-updated-date">${escapeHtml(getCharLastUpdatedText(char))}</div>
           <div class="mood-bubble" id="mood-bubble-${escapeHtml(char)}">${getBuddyMoodText(char, prog.pct)}</div>
           <div class="bond-pill">${getBuddyBondLabel(char)}</div>

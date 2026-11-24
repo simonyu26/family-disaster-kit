@@ -7053,7 +7053,7 @@
 
     // 從備份檔還原失聯匯合計畫。
     // 備份裡有內容：只收文字欄位，合併進本機原有的計畫（本機有、備份沒有的欄位保留）。
-    // 備份裡是空的（舊版備份）：不動本機的計畫，回傳要告訴使用者的話。
+    // 備份裡是空的（舊版備份）：不動本機的計畫，回傳要顯示的提示。
     function restoreReunifyFromBackup(pkgReunify) {
       const prev = readReunifyPlan();
       if (reunifyHasContent(pkgReunify)) {
@@ -7064,9 +7064,10 @@
         localStorage.setItem(STORAGE_KEYS.REUNIFY, JSON.stringify({ ...prev, ...clean }));
         return '';
       }
+      // 字句：使用者顧問定稿（reviews/reunify-restore-toast-user.md）
       return reunifyHasContent(prev)
-        ? '這份備份檔沒有存到「失聯匯合計畫」（舊版備份的問題），手機上原本的計畫沒有更動。建議現在重新匯出一次備份。'
-        : '這份備份檔沒有存到「失聯匯合計畫」（舊版備份的問題）。請到「情報」的「應變計畫與防災卡」重新填寫，再重新匯出一次備份。';
+        ? '⚠️ 備份已匯入，但這份舊備份裡沒有「失聯匯合計畫」。手機上原本的計畫還在，沒有被改掉。請到「營地」的「說明與系統」按「現在匯出」，存一份新的備份。'
+        : '⚠️ 備份已匯入，但這份舊備份裡沒有「失聯匯合計畫」（家人約定在哪裡會合的計畫）。請到「情報」的「應變計畫與防災卡」重新填寫，再到「營地」的「說明與系統」按「現在匯出」，存一份新的備份。';
     }
 
     function exportFamilyBackupJson() {
@@ -7105,7 +7106,7 @@
           const reunifyNote = restoreReunifyFromBackup(pkg.reunify);
           selectInitialCharacter();
           renderParty(); renderInventory(); renderCampTab(); renderPlanTab();
-          if (reunifyNote) showToast('⚠️ 已匯入家庭備份檔，但' + reunifyNote, 'warn', { sticky: true });
+          if (reunifyNote) showToast(reunifyNote, 'warn', { sticky: true });
           else showToast('✅ 已成功匯入家庭備份檔！', 'success');
           ensurePersist();
           renderDataKeep();

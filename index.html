@@ -1126,13 +1126,14 @@
       color: #ffd60a !important;
     }
     .sos-triage-btn .t-title { font-size: 1rem; font-weight: 900; }
-    .sos-triage-btn .t-sub { font-size: 16px; opacity: 0.92; font-weight: 600; line-height: 1.3; }
+    .sos-triage-btn .t-sub { font-size: 16px; font-weight: 600; line-height: 1.3; }
     /* 緊急模式首頁字級下限 16px（A-05）、觸控 68px（A-09） */
-    .sos-coord-label { font-size: 16px; color: var(--em-amber); font-weight: 800; }
-    .sos-pane-head { font-size: 16px; font-weight: 800; color: var(--em-amber); margin-bottom: 6px; }
+    .sos-coord-label { font-size: 16px; color: var(--em-text); font-weight: 800; }
+    .sos-pane-head { font-size: 16px; font-weight: 800; color: var(--em-text); margin-bottom: 6px; }
     .sos-gps-btns { display: flex; gap: 6px; flex-wrap: wrap; }
     body.emergency-mode .sos-gps-btn { min-height: 68px; padding: 6px 12px; }
-    body.emergency-mode .sos-gps-btn.sos-copy-btn { background: var(--em-amber) !important; color: var(--em-bg) !important; font-weight: 900 !important; }
+    /* 定位列兩顆鍵用白框，和 #33 複製失敗文字框同一組，不跟 119 搶眼；琥珀色留給 GPS 已鎖定（美術顧問 PR 71） */
+    body.emergency-mode .sos-gps-btn { background: var(--em-card) !important; color: var(--em-text) !important; border: 2px solid var(--em-text) !important; }
     body.emergency-mode #sos-focus-dial .dial-btn { min-height: 68px; }
     body.emergency-mode #sos-focus-dial .stream-btn { min-height: 68px; font-size: 16px; padding: 8px 12px; flex: 1 1 140px; justify-content: center; }
     body.emergency-mode .sos-aed-refresh { min-height: 68px !important; font-size: 16px !important; padding: 6px 12px; }
@@ -1510,7 +1511,7 @@
           </div>
           <div class="sos-gps-btns">
             <button class="btn btn-primary sos-gps-btn" onclick="refreshSosGps()">🛰️ 更新座標</button>
-            <button class="btn btn-warn sos-gps-btn sos-copy-btn" onclick="copySosCoord()">複製求救簡訊</button>
+            <button class="btn btn-warn sos-gps-btn" onclick="copySosCoord()">複製求救簡訊</button>
           </div>
         </div>
       </div>

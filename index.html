@@ -1146,6 +1146,13 @@
     }
 
 
+    /* 失聯匯合：電話打不通時的報平安做法（取代已停用的 1991） */
+    .reunify-tips { margin-bottom: 8px; background: var(--primary-light); padding: 8px 10px; border-radius: 10px; border: 1px solid var(--border); color: var(--text); font-size: 0.875rem; line-height: 1.6; }
+    .reunify-tips-title { font-weight: 800; color: var(--primary-dark); margin-bottom: 4px; }
+    .reunify-tips ol { margin: 0 0 6px; padding-left: 20px; }
+    .reunify-tips-note { margin: 0 0 4px; font-weight: 700; }
+    .reunify-tips-src { margin: 0; font-size: 0.8125rem; color: var(--text-muted); }
+    .dial-grid .dial-wide { grid-column: 1 / -1; }
   </style>
 
 
@@ -1521,7 +1528,7 @@
       <div class="sos-triage-4grid">
         <div class="sos-triage-btn urgent-red" onclick="switchSosFocusPane('dial')">
           <div class="t-title">🚒 1. 立即報案求救</div>
-          <div class="t-sub">直撥 119 / 110 / 112 與 1991</div>
+          <div class="t-sub">直撥 119 / 110 / 112</div>
         </div>
         <div class="sos-triage-btn focus-amber" onclick="switchSosFocusPane('firstaid')">
           <div class="t-title">🩸 2. 有人受傷急救</div>
@@ -1550,8 +1557,7 @@
         <div class="dial-grid">
           <a href="tel:119" class="dial-btn urgent">🚒 119 消防救護</a>
           <a href="tel:110" class="dial-btn urgent">🚓 110 警察報案</a>
-          <a href="tel:112" class="dial-btn">📱 112 打不通時改撥</a>
-          <a href="tel:1991" class="dial-btn">📞 1991 報平安專線</a>
+          <a href="tel:112" class="dial-btn dial-wide">📱 112 打不通時改撥</a>
         </div>
         <div class="stream-links" style="margin-top:8px;">
           <a href="https://www.nfa.gov.tw/cht/index.php?code=list&ids=1600" target="_blank" class="stream-btn">🚒 119 報案 APP</a>
@@ -1744,17 +1750,21 @@
         </div>
         <div class="section-body" id="plan-reunify-sec">
           <div id="care-division-box" style="margin-bottom:8px; font-size:0.8rem;"></div>
-          <div class="form-group" style="margin-bottom:8px; background:#F5F9F6; padding:8px 10px; border-radius:10px; border:1px solid #CFE3D8;">
-            <label class="form-label" style="color:var(--primary-dark);">📞 1991 報平安專線「全家約定信箱號碼」<span class="help-q-btn" onclick="event.stopPropagation(); showTermHelp('1991')">?</span>（市話或主聯絡人手機）</label>
-            <div style="display:flex; gap:6px; align-items:center;">
-              <input type="tel" id="reunify-1991" class="form-input" placeholder="如：0223456789 或 0912345678" onchange="saveReunifyPlan()" style="flex:1;">
-              <a href="tel:1991" class="btn btn-primary" style="text-decoration:none; white-space:nowrap; font-size:0.78rem;">📞 撥打 1991</a>
-            </div>
-            <div style="font-size:0.72rem; color:var(--text-muted); margin-top:4px;">💡 撥通 1991 後：按 <strong>1 錄音留言</strong>（輸入上方約定號碼＋#）｜按 <strong>2 聽取家人留言</strong>（輸入同一號碼＋#）。</div>
+          <!-- 1991 已於 2022-12-31 停止服務，改成報平安做法說明（災防顧問定稿 reviews/remove-1991-disaster.md，審閱 2026-11-24） -->
+          <div class="reunify-tips">
+            <div class="reunify-tips-title">📞 電話打不通時，怎麼報平安？</div>
+            <ol>
+              <li>電話一直打不通，就改傳簡訊，不要一直重撥。</li>
+              <li>事先約定一位住在外縣市的親友當「中繼聯絡人」。家人都先跟他報平安，再由他轉告其他人。（可以把他加進「聯絡人」，備註寫「中繼」。）</li>
+              <li>有網路時，可以用內政部消防署「消防防災e點通」App 裡的「親友協尋」，建立親友資料，系統比對到時會通知你。</li>
+              <li>都聯絡不上時，照計畫到約定的集合點會合。</li>
+            </ol>
+            <p class="reunify-tips-note">※ 內政部「1991 報平安」已在 2022 年 12 月 31 日停止服務，請不要再撥 1991。</p>
+            <p class="reunify-tips-src">出處：內政部 111 年 10 月 13 日公告（1991 停止服務、改由「親友協尋」取代）；消防署「消防防災e點通」系統功能說明（親友協尋）。第 1、2、4 點是災防顧問的建議做法。審閱日期：2026-11-24。</p>
           </div>
           <div class="form-group" style="margin-bottom:6px;">
             <label class="form-label">0～1 小時（剛發生時）</label>
-            <input type="text" id="reunify-h1" class="form-input" placeholder="如：各自就地安全待命，以簡訊或 1991 報平安，不急著上路" onchange="saveReunifyPlan()">
+            <input type="text" id="reunify-h1" class="form-input" placeholder="如：各自就地安全待命，以簡訊向家人或中繼聯絡人報平安，不急著上路" onchange="saveReunifyPlan()">
           </div>
           <div class="form-group" style="margin-bottom:6px;">
             <label class="form-label">1～6 小時（通訊／交通中斷）</label>
@@ -1919,7 +1929,8 @@
             <strong>三、📡 情報模組（即時情報與家庭應變計畫）</strong>：
             <ul style="margin:4px 0 0 0; padding-left:18px;">
               <li><strong>📡 即時情報</strong>：整合 24h／一週天氣預報、NCDR 災害示警（可同時釘選關注最多 3 個外地親友縣市）、警察廣播電臺離線 FM 頻率表與民生搶修專線（1999/1911/1910）。</li>
-              <li><strong>🤝 應變計畫</strong>：提供「🧱 震後 30 秒大樓結構紅線快篩（檢查柱裂、軟腳與大門變形）」判定該留守或移動，並收錄失聯匯合時間軸、1991 全家約定語音信箱與防窺 PIN 碼保護的醫療防災卡。</li>
+              <li><strong>🤝 應變計畫</strong>：提供「🧱 震後 30 秒大樓結構紅線快篩（檢查柱裂、軟腳與大門變形）」判定該留守或移動，並收錄失聯匯合時間軸、電話打不通時的報平安做法與防窺 PIN 碼保護的醫療防災卡。</li>
+              <li><strong>搭配官方 App</strong>：也請下載內政部消防署「消防防災e點通」App，並事先下載離線地圖。</li>
             </ul>
           </div>
           <div style="background:var(--kinari); padding:10px 12px; border-radius:12px; border:1px solid var(--border); margin-bottom:8px;">
@@ -1940,7 +1951,6 @@
             <button class="btn btn-muted" style="font-size:12px; padding:4px 9px;" onclick="showTermHelp('barrel')">❓ 什麼是木桶短板</button>
             <button class="btn btn-muted" style="font-size:12px; padding:4px 9px;" onclick="showTermHelp('wash')">❓ 什麼是 WASH 斷水衛生</button>
             <button class="btn btn-muted" style="font-size:12px; padding:4px 9px;" onclick="showTermHelp('shelter')">❓ 在宅留守 vs 避難所</button>
-            <button class="btn btn-muted" style="font-size:12px; padding:4px 9px;" onclick="showTermHelp('1991')">❓ 1991 報平安怎麼用</button>
             <button class="btn btn-muted" style="font-size:12px; padding:4px 9px;" onclick="showTermHelp('march')">❓ MARCH 止血原則</button>
           </div>
         </div>
@@ -3134,7 +3144,7 @@
         '3. 🧱 30 秒建物快篩：檢查柱牆有無 45 度 X 型裂縫或鋼筋外露（若有請立即撤離）',
         '4. 穿上包鞋或厚底拖鞋，防止踩到碎玻璃，切勿搭乘電梯',
         '5. 🏢 社區大樓注意：確認管委會公告地下室糞管無破裂前，暫勿沖馬桶（改用便袋＋凝固劑）',
-        '6. 依判定建議「在宅留守」或攜帶撤離包前往 Plan A 集合點，並撥打 1991 約定信箱報平安'
+        '6. 依判定建議「在宅留守」或攜帶撤離包前往 Plan A 集合點；傳簡訊向家人或中繼聯絡人報平安；有網路時，也可以用消防防災e點通的「親友協尋」'
       ],
       ty: [
         '1. 將手機、行動電源與緊急照明燈具充飽電，備妥大門電子鎖備用電池',
@@ -3148,7 +3158,7 @@
         '2. 帶齊個人緊急避難包、常備藥與身分證件／現金',
         '3. 關閉室內總電源、水閥與瓦斯總開關',
         '4. 依離線地圖規劃路線避開危險建物前往集合點',
-        '5. 抵達集合點後透過電話／簡訊或 1991 報平安'
+        '5. 抵達集合點後，透過簡訊或電話，向家人和中繼聯絡人報平安'
       ]
     };
     let currentTlKey = 'eq';
@@ -5989,7 +5999,7 @@
     }
 
 
-    // ================= P1-2 (v2.6 升級): 震後 30 秒建物快篩＋避難判定樹＋1991 匯合協議 =================
+    // ================= P1-2 (v2.6 升級): 震後 30 秒建物快篩＋避難判定樹＋失聯匯合協議 =================
     function loadDecisionAndReunify() {
       const dec = JSON.parse(localStorage.getItem('camp_decision_profile_v22') || '{"floor":"mid","struct":"good","hazard":"safe","crack":false,"door":false}');
       if (document.getElementById('dec-floor')) document.getElementById('dec-floor').value = dec.floor || 'mid';
@@ -6001,7 +6011,6 @@
 
 
       const reu = JSON.parse(localStorage.getItem('camp_reunify_plan_v22') || '{}');
-      if (document.getElementById('reunify-1991')) document.getElementById('reunify-1991').value = reu.phone1991 || '';
       if (document.getElementById('reunify-h1')) document.getElementById('reunify-h1').value = reu.h1 || '';
       if (document.getElementById('reunify-h6')) document.getElementById('reunify-h6').value = reu.h6 || '';
       if (document.getElementById('reunify-h24')) document.getElementById('reunify-h24').value = reu.h24 || '';
@@ -6056,8 +6065,11 @@
 
 
     function saveReunifyPlan() {
+      // 1991 已於 2022-12-31 停用：畫面不再顯示、不再寫入 phone1991，但先讀舊值合併，不把使用者以前填的號碼洗掉（工程顧問）
+      let prev = {};
+      try { prev = JSON.parse(localStorage.getItem('camp_reunify_plan_v22') || '{}') || {}; } catch (e) { prev = {}; }
       const reu = {
-        phone1991: document.getElementById('reunify-1991')?.value.trim() || '',
+        ...prev,
         h1: document.getElementById('reunify-h1').value.trim(),
         h6: document.getElementById('reunify-h6').value.trim(),
         h24: document.getElementById('reunify-h24').value.trim(),
@@ -6683,10 +6695,6 @@
       wash: {
         title: '🧼 什麼是 WASH（水、衛生與環境清潔）？',
         body: '聯合國與人道救援標準中的核心指標（Water, Sanitation & Hygiene）。大型停水災難第 3 天起，馬桶無法沖水與無法洗手引發的腸胃炎或感染常比地震本身更棘手，因此生活用水與馬桶凝固劑須與飲用水嚴格分開計算。'
-      },
-      '1991': {
-        title: '📞 什麼是「1991 報平安留言平臺」？',
-        body: '內政部消防署建置的免費災時語音留言專線。當手機網路斷線、電話壅塞時，全家人只要預先約定好同一支「信箱號碼」（例如家裡市話），就能各自撥打 1991 錄音報平安或聽取家人留言。'
       },
       shelter: {
         title: '🧭 什麼是「在宅垂直避難」與「建物快篩」？',

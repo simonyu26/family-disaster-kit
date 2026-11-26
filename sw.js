@@ -19,7 +19,8 @@ const APP_ASSETS = [
   './vendor/leaflet-1.9.4/images/marker-icon.png',
   './vendor/leaflet-1.9.4/images/marker-icon-2x.png',
   './vendor/leaflet-1.9.4/images/marker-shadow.png',
-  'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js'
+  // QR 碼套件自行託管（② #44，S-07）；預存清單不再有跨網域檔案
+  './vendor/qrcodejs-1.0.0/qrcode.min.js'
 ];
 
 

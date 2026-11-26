@@ -2595,7 +2595,7 @@
 
 
     // 版本號只寫這一處（② #29）：升版只改 APP_VERSION，畫面標籤、網頁標題與 Service Worker 快取名稱都從這裡來
-    const APP_VERSION = 'v2.9.22';
+    const APP_VERSION = 'v2.9.23';
     (function showAppVersion() {
       const pill = document.getElementById('app-version-pill');
       if (pill) pill.textContent = APP_VERSION;
@@ -2917,9 +2917,7 @@
 
       try {
         if (manual) showToast('🔄 正在從營地同步最新進度...');
-        const pinParam = getGasPin() ? `&pin=${encodeURIComponent(getGasPin())}` : '';
-        const res = await fetch(`${url}?action=getAll${pinParam}&_t=${Date.now()}`);
-        const json = await res.json();
+        const json = await readFromGas('getAll');
         if (json.authRequired) {
           const inputPin = prompt('🔒 此家庭試算表已啟用通行碼保護，請輸入家庭通行碼：');
           if (inputPin !== null) {
@@ -2956,6 +2954,25 @@
       }
     }
 
+
+    // 讀取家庭資料改用 POST，通行碼放在本文、不放網址（② #23，S-04）。
+    // 不沿用 postToGas：讀取時 authRequired／locked 也是 ok:false，要原樣交回給呼叫端判斷（工程顧問）
+    async function readFromGas(action) {
+      const url = getGasUrl();
+      if (!url) throw new Error('尚未設定 GAS API 網址');
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: action, pin: getGasPin() })
+      });
+      const text = await res.text();
+      try {
+        return JSON.parse(text);
+      } catch (e) {
+        // 不顯示英文的解析錯誤原文（U-03）
+        throw new Error('雲端傳回的資料不正確。請稍後再試。一直失敗的話，請管理試算表的家人，到「營地」確認雲端網址有沒有貼對。');
+      }
+    }
 
     async function postToGas(payload) {
       const url = getGasUrl();

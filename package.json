@@ -1,0 +1,12 @@
+{
+  "name": "family-disaster-kit-dev",
+  "private": true,
+  "description": "開發用：冒煙測試（不影響網站本身，GitHub Pages 不需要 npm）",
+  "scripts": {
+    "check:assets": "node tests/smoke/check-assets.js",
+    "smoke": "node tests/smoke/check-assets.js && playwright test --config tests/smoke/playwright.config.js"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0"
+  }
+}

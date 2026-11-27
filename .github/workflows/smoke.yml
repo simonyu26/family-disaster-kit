@@ -1,0 +1,37 @@
+# 冒煙測試（v3.0 拆檔的安全網，工程顧問 2026-11-27 條件）
+# - 只讀權限，不用 pull_request_target，不用任何 secrets（S-08）
+# - action 用完整 commit SHA 固定版本；Playwright 版號寫死在 package.json，用 package-lock.json 安裝（npm ci）
+# - 不部署、不碰 GitHub Pages
+name: smoke
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+      - name: 安裝開發用套件
+        run: npm ci --no-audit --no-fund
+      - name: 安裝瀏覽器（Chromium、WebKit）
+        run: npx playwright install --with-deps chromium webkit
+      - name: 靜態檢查：頁面用到的檔案都在離線預存清單裡
+        run: node tests/smoke/check-assets.js
+      - name: 冒煙測試（360／390 寬，Chromium 與 WebKit）
+        run: npx playwright test --config tests/smoke/playwright.config.js

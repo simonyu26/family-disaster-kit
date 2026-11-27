@@ -15,7 +15,9 @@ function startServer(root) {
   const server = http.createServer((req, res) => {
     const url = new URL(req.url, 'http://localhost');
     let file = path.resolve(base, '.' + decodeURIComponent(url.pathname));
-    if (!file.startsWith(base)) { res.writeHead(403); res.end(); return; }
+    // 只允許 root 底下的檔案：比對 path.relative，避免 /repo-evil 這類同前綴的路徑混過去（工程顧問）
+    const rel = path.relative(base, file);
+    if (rel.startsWith('..') || path.isAbsolute(rel)) { res.writeHead(403); res.end(); return; }
     if (fs.existsSync(file) && fs.statSync(file).isDirectory()) file = path.join(file, 'index.html');
     fs.readFile(file, (err, buf) => {
       if (err) { res.writeHead(404); res.end('not found'); return; }

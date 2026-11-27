@@ -2509,6 +2509,7 @@
       LAST_BACKUP: 'camp_last_backup_at',        // 上次匯出備份成功的時間（毫秒）；匯入不算（工程顧問 #22）
       BACKUP_NUDGE_DAY: 'camp_backup_nudge_day', // 上次跳備份提醒的時間（毫秒），7 天最多一次（使用者顧問 #22）
       SAMPLE_SIG: 'camp_sample_sig',             // 剛載入範本時的資料指紋；資料沒改過就不提醒備份範例資料
+      ALERT_CLOCK: 'camp_alert_clock_offset',    // 手機比伺服器快多少毫秒（只存負數）與算出的時間，只給示警判斷用（工項 48）
       TQ_OVER2H_NOTIFIED: 'camp_tq_over2h_notified' // 已提醒「超過 2 小時」的那次計時的起始毫秒數，同一次計時只提醒一次（工程顧問 工項 43）
     };
 
@@ -2606,7 +2607,7 @@
 
 
     // 版本號只寫這一處（② #29）：升版只改 APP_VERSION，畫面標籤、網頁標題與 Service Worker 快取名稱都從這裡來
-    const APP_VERSION = 'v2.9.24';
+    const APP_VERSION = 'v2.9.38';
     (function showAppVersion() {
       const pill = document.getElementById('app-version-pill');
       if (pill) pill.textContent = APP_VERSION;
@@ -5620,7 +5621,47 @@
       else if (exp !== null) timeNote = `有效到 ${formatAlertTime(new Date(exp).toISOString(), now)}`;
       return { list: true, active: true, tag: '', timeNote };
     }
-    function isActiveAlert(a) { return classifyAlert(a, Date.now()).active; }
+    // ===== 示警用的「現在」（工項 48，工程、災防顧問 11/27） =====
+    // 手機時鐘走快時，還有效的示警會被當成過期而不列（D-01）。用後端現抓 NCDR 時的 fetchedAt 算出手機快了多少，
+    // 只往保守的方向校正：手機快超過 60 秒才把示警用的現在往回調；手機慢時不校正（只會多列一陣子）。
+    // alertNow() 只給示警判斷用（classifyAlert 的呼叫處：isActiveAlert、getAlertStatus、renderAlertItemHtml）；
+    // 15 分鐘新鮮度、止血帶計時、同步時間都不准用它。
+    const ALERT_CLOCK_MIN_MS = 60 * 1000;            // 60 秒以內當成網路延遲，不校正
+    const ALERT_CLOCK_MAX_MS = 24 * 3600 * 1000;     // 差超過 24 小時當成資料有問題，不校正（避免早就失效的示警重新出現）
+    const ALERT_CLOCK_KEEP_MS = 7 * 24 * 3600 * 1000; // 算出來超過 7 天的時差不再使用
+    // 純函式：收到一次 getAlerts 回應後，時差要設成多少。回傳 { action: 'set', offset }、{ action: 'clear' } 或 { action: 'keep' }
+    function computeAlertClockOffset(json, recvAt) {
+      if (!json || json.ok !== true || json.cached !== false) return { action: 'keep' }; // 只用現抓的；欄位不在就不算（工程顧問）
+      const serverT = Date.parse(json.fetchedAt);
+      if (isNaN(serverT) || !Number.isFinite(recvAt)) return { action: 'keep' };
+      const diff = serverT - recvAt; // 負數＝手機比伺服器快
+      if (Math.abs(diff) > ALERT_CLOCK_MAX_MS) return { action: 'clear' };
+      if (diff > -ALERT_CLOCK_MIN_MS) return { action: 'clear' }; // 手機準或慢：清掉舊時差
+      return { action: 'set', offset: diff };
+    }
+    // 純函式：存起來的時差現在還能不能用；不能用就回 0
+    function usableAlertClockOffset(stored, phoneNow) {
+      if (!stored || typeof stored !== 'object') return 0;
+      const off = Number(stored.offset), at = Number(stored.at);
+      if (!Number.isFinite(off) || !Number.isFinite(at) || off >= 0 || off < -ALERT_CLOCK_MAX_MS) return 0;
+      const age = phoneNow + off - at; // 用校正後的時間算放了多久
+      if (age < 0 || age > ALERT_CLOCK_KEEP_MS) return 0;
+      return off;
+    }
+    function readAlertClock() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEYS.ALERT_CLOCK) || 'null'); } catch (e) { return null; }
+    }
+    function applyAlertClockResult(r, json) {
+      try {
+        if (r.action === 'set') localStorage.setItem(STORAGE_KEYS.ALERT_CLOCK, JSON.stringify({ offset: r.offset, at: Date.parse(json.fetchedAt) }));
+        else if (r.action === 'clear') localStorage.removeItem(STORAGE_KEYS.ALERT_CLOCK);
+      } catch (e) { /* 存不了就只是不校正 */ }
+    }
+    function alertNow() {
+      const phoneNow = Date.now();
+      return phoneNow + usableAlertClockOffset(readAlertClock(), phoneNow);
+    }
+    function isActiveAlert(a) { return classifyAlert(a, alertNow()).active; }
     // 舊後端或舊快取沒有 effective／expires 等欄位時，判斷仍是「近 12 小時」，文字也照舊，不混用「目前有效」（使用者顧問）
     function alertsHaveTimeFields() {
       return (alertsCache || []).some(a => a && ('expires' in a || 'effective' in a || 'msgType' in a || 'status' in a));
@@ -5855,7 +5896,7 @@
 
     // 回傳某縣市的示警狀態；只有資料新鮮、來源正常、沒有被截斷時，才會回傳 clear
     function getAlertStatus(city) {
-      const now = Date.now();
+      const now = alertNow(); // 只給 classifyAlert 用；下面的新鮮度照舊用手機時間
       const listed = (alertsCache || []).map(a => ({ a, c: classifyAlert(a, now) })).filter(x => x.c.list && matchAlertRegion(x.a, city));
       const matches = listed.filter(x => x.c.active).map(x => x.a);
       // 只有演習、測試、已取消、已更正時不算有示警，其他條件成立仍可顯示 ✅，並把它們列在下方（#18）
@@ -5878,7 +5919,7 @@
 
     // 一則示警的 HTML；外部欄位一律 escapeHtml（S-01）。時間欄：有生效／失效時間就寫出來，否則寫最後更新時間
     function renderAlertItemHtml(a) {
-      const c = classifyAlert(a, Date.now());
+      const c = classifyAlert(a, alertNow());
       const summary = String(a.summary || '');
       const typeLabel = getAlertTypeLabel(a);
       const statusBadge = c.tag ? `<span class="alert-status-badge">${escapeHtml(c.tag)}</span>` : '';
@@ -5979,7 +6020,9 @@
       let okResult = false;
       try {
         const res = await fetch(`${url}?action=getAlerts&_t=${Date.now()}`, { signal: controller.signal });
+        const recvAt = Date.now(); // 收到回應當下就記手機時間，不等解析完（工程顧問，工項 48）
         const json = await res.json();
+        applyAlertClockResult(computeAlertClockOffset(json, recvAt), json);
         if (json.ok && isAlertPayloadValid(json.alerts)) {
           alertsCache = json.alerts;
           localStorage.setItem(STORAGE_KEYS.ALERTS, JSON.stringify(alertsCache));

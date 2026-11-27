@@ -2606,7 +2606,7 @@
 
 
     // 版本號只寫這一處（② #29）：升版只改 APP_VERSION，畫面標籤、網頁標題與 Service Worker 快取名稱都從這裡來
-    const APP_VERSION = 'v2.9.24';
+    const APP_VERSION = 'v2.9.39';
     (function showAppVersion() {
       const pill = document.getElementById('app-version-pill');
       if (pill) pill.textContent = APP_VERSION;
@@ -3677,7 +3677,7 @@
       const refPos = userPos || (locationsData && locationsData[0] ? { lat: locationsData[0].lat, lng: locationsData[0].lng } : { lat: 25.0330, lng: 121.5430 });
       const pool = (aedsData && aedsData.length > 0) ? aedsData : Object.values(aedsByLocCache || {}).flat();
       if (!pool || pool.length === 0) {
-        box.innerHTML = '<div style="color:var(--text-muted);">尚無快取之 AED 資料，請點右上角「🔄 更新」或平時先於地圖預載離線包。</div>';
+        box.innerHTML = '<div style="color:var(--text-muted);">尚無快取之 AED 資料，請點右上角「🔁 更新」或平時先於地圖預載離線包。</div>';
         return;
       }
       const sorted = pool.map(a => ({

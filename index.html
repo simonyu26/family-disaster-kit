@@ -1148,6 +1148,12 @@
     /* 最小避讓 3：物資分類膠囊放不下時整顆換到下一排，不擠成三行字 */
     .layer-chips { flex-wrap: wrap; overflow-x: visible; }
     .layer-chips .city-chip { flex: 0 0 auto; }
+    /* ===== 字級第 4 步：小按鈕（工項 54） =====
+       換一句、陪我說話、🔁 更新、換一則等小按鈕：原本寫行內樣式、高約 30px，改成同一個 class，至少 48px（A-04、A-09，美術顧問 11/27 不開例外）。
+       按鈕不換行，旁邊的標題自己換行（美術顧問 11/27） */
+    .btn-mini { min-height: 48px; padding: 4px 10px; font-size: 0.75rem; white-space: nowrap; flex-shrink: 0; }
+    .btn-push-right { margin-left: auto; }
+    .btn-mini-gap { margin-top: 6px; }
   </style>
 
 
@@ -1209,7 +1215,7 @@
     <div id="tab-onboarding-box"></div>
     <div class="guide-capsule" id="camp-guide-nudge-bar">
       <div id="camp-guide-nudge-text">🦉 <strong>營地嚮導森森</strong>：「歡迎回到營地！點選下方夥伴卡片可以巡視背包，或拍下瓶罐標籤自動算天數喔。」</div>
-      <button class="btn btn-muted" style="padding:4px 9px; font-size:0.75rem; white-space:nowrap;" onclick="cycleGuideTip()">💬 換一句叮嚀</button>
+      <button class="btn btn-muted btn-mini" onclick="cycleGuideTip()">💬 換一句叮嚀</button>
     </div>
 
 
@@ -1382,7 +1388,7 @@
               <option value="花蓮縣">花蓮縣</option>
               <option value="臺東縣">臺東縣</option>
             </select>
-            <button class="btn btn-muted" style="padding:3px 8px; font-size:0.75rem; margin-left:auto;" onclick="fetchWeather(true)">🔁 更新</button>
+            <button class="btn btn-muted btn-mini btn-push-right" onclick="fetchWeather(true)">🔁 更新</button>
           </div>
           <div id="weather-box" style="font-size:0.86rem; color:var(--text-muted);">載入天氣預報中...</div>
         </div>
@@ -1417,7 +1423,7 @@
               <option value="花蓮縣">花蓮縣</option>
               <option value="臺東縣">臺東縣</option>
             </select>
-            <button class="btn btn-muted" style="padding:3px 8px; font-size:0.75rem; margin-left:auto;" onclick="fetchNcdrAlerts(true)">🔁 更新</button>
+            <button class="btn btn-muted btn-mini btn-push-right" onclick="fetchNcdrAlerts(true)">🔁 更新</button>
           </div>
           <div id="ncdr-alerts-meta" class="alert-meta-line"></div>
           <div id="ncdr-alerts-box" class="alert-box"></div>
@@ -1803,16 +1809,6 @@
 
     <!-- 營地子分頁 1：🔥 營火與夥伴（災時等待安心陪伴 ＋ 4-4-6 營火靜心 ＋ 總嚮導設定 ＋ 小隊成員管理） -->
     <div id="camp-fire-pane">
-      <!-- 災時等待／營火靜心陪伴橫幅（三態情境：災難等待期不隱身，給予溫和穩定陪伴） -->
-      <div class="guide-capsule" style="background:#edf4ee; border-color:#b8d4be; border-left:4px solid #2f5a3a;">
-        <div>
-          <div style="font-weight:800; color:#2f5a3a; margin-bottom:2px;" id="pfa-companion-title">🦉 營地總嚮導・森森（安心陪伴模式）</div>
-          <div id="pfa-companion-quote" style="font-size:0.84rem; color:#2f2a26;">「如果在停電或餘震等待時覺得心跳很快，先坐下來喝一小口水，跟著下面的營火吸氣 4 秒、屏息 4 秒、慢吐 6 秒，我陪你們一起等消息。」</div>
-        </div>
-        <button class="btn btn-muted" style="font-size:0.75rem; padding:4px 9px; white-space:nowrap;" onclick="nextPfaCompanionQuote()">💬 陪我說話</button>
-      </div>
-
-
       <!-- 營火靜心與減壓放鬆（心理急救 PFA） -->
       <div class="section-card">
         <div class="section-title" onclick="toggleInfoSection('camp-pfa-sec')">
@@ -1841,13 +1837,23 @@
           <div class="riddle-box">
             <div style="display:flex; justify-content:space-between; align-items:center;">
               <strong style="color:#9C5211;">🏕️ 營地親子安定小謎題／安心語錄</strong>
-              <button class="btn btn-muted" style="padding:2px 8px; font-size:0.75rem;" onclick="nextCalmCard()">🔁 換一則</button>
+              <button class="btn btn-muted btn-mini" onclick="nextCalmCard()">🔁 換一則</button>
             </div>
             <div id="calm-card-question" style="margin-top:5px; font-weight:bold;"></div>
             <div id="calm-card-answer" style="margin-top:4px; color:var(--primary-dark); display:none; font-weight:800;"></div>
-            <button id="btn-show-calm-ans" class="btn btn-muted" style="margin-top:6px; padding:3px 10px; font-size:0.75rem;" onclick="revealCalmAnswer()">💡 看答案／安心小叮嚀</button>
+            <button id="btn-show-calm-ans" class="btn btn-muted btn-mini btn-mini-gap" onclick="revealCalmAnswer()">💡 看答案／安心小叮嚀</button>
           </div>
         </div>
+      </div>
+
+
+      <!-- 災時等待／營火靜心陪伴橫幅（三態情境：災難等待期不隱身，給予溫和穩定陪伴） -->
+      <div class="guide-capsule" style="background:#edf4ee; border-color:#b8d4be; border-left:4px solid #2f5a3a;">
+        <div>
+          <div style="font-weight:800; color:#2f5a3a; margin-bottom:2px;" id="pfa-companion-title">🦉 營地總嚮導・森森（安心陪伴模式）</div>
+          <div id="pfa-companion-quote" style="font-size:0.84rem; color:#2f2a26;">「如果在停電或餘震等待時覺得心跳很快，先坐下來喝一小口水，跟著營火吸氣 4 秒、屏息 4 秒、慢吐 6 秒，我陪你們一起等消息。」</div>
+        </div>
+        <button class="btn btn-muted btn-mini" onclick="nextPfaCompanionQuote()">💬 陪我說話</button>
       </div>
 
 
@@ -2578,7 +2584,7 @@
 
 
     // 版本號只寫這一處（② #29）：升版只改 APP_VERSION，畫面標籤、網頁標題與 Service Worker 快取名稱都從這裡來
-    const APP_VERSION = 'v2.9.32';
+    const APP_VERSION = 'v2.9.33';
     (function showAppVersion() {
       const pill = document.getElementById('app-version-pill');
       if (pill) pill.textContent = APP_VERSION;
@@ -6826,7 +6832,7 @@
 
 
     const PFA_COMPANION_QUOTES = [
-      '「如果在停電或餘震等待時覺得心跳很快，先坐下來喝一小口水，跟著下面的營火吸氣 4 秒、屏息 4 秒、慢吐 6 秒，我陪你們一起等消息。」',
+      '「如果在停電或餘震等待時覺得心跳很快，先坐下來喝一小口水，跟著營火吸氣 4 秒、屏息 4 秒、慢吐 6 秒，我陪你們一起等消息。」',
       '「現在外面可能比較暗，但我們的手電筒、飲水跟背包都已經準備好了。先把肩膀放輕鬆，有我在這裡陪你。」',
       '「餘震來的時候害怕是很正常的反應，我們先待在遠離玻璃與高櫃的安全角落，慢慢深呼吸，一步一步來就好。」',
       '「等一下如果覺得安靜得有點緊張，可以點下方的『播放離線森林細雨聲』，讓營地的自然雨聲陪大家休息一下。」'

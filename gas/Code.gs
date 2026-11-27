@@ -22,7 +22,7 @@ function openFamilySpreadsheet() {
 }
 
 // 後端版本號（WP-06）：每次請擁有者重貼 Code.gs 都要加一，並寫進 CHANGELOG 的 [gas] 標題
-const BACKEND_VERSION = 'v1.5';
+const BACKEND_VERSION = 'v1.6';
 
 const PIN_MIN_LENGTH = 6;
 const PIN_MAX_FAILURES = 10;           // 10 分鐘內猜錯 10 次就鎖定（#14：全域計數可被外人故意鎖住，放寬門檻）
@@ -105,22 +105,23 @@ const READ_PIN_ERROR = '請輸入正確的家庭通行碼以同步雲端資料';
 
 /**
  * 讀取家庭資料（GET 與 POST 共用；呼叫前須已通過通行碼驗證）
+ * 讀取不持全域鎖，所以一律「純讀取」：不新增分頁、不補成員列，補資料留給在鎖內的寫入流程（工程顧問，v1.6）。
  */
 function readFamilyData(action, auth) {
   if (action === 'getLocations') {
-    return { ok: true, pinRequired: auth.pinRequired, locations: getLocationsData(), serverTime: new Date().toISOString() };
+    return { ok: true, pinRequired: auth.pinRequired, locations: getLocationsData(true), serverTime: new Date().toISOString() };
   }
   if (action === 'getContacts') {
-    return { ok: true, pinRequired: auth.pinRequired, contacts: getContactsData(), serverTime: new Date().toISOString() };
+    return { ok: true, pinRequired: auth.pinRequired, contacts: getContactsData(true), serverTime: new Date().toISOString() };
   }
   const inv = getInventoryData();
   return {
     ok: true,
     pinRequired: auth.pinRequired,
     inventory: inv,
-    members: getMembersData(inv.characters),
-    locations: getLocationsData(),
-    contacts: getContactsData(),
+    members: getMembersData(inv.characters, true),
+    locations: getLocationsData(true),
+    contacts: getContactsData(true),
     snapshots: getSnapshotList(),
     backendVersion: BACKEND_VERSION,
     serverTime: new Date().toISOString()
@@ -161,10 +162,27 @@ function doGet(e) {
  * 處理外部 PWA 的 POST 請求（前端以 Content-Type: text/plain 傳送 JSON 避免 CORS Preflight）
  */
 function doPost(e) {
+  let payload;
+  try {
+    payload = JSON.parse(e.postData.contents);
+
+    // 讀取家庭資料：通行碼放在 POST 本文，不放網址（S-04）。
+    // 讀取不寫入試算表，不進全域鎖，避免排在寫入後面等最多 15 秒（工程顧問）。
+    // 沒持鎖，所以 checkAuthPin 不傳 alreadyLocked：猜錯計數由 recordPinFailure 自己短暫取鎖。
+    if (READ_ACTIONS.includes(payload.action)) {
+      const readAuth = checkAuthPin(payload.pin);
+      if (!readAuth.ok) {
+        return authFailureOutput(readAuth, READ_PIN_ERROR);
+      }
+      return createJsonOutput(readFamilyData(payload.action, readAuth));
+    }
+  } catch (err) {
+    return createJsonOutput({ ok: false, error: err.message });
+  }
+
   const lock = LockService.getScriptLock();
   try {
     lock.waitLock(15000);
-    const payload = JSON.parse(e.postData.contents);
     const action = payload.action;
 
     // 更新家庭通行碼：只接受「已知舊碼換新碼」；首次設定須由管理者在 GAS 指令碼屬性手動填入，
@@ -180,15 +198,6 @@ function doPost(e) {
       }
       PropertiesService.getScriptProperties().setProperty('FAMILY_PIN', newPin);
       return createJsonOutput({ ok: true, pinRequired: true, serverTime: new Date().toISOString() });
-    }
-
-    // 讀取家庭資料：通行碼放在 POST 本文，不放網址（S-04）
-    if (READ_ACTIONS.includes(action)) {
-      const readAuth = checkAuthPin(payload.pin, true);
-      if (!readAuth.ok) {
-        return authFailureOutput(readAuth, READ_PIN_ERROR);
-      }
-      return createJsonOutput(readFamilyData(action, readAuth));
     }
 
     // 驗證家庭通行碼
@@ -1017,10 +1026,13 @@ function getMembersSheet(ss, initialCharacters) {
   return sheet;
 }
 
-function getMembersData(initialCharacters) {
+/**
+ * readOnly：不持鎖的讀取用。分頁不存在時不建立，缺的成員只補在回傳資料裡、不寫進試算表。
+ */
+function getMembersData(initialCharacters, readOnly) {
   const ss = openFamilySpreadsheet();
-  const sheet = getMembersSheet(ss, initialCharacters);
-  const data = sheet.getDataRange().getValues();
+  const sheet = readOnly ? ss.getSheetByName('Members') : getMembersSheet(ss, initialCharacters);
+  const data = sheet ? sheet.getDataRange().getValues() : [];
   const map = {};
   for (let i = 1; i < data.length; i++) {
     const name = String(data[i][0] || '').trim();
@@ -1047,7 +1059,7 @@ function getMembersData(initialCharacters) {
           name: name, avatar: '🧑', buddy: '🐾', blood: '', medical: '', iceContact: '', rallyNote: '',
           memberType: defaultType, mobility: 'self', firstAidSkill: ''
         };
-        sheet.appendRow(sanitizeRow([name, '🧑', '🐾', '', '', '', '', defaultType, 'self', '']));
+        if (!readOnly) sheet.appendRow(sanitizeRow([name, '🧑', '🐾', '', '', '', '', defaultType, 'self', '']));
       }
     });
   }
@@ -1194,10 +1206,10 @@ function getContactsSheet(ss) {
   return sheet;
 }
 
-function getContactsData() {
+function getContactsData(readOnly) {
   const ss = openFamilySpreadsheet();
-  const sheet = getContactsSheet(ss);
-  const data = sheet.getDataRange().getValues();
+  const sheet = readOnly ? ss.getSheetByName('Contacts') : getContactsSheet(ss); // readOnly：不建立分頁
+  const data = sheet ? sheet.getDataRange().getValues() : [];
   const contacts = [];
   for (let i = 1; i < data.length; i++) {
     if (!data[i][0] && !data[i][1]) continue;
@@ -1278,10 +1290,10 @@ function getLocationsSheet(ss) {
   return sheet;
 }
 
-function getLocationsData() {
+function getLocationsData(readOnly) {
   const ss = openFamilySpreadsheet();
-  const sheet = getLocationsSheet(ss);
-  const data = sheet.getDataRange().getValues();
+  const sheet = readOnly ? ss.getSheetByName('Locations') : getLocationsSheet(ss); // readOnly：不建立分頁
+  const data = sheet ? sheet.getDataRange().getValues() : [];
   const locations = [];
   for (let i = 1; i < data.length; i++) {
     if (!data[i][0] && !data[i][1]) continue;

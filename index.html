@@ -1154,6 +1154,21 @@
     .btn-mini { min-height: 48px; padding: 4px 10px; font-size: 0.75rem; white-space: nowrap; flex-shrink: 0; }
     .btn-push-right { margin-left: auto; }
     .btn-mini-gap { margin-top: 6px; }
+    /* ===== 字級第 3 步：頂部列兩排（工項 53） =====
+       第一排站名＋版號；第二排連線狀態（左，固定上下兩行）＋兩顆按鈕（右，至少 48px，A-09）。只用在平時模式，緊急模式的頂部列不動。
+       .brand-col 設 display: contents，讓站名列和狀態列直接放進格線；id、class 不變，JS 不受影響（工程顧問 11/27）。蓋掉 PR 72 的 flex-wrap 避讓。 */
+    .top-actions { display: flex; gap: 6px; align-items: center; }
+    body:not(.emergency-mode) .top-bar {
+      display: grid; grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-areas: "brand brand" "status actions";
+      align-items: center; column-gap: 8px; row-gap: 6px; flex-wrap: nowrap;
+    }
+    body:not(.emergency-mode) .top-bar .brand-col { display: contents; }
+    body:not(.emergency-mode) .top-bar .brand-title-row { grid-area: brand; }
+    body:not(.emergency-mode) .top-bar .status-inline { grid-area: status; flex-direction: column; align-items: flex-start; gap: 0; min-width: 0; }
+    body:not(.emergency-mode) .top-bar .status-dot { display: none; }
+    body:not(.emergency-mode) .top-bar .top-actions { grid-area: actions; }
+    body:not(.emergency-mode) #btn-emergency-mode, body:not(.emergency-mode) #btn-sync { min-height: 48px; }
   </style>
 
 
@@ -1179,12 +1194,12 @@
       </div>
       <div class="status-inline">
         <span id="net-status" class="status-badge online">🟢 連線檢查中...</span>
-        <span>·</span>
+        <span class="status-dot">·</span>
         <span id="last-sync-text">尚未同步</span>
         <span id="pending-badge" class="sync-pill" style="display:none;" onclick="flushOfflineQueue()">待同步 0 筆</span>
       </div>
     </div>
-    <div style="display:flex; gap:6px; align-items:center;">
+    <div class="top-actions">
       <button id="btn-emergency-mode" class="btn-emergency-toggle" onclick="toggleEmergencyMode()" title="啟動緊急應變模式">🆘 緊急應變</button>
       <button id="btn-em-end" class="em-end-btn" type="button" aria-label="結束應變，請按住 2 秒"><span>結束應變</span><span>長按2秒</span></button>
       <button id="btn-sync" class="icon-btn" onclick="syncWithServer(true)" title="同步雲端試算表">🔄 同步</button>
@@ -2584,7 +2599,7 @@
 
 
     // 版本號只寫這一處（② #29）：升版只改 APP_VERSION，畫面標籤、網頁標題與 Service Worker 快取名稱都從這裡來
-    const APP_VERSION = 'v2.9.33';
+    const APP_VERSION = 'v2.9.34';
     (function showAppVersion() {
       const pill = document.getElementById('app-version-pill');
       if (pill) pill.textContent = APP_VERSION;

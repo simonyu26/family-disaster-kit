@@ -2606,7 +2606,7 @@
 
 
     // 版本號只寫這一處（② #29）：升版只改 APP_VERSION，畫面標籤、網頁標題與 Service Worker 快取名稱都從這裡來
-    const APP_VERSION = 'v2.9.24';
+    const APP_VERSION = 'v2.9.37';
     (function showAppVersion() {
       const pill = document.getElementById('app-version-pill');
       if (pill) pill.textContent = APP_VERSION;
@@ -5954,6 +5954,9 @@
       // 先看標題，標題找不到才看摘要，避免摘要順帶提到的詞標錯類別（工程顧問）
       const title = String((a && a.title) || '');
       const summary = String((a && a.summary) || '');
+      // 標題寫「解除」的不掛類別，免得「解除豪雨特報」看起來像還在下豪雨；只看標題，摘要順帶提到解除不算（災防顧問 #20 建議，進度表 ② #30）
+      // 例外：標題同時寫「持續／仍／維持／其餘」，表示還有地方沒解除，照舊掛標籤（災防顧問 11/27）
+      if (title.includes('解除') && !/持續|仍|維持|其餘/.test(title)) return '';
       return ALERT_TYPE_WORDS.find(w => title.includes(w)) || ALERT_TYPE_WORDS.find(w => summary.includes(w)) || '';
     }
 

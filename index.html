@@ -2606,7 +2606,7 @@
 
 
     // 版本號只寫這一處（② #29）：升版只改 APP_VERSION，畫面標籤、網頁標題與 Service Worker 快取名稱都從這裡來
-    const APP_VERSION = 'v2.9.23.2';
+    const APP_VERSION = 'v2.9.24';
     (function showAppVersion() {
       const pill = document.getElementById('app-version-pill');
       if (pill) pill.textContent = APP_VERSION;
@@ -2966,12 +2966,39 @@
     }
 
 
+    // 呼叫 GAS 的逾時（D-06，工程顧問）
+    // 讀取：6 秒中止，改用本機資料。寫入：不中止（GAS 可能已經在寫，中止後重送會重複新增），只顯示白話狀態。
+    const GAS_READ_TIMEOUT_MS = 6000;
+    const GAS_WRITE_SLOW_MS = 6000;
+    const GAS_WRITE_UNSURE_MS = 30000;
+    const GAS_READ_TIMEOUT_MSG = '雲端回應太慢，先用這支手機上的資料。請稍後再按「同步」。';
+    const GAS_WRITE_SLOW_MSG = '⏳ 雲端還在處理，請稍等，不用重按。';
+    // 不寫「資料還在這支手機上」：頁面若在等待中被關掉，這筆不會進離線佇列，下次同步可能被雲端資料蓋掉（D-01）
+    const GAS_WRITE_UNSURE_MSG = '⚠️ 雲端很久沒有回應，不確定剛才的資料有沒有存到。請稍後按「同步」，確認雲端有沒有收到；沒有的話請再改一次。';
+
+    async function fetchGasWithTimeout(input, init) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), GAS_READ_TIMEOUT_MS);
+      try {
+        return await fetch(input, Object.assign({}, init || {}, { signal: controller.signal }));
+      } catch (e) {
+        if (e && e.name === 'AbortError') {
+          const err = new Error(GAS_READ_TIMEOUT_MSG);
+          err.code = 'TIMEOUT';
+          throw err;
+        }
+        throw e;
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
     // 讀取家庭資料改用 POST，通行碼放在本文、不放網址（② #23，S-04）。
     // 不沿用 postToGas：讀取時 authRequired／locked 也是 ok:false，要原樣交回給呼叫端判斷（工程顧問）
     async function readFromGas(action) {
       const url = getGasUrl();
       if (!url) throw new Error('尚未設定 GAS API 網址');
-      const res = await fetch(url, {
+      const res = await fetchGasWithTimeout(url, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({ action: action, pin: getGasPin() })
@@ -2989,11 +3016,23 @@
       const url = getGasUrl();
       if (!url) throw new Error('尚未設定 GAS API 網址');
       const finalPayload = Object.assign({}, payload, { pin: getGasPin() });
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify(finalPayload)
-      });
+      // 寫入不中止，只在久等時告訴使用者狀態（D-06）
+      let unsureShown = false;
+      const slowTimer = setTimeout(() => showToast(GAS_WRITE_SLOW_MSG), GAS_WRITE_SLOW_MS);
+      const unsureTimer = setTimeout(() => { unsureShown = true; showToast(GAS_WRITE_UNSURE_MSG, 'warn', { sticky: true }); }, GAS_WRITE_UNSURE_MS);
+      let res;
+      try {
+        res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(finalPayload)
+        });
+      } finally {
+        clearTimeout(slowTimer);
+        clearTimeout(unsureTimer);
+        // 最後有回應了，就收起「不確定有沒有存到」
+        if (unsureShown) document.querySelectorAll('#toast-container .toast-sticky').forEach(t => { if (t.textContent.startsWith(GAS_WRITE_UNSURE_MSG)) t.remove(); });
+      }
       const json = await res.json();
       if (!json.ok) {
         const err = new Error(json.error || '寫入失敗');
@@ -5099,7 +5138,7 @@
       const url = getGasUrl();
       if (url) {
         try {
-          const res = await fetch(`${url}?action=getAeds&lat=${center.lat}&lng=${center.lng}&_t=${Date.now()}`);
+          const res = await fetchGasWithTimeout(`${url}?action=getAeds&lat=${center.lat}&lng=${center.lng}&_t=${Date.now()}`); // 逾時就改查 OSM（D-06）
           const json = await res.json();
           if (json.ok && Array.isArray(json.aeds) && json.aeds.length > 0) {
             aedsData = json.aeds;
@@ -6056,7 +6095,7 @@
       const url = getGasUrl();
       if (url) {
         try {
-          const res = await fetch(`${url}?action=getAeds&lat=${lat}&lng=${lng}&_t=${Date.now()}`);
+          const res = await fetchGasWithTimeout(`${url}?action=getAeds&lat=${lat}&lng=${lng}&_t=${Date.now()}`); // 逾時就改查 OSM（D-06）
           const json = await res.json();
           if (json.ok && Array.isArray(json.aeds) && json.aeds.length > 0) return json.aeds;
         } catch (e) {}

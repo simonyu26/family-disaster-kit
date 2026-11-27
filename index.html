@@ -1430,6 +1430,9 @@
               <option value="宜蘭縣">宜蘭縣</option>
               <option value="花蓮縣">花蓮縣</option>
               <option value="臺東縣">臺東縣</option>
+              <option value="澎湖縣">澎湖縣</option>
+              <option value="金門縣">金門縣</option>
+              <option value="連江縣">連江縣</option>
             </select>
             <button class="btn btn-muted" style="padding:3px 8px; font-size:0.75rem; margin-left:auto;" onclick="fetchNcdrAlerts(true)">🔁 更新</button>
           </div>
@@ -2606,7 +2609,7 @@
 
 
     // 版本號只寫這一處（② #29）：升版只改 APP_VERSION，畫面標籤、網頁標題與 Service Worker 快取名稱都從這裡來
-    const APP_VERSION = 'v2.9.24';
+    const APP_VERSION = 'v2.9.24.1';
     (function showAppVersion() {
       const pill = document.getElementById('app-version-pill');
       if (pill) pill.textContent = APP_VERSION;
@@ -5670,7 +5673,11 @@
         [['蘭嶼', '綠島'], ['臺東縣']],
         [['離島', '外島', '澎金馬'], ISL],
         [['金馬'], ['金門縣', '連江縣']],
-        [['馬祖'], ['連江縣']]
+        [['馬祖'], ['連江縣']],
+        // 離島的島名與鄉鎮：示警只寫「馬公」「南竿」時也要對到（災防顧問，審閱日期 2026-11-27，reviews/font-step3-4-islands-disaster.md）
+        [['馬公', '望安', '七美', '白沙', '西嶼', '湖西'], ['澎湖縣']],
+        [['烈嶼', '小金門', '金城', '金湖', '金沙', '金寧'], ['金門縣']],
+        [['南竿', '北竿', '東引', '莒光'], ['連江縣']]
       ];
     })();
     // 選單標籤不是完整縣市名時，對到哪些縣市：縣轄市對到所屬的縣（選「彰化市」時，「中彰投」也要算）；

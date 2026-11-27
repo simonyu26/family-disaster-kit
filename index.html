@@ -2509,6 +2509,7 @@
       LAST_BACKUP: 'camp_last_backup_at',        // 上次匯出備份成功的時間（毫秒）；匯入不算（工程顧問 #22）
       BACKUP_NUDGE_DAY: 'camp_backup_nudge_day', // 上次跳備份提醒的時間（毫秒），7 天最多一次（使用者顧問 #22）
       SAMPLE_SIG: 'camp_sample_sig',             // 剛載入範本時的資料指紋；資料沒改過就不提醒備份範例資料
+      ALERT_CITY: 'camp_alert_city',             // 示警選的縣市（只存選單裡的縣市名稱）；跑馬燈也跟著它（進度表 ② #19）
       TQ_OVER2H_NOTIFIED: 'camp_tq_over2h_notified' // 已提醒「超過 2 小時」的那次計時的起始毫秒數，同一次計時只提醒一次（工程顧問 工項 43）
     };
 
@@ -2606,7 +2607,7 @@
 
 
     // 版本號只寫這一處（② #29）：升版只改 APP_VERSION，畫面標籤、網頁標題與 Service Worker 快取名稱都從這裡來
-    const APP_VERSION = 'v2.9.24';
+    const APP_VERSION = 'v2.9.36';
     (function showAppVersion() {
       const pill = document.getElementById('app-version-pill');
       if (pill) pill.textContent = APP_VERSION;
@@ -2730,6 +2731,7 @@
         alertsCache = JSON.parse(cachedAlerts);
       }
       loadAlertsMeta();
+      restoreAlertCity();
       renderAlertViews();
       // 每分鐘重算一次示警狀態（只重算、不重抓），資料超過 15 分鐘就不再顯示 ✅（D-02）
       setInterval(renderAlertViews, 60 * 1000);
@@ -5709,16 +5711,22 @@
       const recent = (alertsCache || []).filter(isActiveAlert); // 只放算有示警的，演習、測試、已取消不上跑馬燈（#18）
 
 
-      // 預設鎖定臺北市目前有效的示警
-      const taipeiMatches = recent.filter(a => matchAlertRegion(a, '臺北市'));
-      if (taipeiMatches.length > 0) {
-        const top = taipeiMatches[0];
+      // 跟著情報頁選的縣市（進度表 ② #19）；沒選過時是臺北市
+      const city = selectedAlertCity;
+      const isAll = city === '全國';
+      const cityMatches = recent.filter(a => matchAlertRegion(a, city));
+      if (cityMatches.length > 0) {
+        const top = cityMatches[0];
         ticker.style.display = 'flex';
         const topType = getAlertTypeLabel(top);
-        // 標題已經寫到縣市或類別時不再重複加前綴，避免 360px 折成兩行（使用者、美術顧問）
-        const cityPrefix = String(top.title).replace(/台/g, '臺').includes('臺北市') ? '' : '臺北市・';
+        // 一定看得出是哪個縣市：標題沒寫到這個縣市時加前綴，選全國寫「全國・」（災防顧問 11/27）。
+        // 前綴用選單的名稱（「新竹」「嘉義」），標題已經寫到時不重複加，避免 360px 折成兩行（使用者、美術顧問）
+        const key = city.replace(/[市縣]/g, '');
+        const cityPrefix = !isAll && String(top.title).replace(/台/g, '臺').includes(key) ? '' : city + '・';
         const typePrefix = topType && !String(top.title).includes(topType) ? '【' + topType + '】' : '';
-        titleEl.innerText = `🚨 ${cityPrefix}${typePrefix}${top.title}（${alertScopeText()}共 ${taipeiMatches.length} 則）`;
+        const scope = alertScopeText();
+        const countText = isAll ? `全國${scope === '目前' ? '' : scope}共 ${cityMatches.length} 則` : `${scope}共 ${cityMatches.length} 則`;
+        titleEl.innerText = `🚨 ${cityPrefix}${typePrefix}${top.title}（${countText}）`;
         sumEl.innerText = top.summary.slice(0, 85) + (top.summary.length > 85 ? '...' : '');
       } else {
         ticker.style.display = 'none';
@@ -5726,13 +5734,30 @@
     }
 
 
-    function setAlertCity(city) {
+    // 示警可選的縣市：縣市膠囊加上「其他地區...」選單，存起來的值只有在這份清單裡才採用（工程顧問 11/27）
+    function alertCityCandidates() {
+      const chips = [...document.querySelectorAll('#alert-city-chips .city-chip')].map(el => el.getAttribute('data-acity'));
+      const opts = [...document.querySelectorAll('#alert-more-city option')].map(o => o.value);
+      return chips.concat(opts).filter(Boolean);
+    }
+
+    function restoreAlertCity() {
+      let saved = null;
+      try { saved = localStorage.getItem(STORAGE_KEYS.ALERT_CITY); } catch (e) { saved = null; }
+      if (saved && saved !== selectedAlertCity && alertCityCandidates().includes(saved)) setAlertCity(saved, false);
+    }
+
+
+    function setAlertCity(city, save = true) {
       selectedAlertCity = city;
       document.querySelectorAll('#alert-city-chips .city-chip').forEach(el => {
         el.classList.toggle('active', el.getAttribute('data-acity') === city);
       });
-      renderNcdrAlerts();
-      renderWatchCities();
+      // 「其他地區...」選單顯示目前選的縣市；選的是膠囊時回到「其他地區...」
+      const more = document.getElementById('alert-more-city');
+      if (more) more.value = [...more.options].some(o => o.value === city) ? city : '';
+      if (save) { try { localStorage.setItem(STORAGE_KEYS.ALERT_CITY, city); } catch (e) { /* 存不了就只在這次有效 */ } }
+      renderAlertViews();
     }
 
 

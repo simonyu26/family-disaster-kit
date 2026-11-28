@@ -2616,7 +2616,7 @@
 
 
     // 版本號只寫這一處（② #29）：升版只改 APP_VERSION，畫面標籤、網頁標題與 Service Worker 快取名稱都從這裡來
-    const APP_VERSION = 'v2.9.25';
+    const APP_VERSION = 'v2.9.26';
     (function showAppVersion() {
       const pill = document.getElementById('app-version-pill');
       if (pill) pill.textContent = APP_VERSION;
@@ -3022,9 +3022,26 @@
       }
     }
 
+    // 重送防重複（後端 v1.7）：每個寫入帶一個請求編號 reqId。
+    // 同一個動作重送（轉入離線佇列再補傳）沿用同一個編號，後端認得就不會再寫一次。
+    // batchSync 由裡面每一筆各自帶編號；辨識標籤不寫入；改通行碼另外處理，都不帶。
+    const NO_REQ_ID_ACTIONS = ['batchSync', 'recognizeLabel', 'setFamilyPin'];
+    function newReqId() {
+      try { if (window.crypto && crypto.randomUUID) return crypto.randomUUID(); } catch (e) { /* 改用下面的方式 */ }
+      const b = new Uint8Array(16);
+      crypto.getRandomValues(b);
+      return Array.from(b, x => x.toString(16).padStart(2, '0')).join('');
+    }
+    // 直接寫回呼叫端的 payload：送失敗轉入離線佇列時，佇列裡是同一個物件、同一個編號
+    function ensureReqId(payload) {
+      if (payload && !payload.reqId && !NO_REQ_ID_ACTIONS.includes(payload.action)) payload.reqId = newReqId();
+      return payload;
+    }
+
     async function postToGas(payload) {
       const url = getGasUrl();
       if (!url) throw new Error('尚未設定 GAS API 網址');
+      ensureReqId(payload);
       const finalPayload = Object.assign({}, payload, { pin: getGasPin() });
       // 寫入不中止，只在久等時告訴使用者狀態（D-06）
       let unsureShown = false;
@@ -3050,6 +3067,8 @@
         err.data = json;
         throw err;
       }
+      // 重送命中（後端 v1.7）：這次沒有寫入，回應也不附資料，在背景同步一次，讓畫面對齊雲端
+      if (json.duplicate || json.needSync) setTimeout(() => syncWithServer(false), 0);
       return json;
     }
 
@@ -3103,7 +3122,7 @@
         const key = q => (q.itemId ? 'id:' + q.itemId : 'row:' + q.row) + '|' + q.charName;
         offlineQueue = offlineQueue.filter(q => !(q.action === 'updateItem' && key(q) === key(payload)));
       }
-      offlineQueue.push(payload);
+      offlineQueue.push(ensureReqId(payload));
       localStorage.setItem(STORAGE_KEYS.QUEUE, JSON.stringify(offlineQueue));
       updatePendingBadge();
     }
@@ -3111,6 +3130,11 @@
 
     async function flushOfflineQueue() {
       if (offlineQueue.length === 0 || !navigator.onLine || !getGasUrl()) return;
+      // 舊版留下、沒有編號的待傳資料，先補上並存起來，這次沒送成功下次也用同一個編號
+      if (offlineQueue.some(q => !q.reqId)) {
+        offlineQueue.forEach(ensureReqId);
+        localStorage.setItem(STORAGE_KEYS.QUEUE, JSON.stringify(offlineQueue));
+      }
       const toSend = [...offlineQueue];
       try {
         const res = await postToGas({ action: 'batchSync', actions: toSend });
@@ -4031,12 +4055,13 @@
       localStorage.setItem(STORAGE_KEYS.CONTACTS, JSON.stringify(contactsData));
       renderContactsGraph();
       const action = id ? 'updateContact' : 'addContact';
-      if (!navigator.onLine || !getGasUrl()) { enqueueAction({ action, contact }); showToast('🟠 已離線儲存聯絡人', 'warn'); return; }
+      const payload = { action, contact };
+      if (!navigator.onLine || !getGasUrl()) { enqueueAction(payload); showToast('🟠 已離線儲存聯絡人', 'warn'); return; }
       try {
-        const res = await postToGas({ action, contact });
+        const res = await postToGas(payload);
         if (res.contacts) { contactsData = res.contacts; localStorage.setItem(STORAGE_KEYS.CONTACTS, JSON.stringify(contactsData)); renderContactsGraph(); }
         showToast('✅ 已同步家庭聯絡人', 'success');
-      } catch (e) { enqueueAction({ action, contact }); showToast('🟠 轉為離線暫存', 'warn'); }
+      } catch (e) { enqueueAction(payload); showToast('🟠 轉為離線暫存', 'warn'); }
     }
 
 
@@ -4045,11 +4070,12 @@
       contactsData = contactsData.filter(x => x.id !== id);
       localStorage.setItem(STORAGE_KEYS.CONTACTS, JSON.stringify(contactsData));
       renderContactsGraph();
-      if (!navigator.onLine || !getGasUrl()) { enqueueAction({ action: 'deleteContact', id }); showToast('🟠 已離線刪除', 'warn'); return; }
+      const payload = { action: 'deleteContact', id };
+      if (!navigator.onLine || !getGasUrl()) { enqueueAction(payload); showToast('🟠 已離線刪除', 'warn'); return; }
       try {
-        await postToGas({ action: 'deleteContact', id });
+        await postToGas(payload);
         showToast('✅ 已刪除聯絡人', 'success');
-      } catch (e) { enqueueAction({ action: 'deleteContact', id }); }
+      } catch (e) { enqueueAction(payload); }
     }
 
 
@@ -4588,7 +4614,7 @@
         try {
           showToast('📡 正在新增物資...');
           const res = await postToGas(payload);
-          globalData = res.inventory;
+          if (res.inventory) globalData = res.inventory; // 重送命中時可能沒附資料，改由背景同步補上
           localStorage.setItem(STORAGE_KEYS.DATA, JSON.stringify(globalData));
           renderParty(); renderInventory();
           showToast('✅ 已新增物資：' + name, 'success');
@@ -4602,7 +4628,7 @@
           showToast('📡 正在更新物資資訊...');
           // itemName 送改名前的舊名，後端用舊名比對（工程顧問）
           const res = await postToGas({ action: 'editItem', row: item.row, ...itemRefFields(item), newName: name, newCategory: cat });
-          globalData = res.inventory;
+          if (res.inventory) globalData = res.inventory; // 重送命中時可能沒附資料，改由背景同步補上
           localStorage.setItem(STORAGE_KEYS.DATA, JSON.stringify(globalData));
           renderParty(); renderInventory();
           showToast('✅ 已更新物資', 'success');
@@ -4712,7 +4738,7 @@
       try {
         showToast('🗑️ 正在永久刪除...');
         const res = await postToGas({ action: 'deleteItem', row: item.row, ...itemRefFields(item) });
-        globalData = res.inventory;
+        if (res.inventory) globalData = res.inventory; // 重送命中時可能沒附資料，改由背景同步補上
         localStorage.setItem(STORAGE_KEYS.DATA, JSON.stringify(globalData));
         renderParty(); renderInventory();
         showToast('✅ 已永久刪除物資', 'success');
@@ -4870,7 +4896,7 @@
         } else {
           showToast('📡 正在新增成員與試算表欄位...');
           const res = await postToGas({ action: 'addMember', name: newName, avatar, buddy, defaultState, blood: cloudBlood, medical: cloudMed, iceContact: '', rallyNote: cloudRally, memberType, mobility, firstAidSkill });
-          globalData = res.inventory;
+          if (res.inventory) globalData = res.inventory; // 重送命中時可能沒附資料，改由背景同步補上
           membersMap = res.members || membersMap;
           localStorage.setItem(STORAGE_KEYS.DATA, JSON.stringify(globalData));
           localStorage.setItem(STORAGE_KEYS.MEMBERS, JSON.stringify(membersMap));
@@ -4887,7 +4913,7 @@
       try {
         showToast('🗑️ 正在移除成員...');
         const res = await postToGas({ action: 'deleteMember', name });
-        globalData = res.inventory;
+        if (res.inventory) globalData = res.inventory; // 重送命中時可能沒附資料，改由背景同步補上
         membersMap = res.members || membersMap;
         localStorage.setItem(STORAGE_KEYS.DATA, JSON.stringify(globalData));
         localStorage.setItem(STORAGE_KEYS.MEMBERS, JSON.stringify(membersMap));

@@ -20,7 +20,8 @@ const APP_ASSETS = [
   './vendor/leaflet-1.9.4/images/marker-icon-2x.png',
   './vendor/leaflet-1.9.4/images/marker-shadow.png',
   // QR 碼套件自行託管（② #44，S-07）；預存清單不再有跨網域檔案
-  './vendor/qrcodejs-1.0.0/qrcode.min.js'
+  // 平安 QR 第 2 步：qrcodejs 算錯中文長度，換成 qrcode-generator
+  './vendor/qrcode-generator-1.4.4/qrcode.js'
 ];
 
 
